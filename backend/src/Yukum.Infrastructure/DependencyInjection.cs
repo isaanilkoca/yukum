@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Yukum.Application.Abstractions.Persistence;
 using Yukum.Infrastructure.Persistence;
 
 namespace Yukum.Infrastructure;
@@ -22,6 +23,14 @@ public static class DependencyInjection
             options.UseSqlServer(connectionString);
         });
 
+        return services.AddRepositories();
+    }
+
+    // Ayrı metot: testler kendi DbContext'iyle aynı kayıtları kullanabilsin.
+    public static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
 }

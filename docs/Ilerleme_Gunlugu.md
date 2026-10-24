@@ -46,6 +46,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | Alt adım | Ne yapıldı | Kanıt |
 |---|---|---|
 | B4a | Application katmanında arayüzler: `IRepository<T>` (GetById, List, Any, Count, Add, Remove; okumada `asNoTracking`), `IUnitOfWork` (tek işlemde kaydet), `ICommandHandler`/`IQueryHandler`. **Rapordan bilinçli fark:** `Update` metodu yok — EF izlenen kaydın değişikliğini zaten kaydediyor; `Update` tüm sütunları baştan yazan bir tuzak. Kopuk (detached) kayıt senaryosu çıkarsa eklenir. | Derleme temiz; davranış testi B4b'de |
+| B4b | `Repository<T>` ve `UnitOfWork` (Infrastructure), `AddRepositories()` ile DI kaydı. 7 davranış testi (önce iskeletle hepsi kırmızıydı): ekle→bul, olmayan Id null, izlenen kaydın değişikliği `Update` olmadan kaydedilir, **silinen kayıt GetById/List/Count/Any'de görünmez ama satır durur**, predicate'li list/count/any, `asNoTracking` gerçekten izlemez, **atomiklik: çakışmada aynı kaydetmedeki yeni kayıt da kaydedilmez**. `FindAsync` bilerek kullanılmadı (yumuşak silme filtresini atlar). | **31 entegrasyon + 1 birim test yeşil**, 0 uyarı |
 <!--B4-->
 
 ### Öğrenilenler / dürüst notlar
