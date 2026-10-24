@@ -1,0 +1,31 @@
+# macOS
+.DS_Store
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+*.log
+
+# Gizli bilgiler (asla commit edilmez)
+.env
+*.p8
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# Xcode / Swift
+xcuserdata/
+DerivedData/
+.build/
+*.xcuserstate
+*.xcscmblueprint
+
+# VS Code (paylaşılan ayarlar hariç)
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
