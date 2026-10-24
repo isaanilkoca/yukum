@@ -39,6 +39,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 |---|---|---|
 | B3c-1 | `dotnet-ef` 10.0.13 projeye özel kuruldu (`backend/dotnet-tools.json`); sudo/global kurulum gerekmedi. | `dotnet ef --version` = 10.0.13 |
 | B3c-2 | `AddInfrastructure()` (DbContext + `TimeProvider`, bağlantı dizesi kullanılırken okunur; eksikse açık hata mesajı). `/health` artık **veritabanına bağlanmayı dener**: erişilebilirken 200 Healthy, DB ulaşılamaz ya da ayar eksikken 503 Unhealthy. | 3 health testi + **gerçek API gerçek `Yukum` DB'sine user-secrets ile bağlanıp Healthy döndü** (B2d borcu kapandı) |
+| B3c-3 | İlk migration `InitialCreate` (boş şema: gerçek tablolar Aşama D'den itibaren). Geliştirme DB'sine `dotnet ef database update` ile uygulandı. İki test: migration'lar boş DB'ye temiz uygulanır; modelde migration'a yazılmamış değişiklik yok (ileride birinin migration eklemeyi unutmasını yakalar). | SQL Server'da `Yukum` içinde `__EFMigrationsHistory` + `20261024232737_InitialCreate`; **24 entegrasyon + 1 birim test yeşil** |
 <!--B3C-->
 
 ### Öğrenilenler / dürüst notlar
@@ -57,4 +58,4 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
 ### Sıradaki
-**B3** (veritabanı: taban sınıf, AppDbContext, ilk migration, `/health` DB kontrolü), sonra B4 (Repository + Unit of Work).
+**B4** (Repository + Unit of Work, Application katmanında CQRS-lite handler yapısı, MediatR'sız), sonra C (il/ilçe servisi + iOS'a ilk bağlantı). B3 tamamlandı.

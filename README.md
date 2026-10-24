@@ -32,6 +32,9 @@ Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
      --project backend/src/Yukum.Api
    ```
 4. API'yi çalıştır: `dotnet run --project backend/src/Yukum.Api --launch-profile http` → http://localhost:5054/scalar
-5. Testler: `dotnet test backend/Yukum.slnx`
+5. Veritabanı şemasını uygula: `dotnet tool restore` (bir kez) sonra
+   `dotnet ef database update --project backend/src/Yukum.Infrastructure --startup-project backend/src/Yukum.Api`
+   (araç `backend` klasöründe kurulu; komutları `backend/` içinde çalıştır)
+6. Testler: `dotnet test backend/Yukum.slnx` (veritabanı testleri Docker'da kendi geçici SQL Server'ını açar)
 
 İlerleme: `docs/Ilerleme_Gunlugu.md`
