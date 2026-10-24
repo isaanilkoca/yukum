@@ -42,6 +42,12 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | B3c-3 | İlk migration `InitialCreate` (boş şema: gerçek tablolar Aşama D'den itibaren). Geliştirme DB'sine `dotnet ef database update` ile uygulandı. İki test: migration'lar boş DB'ye temiz uygulanır; modelde migration'a yazılmamış değişiklik yok (ileride birinin migration eklemeyi unutmasını yakalar). | SQL Server'da `Yukum` içinde `__EFMigrationsHistory` + `20261024232737_InitialCreate`; **24 entegrasyon + 1 birim test yeşil** |
 <!--B3C-->
 
+#### B4 — Repository, Unit of Work, CQRS-lite (adım adım)
+| Alt adım | Ne yapıldı | Kanıt |
+|---|---|---|
+| B4a | Application katmanında arayüzler: `IRepository<T>` (GetById, List, Any, Count, Add, Remove; okumada `asNoTracking`), `IUnitOfWork` (tek işlemde kaydet), `ICommandHandler`/`IQueryHandler`. **Rapordan bilinçli fark:** `Update` metodu yok — EF izlenen kaydın değişikliğini zaten kaydediyor; `Update` tüm sütunları baştan yazan bir tuzak. Kopuk (detached) kayıt senaryosu çıkarsa eklenir. | Derleme temiz; davranış testi B4b'de |
+<!--B4-->
+
 ### Öğrenilenler / dürüst notlar
 - Bir test beklentimi tahminle yazmıştım (olmayan sürüm için 400); gerçek davranış 404 çıktı, testi gerçek gereksinime göre düzelttik.
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
