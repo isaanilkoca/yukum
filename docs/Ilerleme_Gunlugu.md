@@ -47,6 +47,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 |---|---|---|
 | B4a | Application katmanında arayüzler: `IRepository<T>` (GetById, List, Any, Count, Add, Remove; okumada `asNoTracking`), `IUnitOfWork` (tek işlemde kaydet), `ICommandHandler`/`IQueryHandler`. **Rapordan bilinçli fark:** `Update` metodu yok — EF izlenen kaydın değişikliğini zaten kaydediyor; `Update` tüm sütunları baştan yazan bir tuzak. Kopuk (detached) kayıt senaryosu çıkarsa eklenir. | Derleme temiz; davranış testi B4b'de |
 | B4b | `Repository<T>` ve `UnitOfWork` (Infrastructure), `AddRepositories()` ile DI kaydı. 7 davranış testi (önce iskeletle hepsi kırmızıydı): ekle→bul, olmayan Id null, izlenen kaydın değişikliği `Update` olmadan kaydedilir, **silinen kayıt GetById/List/Count/Any'de görünmez ama satır durur**, predicate'li list/count/any, `asNoTracking` gerçekten izlemez, **atomiklik: çakışmada aynı kaydetmedeki yeni kayıt da kaydedilmez**. `FindAsync` bilerek kullanılmadı (yumuşak silme filtresini atlar). | **31 entegrasyon + 1 birim test yeşil**, 0 uyarı |
+| B4c | CQRS-lite kaydı: `AddApplication()` Application projesindeki handler sınıflarını **kendisi bulup** scoped kaydeder (yeni handler yazınca başka yere dokunulmaz). Kurallar: soyut ve iç içe (nested) sınıflar kaydedilmez; aynı komut için **iki farklı handler → uygulama açılırken hata**; iki kez taramak çift kayıt üretmez. Handler iş mantığı **sahte repo (NSubstitute)** ile veritabanısız test edildi (bulunca günceller+tek kaydet; bulamazsa kaydetmez; sorgu `asNoTracking` okur). Uçtan uca: DI→handler→repo→UoW→gerçek SQL Server, yazma ve okuma ayrı oturumda. | **8 birim + 32 entegrasyon test yeşil**, 0 uyarı; gerçek API `/health` Healthy |
 <!--B4-->
 
 ### Öğrenilenler / dürüst notlar
@@ -65,4 +66,4 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
 ### Sıradaki
-**B4** (Repository + Unit of Work, Application katmanında CQRS-lite handler yapısı, MediatR'sız), sonra C (il/ilçe servisi + iOS'a ilk bağlantı). B3 tamamlandı.
+**C1** (Cities/Districts tabloları + migration + seed: 81 il, ~970 ilçe, merkez koordinatları; resmî liste doğrulanarak), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).

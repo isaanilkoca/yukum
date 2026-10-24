@@ -6,6 +6,7 @@ using Serilog.Context;
 using Yukum.Api.Health;
 using Yukum.Api.Json;
 using Yukum.Api.Middleware;
+using Yukum.Application;
 using Yukum.Infrastructure;
 using Yukum.Api.Validation;
 
@@ -34,6 +35,7 @@ builder.Services.AddApiVersioning(options =>
         options.SubstituteApiVersionInUrl = true;
     })
     .AddOpenApi();
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
