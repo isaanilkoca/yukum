@@ -26,6 +26,14 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | B2c | API sürümleme `/api/v1` (Asp.Versioning + sürüm başına OpenAPI belgesi). JSON: camelCase, enum string, tarih **UTC `…T07:15:00Z` kesirli saniyesiz** (Swift `.iso8601` kesirliyi okuyamaz). Doğrulama hatalarında alan adları camelCase, başlık Türkçe. | `ad6145b`; **15 entegrasyon testi yeşil**, 0 uyarı |
 | B2d | `Yukum` veritabanı, en az yetkili `yukum_app` kullanıcısı (sunucu yöneticisi değil), bağlantı bilgisi **user-secrets**'ta. Parola repoda ve git geçmişinde yok (arandı). | `62139a2` |
 
+### Aşama B devam — veritabanı katmanı (B3)
+| Adım | Ne yapıldı | Kanıt |
+|---|---|---|
+| B3a | `BaseEntity` (Domain): `Id`, `CreatedAt`, `UpdatedAt`, `IsDeleted`, `RowVersion`. Id'yi EF Core üretir (SQL Server sıralı GUID, K-012). | `715486d` |
+| B3b | `AppDbContext` (Infrastructure): kaydetmeden önce `CreatedAt`/`UpdatedAt` (UTC, `TimeProvider` ile), **yumuşak silme** (`Remove` → `IsDeleted=true`, sorgularda otomatik gizli), `RowVersion` ile eşzamanlılık denetimi. Davranışlar **gerçek SQL Server 2025'e karşı** (Testcontainers, testin kendi geçici DB'si) 5 testle kanıtlandı; testler önce kırmızıydı. | **20 entegrasyon + 1 birim test yeşil** |
+
+**B3b'de yakalanan güvenlik uyarısı:** EF SQL Server paketinin dolaylı getirdiği `System.Security.Cryptography.Pkcs 9.0.11` paketinde bilinen yüksek/orta açık vardı (NU1902/NU1903). Uyarıyı susturmadık; yamalı 10.0.13 sürümünü Infrastructure'a doğrudan ekledik, zafiyet taraması temiz.
+
 ### Öğrenilenler / dürüst notlar
 - Bir test beklentimi tahminle yazmıştım (olmayan sürüm için 400); gerçek davranış 404 çıktı, testi gerçek gereksinime göre düzelttik.
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
