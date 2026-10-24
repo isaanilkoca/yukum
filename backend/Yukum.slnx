@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Yukum.Api/Yukum.Api.csproj" />
+    <Project Path="src/Yukum.Application/Yukum.Application.csproj" />
+    <Project Path="src/Yukum.Domain/Yukum.Domain.csproj" />
+    <Project Path="src/Yukum.Infrastructure/Yukum.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Yukum.IntegrationTests/Yukum.IntegrationTests.csproj" />
+    <Project Path="tests/Yukum.UnitTests/Yukum.UnitTests.csproj" />
+  </Folder>
+</Solution>

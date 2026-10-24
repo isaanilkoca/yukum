@@ -13,7 +13,6 @@ TestResults/
 # Gizli bilgiler (asla commit edilmez)
 .env
 *.p8
-appsettings.Development.json
 appsettings.Local.json
 secrets.json
 
