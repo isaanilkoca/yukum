@@ -37,7 +37,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 #### B3c — ilk migration, DI bağlantısı, `/health` DB kontrolü (adım adım)
 | Alt adım | Ne yapıldı | Kanıt |
 |---|---|---|
-| B3c-1 | Başladı: `dotnet-ef` aracı projeye özel (tool manifest) kurulacak. | — |
+| B3c-1 | `dotnet-ef` 10.0.13 projeye özel kuruldu (`backend/dotnet-tools.json`); sudo/global kurulum gerekmedi. | `dotnet ef --version` = 10.0.13 |
 <!--B3C-->
 
 ### Öğrenilenler / dürüst notlar
