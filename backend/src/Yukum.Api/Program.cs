@@ -1,16 +1,37 @@
 using System.Diagnostics;
+using Asp.Versioning;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Context;
+using Yukum.Api.Json;
 using Yukum.Api.Middleware;
+using Yukum.Api.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => JsonSetup.Configure(options.JsonSerializerOptions))
+    .ConfigureApiBehaviorOptions(options =>
+        options.InvalidModelStateResponseFactory = ValidationProblemResponse.Create);
+builder.Services.ConfigureHttpJsonOptions(options => JsonSetup.Configure(options.SerializerOptions));
+
+// Sürüm adreste: /api/v1/... Sürümsüz adres kabul edilmez. Kırıcı değişiklik = yeni sürüm (v2).
+builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.ReportApiVersions = true;
+        options.ApiVersionReader = new UrlSegmentApiVersionReader();
+    })
+    .AddMvc()
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'V";
+        options.SubstituteApiVersionInUrl = true;
+    })
+    .AddOpenApi();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
@@ -35,7 +56,7 @@ app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi().WithDocumentPerVersion();
     app.MapScalarApiReference();
 }
 
@@ -46,3 +67,6 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 app.Run();
+
+// Entegrasyon testlerinin (WebApplicationFactory) uygulamayı bulabilmesi için.
+public partial class Program;
