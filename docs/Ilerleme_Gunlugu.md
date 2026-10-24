@@ -34,6 +34,12 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 
 **B3b'de yakalanan güvenlik uyarısı:** EF SQL Server paketinin dolaylı getirdiği `System.Security.Cryptography.Pkcs 9.0.11` paketinde bilinen yüksek/orta açık vardı (NU1902/NU1903). Uyarıyı susturmadık; yamalı 10.0.13 sürümünü Infrastructure'a doğrudan ekledik, zafiyet taraması temiz.
 
+#### B3c — ilk migration, DI bağlantısı, `/health` DB kontrolü (adım adım)
+| Alt adım | Ne yapıldı | Kanıt |
+|---|---|---|
+| B3c-1 | Başladı: `dotnet-ef` aracı projeye özel (tool manifest) kurulacak. | — |
+<!--B3C-->
+
 ### Öğrenilenler / dürüst notlar
 - Bir test beklentimi tahminle yazmıştım (olmayan sürüm için 400); gerçek davranış 404 çıktı, testi gerçek gereksinime göre düzelttik.
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
