@@ -10,6 +10,10 @@ public sealed class YukumApiFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        // Testler geliştiricinin user-secrets'ındaki gerçek veritabanına bağımlı olmasın: varsayılan boş.
+        // Veritabanı isteyen testler WithWebHostBuilder(...UseSetting(...)) ile kendi bağlantısını verir.
+        builder.UseSetting("ConnectionStrings:DefaultConnection", "");
+
         builder.ConfigureTestServices(services =>
             services.AddControllers().AddApplicationPart(typeof(YukumApiFactory).Assembly));
     }

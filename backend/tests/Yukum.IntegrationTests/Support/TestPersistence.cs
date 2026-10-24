@@ -17,6 +17,8 @@ public class TestDbContext(DbContextOptions<TestDbContext> options, TimeProvider
 
 public sealed class TestDatabase(string connectionString, TimeProvider time)
 {
+    public string ConnectionString => connectionString;
+
     public TestDbContext NewContext() =>
         new(new DbContextOptionsBuilder<TestDbContext>().UseSqlServer(connectionString).Options, time);
 }

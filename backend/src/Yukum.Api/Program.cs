@@ -3,8 +3,10 @@ using Asp.Versioning;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Context;
+using Yukum.Api.Health;
 using Yukum.Api.Json;
 using Yukum.Api.Middleware;
+using Yukum.Infrastructure;
 using Yukum.Api.Validation;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,7 +34,9 @@ builder.Services.AddApiVersioning(options =>
         options.SubstituteApiVersionInUrl = true;
     })
     .AddOpenApi();
-builder.Services.AddHealthChecks();
+builder.Services.AddInfrastructure();
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database");
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails(options =>

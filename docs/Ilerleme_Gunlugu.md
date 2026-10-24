@@ -38,6 +38,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | Alt adım | Ne yapıldı | Kanıt |
 |---|---|---|
 | B3c-1 | `dotnet-ef` 10.0.13 projeye özel kuruldu (`backend/dotnet-tools.json`); sudo/global kurulum gerekmedi. | `dotnet ef --version` = 10.0.13 |
+| B3c-2 | `AddInfrastructure()` (DbContext + `TimeProvider`, bağlantı dizesi kullanılırken okunur; eksikse açık hata mesajı). `/health` artık **veritabanına bağlanmayı dener**: erişilebilirken 200 Healthy, DB ulaşılamaz ya da ayar eksikken 503 Unhealthy. | 3 health testi + **gerçek API gerçek `Yukum` DB'sine user-secrets ile bağlanıp Healthy döndü** (B2d borcu kapandı) |
 <!--B3C-->
 
 ### Öğrenilenler / dürüst notlar
@@ -45,9 +46,13 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
 - Test uçları yalnız test projesinde; gerçek API'ye girmedi.
 
+**B3c-2'de yakalanan iki hata (ikisi de düzeltildi):**
+1. Test, geliştiricinin user-secrets'ına bağımlıydı ("bağlantı yok" senaryosunda gerçek DB'ye bağlanıp 200 verdi). Test fabrikası artık bağlantıyı varsayılan boş verir; başka bilgisayarda/CI'da aynı sonuç.
+2. Hazır `AddDbContextCheck`, ayar eksikken hatayı yakalamayıp 500 döndürdü. Kendi `DatabaseHealthCheck`'imizi yazdık: her hata 503 Unhealthy, ayrıntı yalnız loga. Gereksiz paket kaldırıldı.
+
 ### Bilinen borçlar
 - Doğrulama **mesaj metinleri** İngilizce → D2'de FluentValidation ile Türkçe.
-- Uygulamanın user-secrets'tan bağlantıyı gerçekten okuması B3'te uçtan uca doğrulanacak.
+- ~~Uygulamanın user-secrets'tan bağlantıyı gerçekten okuması~~ → B3c-2'de doğrulandı.
 - HTTPS yönlendirme uyarısı (http profili) → C3'te iOS bağlantısıyla netleşecek.
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 

@@ -12,14 +12,6 @@ public class ApiConventionTests(YukumApiFactory factory) : IClassFixture<YukumAp
     private static async Task<JsonElement> ReadJson(HttpResponseMessage response) =>
         JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
 
-    // ---------- Sağlık ----------
-    [Fact]
-    public async Task Health_returns_200()
-    {
-        var response = await _client.GetAsync("/health");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
     // ---------- JSON kuralları (iOS Codable ile uyum) ----------
     [Fact]
     public async Task Json_property_names_are_camelCase()
