@@ -20,3 +20,10 @@
 - **Neden:** SQL Server `uniqueidentifier` değerlerini sondan sıralar; UUIDv7 (zaman başta) kümelenmiş indekste sıralı olmaz. Rapor 9.1 "UUIDv7 / sıralı GUID değerlendirilebilir" diyordu; ölçüt: indeks parçalanmasını azaltmak.
 - **Sonuç:** Kayıt `Add` edilmeden `Id` boştur (`Guid.Empty`). Başka tablo gerektirmez; kayıt eklendikten sonra Id dolar.
 - **Geri dönüş maliyeti:** Düşük (taban sınıfta tek alan).
+
+## K-013 — İl/ilçe kimlikleri ve veri kaynağı (25 Ekim 2026)
+- **Karar:** `Cities.Id` = plaka kodu (1–81); ayrı `PlateCode` sütunu yok (Id ile aynı, tekrar eden alan tutarsızlık riski). `Districts.Id` = sıralı tamsayı (plaka sırası, sonra Türkçe alfabetik); seed donduruldu, ileride eklenen ilçe sıradaki numarayı alır, mevcut numaralar değişmez.
+- **Veri:** 81 il / 973 ilçe, `docs/veri/il-ilce.json`; kaynaklar, yöntem ve bulunan hatalar `docs/veri/Veri_Kaynaklari.md`.
+- **Neden:** Rapor 9.5 "resmî listeden alınıp doğrulanır". Tek kaynağa güvenilmedi; 5 kaynak çapraz kontrol edildi ve Vikipedi'de 9, Wikidata'da 2 hata bulundu.
+- **Rapordan fark:** Rapor `PlateCode` sütunu sayıyor; Id ile aynı olduğu için eklenmedi. DTO'da `id` plaka kodudur.
+- **Geri dönüş maliyeti:** Düşük (seed migration'ı yeniden üretilir).

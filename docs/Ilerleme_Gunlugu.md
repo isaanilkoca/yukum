@@ -50,6 +50,12 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | B4c | CQRS-lite kaydı: `AddApplication()` Application projesindeki handler sınıflarını **kendisi bulup** scoped kaydeder (yeni handler yazınca başka yere dokunulmaz). Kurallar: soyut ve iç içe (nested) sınıflar kaydedilmez; aynı komut için **iki farklı handler → uygulama açılırken hata**; iki kez taramak çift kayıt üretmez. Handler iş mantığı **sahte repo (NSubstitute)** ile veritabanısız test edildi (bulunca günceller+tek kaydet; bulamazsa kaydetmez; sorgu `asNoTracking` okur). Uçtan uca: DI→handler→repo→UoW→gerçek SQL Server, yazma ve okuma ayrı oturumda. | **8 birim + 32 entegrasyon test yeşil**, 0 uyarı; gerçek API `/health` Healthy |
 <!--B4-->
 
+### Aşama C — il/ilçe (C1)
+| Alt adım | Ne yapıldı | Kanıt |
+|---|---|---|
+| C1a | **Veri seti hazırlandı ve doğrulandı** (kod yok, yalnız veri): 81 il, 973 ilçe, plaka kodları, il ve ilçe merkezi koordinatları. 5 kaynak çapraz kontrol edildi (Vikipedi iki tablo, GeoNames, Wikidata, 2 GitHub seti). "922 mi 973 mü?" tuzağı çözüldü: 922 belediye sayısı, 973 idari ilçe; "Merkez" ilçesi sayısı tam 51. **Bulunan hatalar:** Wikidata'da Konya ve Uşak plakası yanlış; Vikipedi'de 9 ilçe koordinatı yanlış (5'i başka ilçenin koordinatının kopyası). Hepsi düzeltildi. | `docs/veri/il-ilce.json`, `docs/veri/Veri_Kaynaklari.md`, K-013; değişmez kontrolleri geçti |
+<!--C1-->
+
 ### Öğrenilenler / dürüst notlar
 - Bir test beklentimi tahminle yazmıştım (olmayan sürüm için 400); gerçek davranış 404 çıktı, testi gerçek gereksinime göre düzelttik.
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
@@ -66,4 +72,4 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
 ### Sıradaki
-**C1** (Cities/Districts tabloları + migration + seed: 81 il, ~970 ilçe, merkez koordinatları; resmî liste doğrulanarak), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).
+**C1b** (Cities/Districts entity'leri + EF yapılandırması + migration + seed; veri testleri), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).

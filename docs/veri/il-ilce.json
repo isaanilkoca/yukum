@@ -1,0 +1,5515 @@
+[
+ {
+  "plate": 1,
+  "name": "Adana",
+  "lat": 36.98615,
+  "lon": 35.32531,
+  "districts": [
+   {
+    "name": "Aladağ",
+    "lat": 37.54833,
+    "lon": 35.39306
+   },
+   {
+    "name": "Ceyhan",
+    "lat": 37.03194,
+    "lon": 35.8225
+   },
+   {
+    "name": "Çukurova",
+    "lat": 37.04778,
+    "lon": 35.28194
+   },
+   {
+    "name": "Feke",
+    "lat": 37.81444,
+    "lon": 35.91111
+   },
+   {
+    "name": "İmamoğlu",
+    "lat": 37.25528,
+    "lon": 35.66
+   },
+   {
+    "name": "Karaisalı",
+    "lat": 37.25472,
+    "lon": 35.06028
+   },
+   {
+    "name": "Karataş",
+    "lat": 36.56389,
+    "lon": 35.38389
+   },
+   {
+    "name": "Kozan",
+    "lat": 37.45472,
+    "lon": 35.81639
+   },
+   {
+    "name": "Pozantı",
+    "lat": 37.42139,
+    "lon": 34.87278
+   },
+   {
+    "name": "Saimbeyli",
+    "lat": 37.98611,
+    "lon": 36.09
+   },
+   {
+    "name": "Sarıçam",
+    "lat": 37.03222,
+    "lon": 35.41194
+   },
+   {
+    "name": "Seyhan",
+    "lat": 36.99722,
+    "lon": 35.30167
+   },
+   {
+    "name": "Tufanbeyli",
+    "lat": 38.26111,
+    "lon": 36.21972
+   },
+   {
+    "name": "Yumurtalık",
+    "lat": 36.76972,
+    "lon": 35.79028
+   },
+   {
+    "name": "Yüreğir",
+    "lat": 36.98861,
+    "lon": 35.35278
+   }
+  ]
+ },
+ {
+  "plate": 2,
+  "name": "Adıyaman",
+  "lat": 37.76441,
+  "lon": 38.27629,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.7625,
+    "lon": 38.27472
+   },
+   {
+    "name": "Besni",
+    "lat": 37.69111,
+    "lon": 37.86194
+   },
+   {
+    "name": "Çelikhan",
+    "lat": 38.03306,
+    "lon": 38.24222
+   },
+   {
+    "name": "Gerger",
+    "lat": 38.02917,
+    "lon": 39.03278
+   },
+   {
+    "name": "Gölbaşı",
+    "lat": 37.78444,
+    "lon": 37.63889
+   },
+   {
+    "name": "Kahta",
+    "lat": 37.78639,
+    "lon": 38.62222
+   },
+   {
+    "name": "Samsat",
+    "lat": 37.57917,
+    "lon": 38.48139
+   },
+   {
+    "name": "Sincik",
+    "lat": 38.02889,
+    "lon": 38.61944
+   },
+   {
+    "name": "Tut",
+    "lat": 37.795,
+    "lon": 37.91444
+   }
+  ]
+ },
+ {
+  "plate": 3,
+  "name": "Afyonkarahisar",
+  "lat": 38.75667,
+  "lon": 30.54333,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.75639,
+    "lon": 30.53806
+   },
+   {
+    "name": "Başmakçı",
+    "lat": 37.89722,
+    "lon": 30.01
+   },
+   {
+    "name": "Bayat",
+    "lat": 38.98333,
+    "lon": 30.92472
+   },
+   {
+    "name": "Bolvadin",
+    "lat": 38.71111,
+    "lon": 31.045
+   },
+   {
+    "name": "Çay",
+    "lat": 38.59222,
+    "lon": 31.0275
+   },
+   {
+    "name": "Çobanlar",
+    "lat": 38.70111,
+    "lon": 30.78083
+   },
+   {
+    "name": "Dazkırı",
+    "lat": 37.91889,
+    "lon": 29.86028
+   },
+   {
+    "name": "Dinar",
+    "lat": 38.06778,
+    "lon": 30.16611
+   },
+   {
+    "name": "Emirdağ",
+    "lat": 39.01917,
+    "lon": 31.15056
+   },
+   {
+    "name": "Evciler",
+    "lat": 38.04167,
+    "lon": 29.88528
+   },
+   {
+    "name": "Hocalar",
+    "lat": 38.58056,
+    "lon": 29.96667
+   },
+   {
+    "name": "İhsaniye",
+    "lat": 39.03167,
+    "lon": 30.41667
+   },
+   {
+    "name": "İscehisar",
+    "lat": 38.86167,
+    "lon": 30.75056
+   },
+   {
+    "name": "Kızılören",
+    "lat": 38.25722,
+    "lon": 30.14944
+   },
+   {
+    "name": "Sandıklı",
+    "lat": 38.46472,
+    "lon": 30.2725
+   },
+   {
+    "name": "Sinanpaşa",
+    "lat": 38.74444,
+    "lon": 30.24389
+   },
+   {
+    "name": "Sultandağı",
+    "lat": 38.53194,
+    "lon": 31.22889
+   },
+   {
+    "name": "Şuhut",
+    "lat": 38.53361,
+    "lon": 30.54556
+   }
+  ]
+ },
+ {
+  "plate": 4,
+  "name": "Ağrı",
+  "lat": 39.71467,
+  "lon": 43.04015,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.71861,
+    "lon": 43.05
+   },
+   {
+    "name": "Diyadin",
+    "lat": 39.53972,
+    "lon": 43.67139
+   },
+   {
+    "name": "Doğubayazıt",
+    "lat": 39.54889,
+    "lon": 44.07583
+   },
+   {
+    "name": "Eleşkirt",
+    "lat": 39.79944,
+    "lon": 42.67583
+   },
+   {
+    "name": "Hamur",
+    "lat": 39.60889,
+    "lon": 42.98778
+   },
+   {
+    "name": "Patnos",
+    "lat": 39.23167,
+    "lon": 42.86111
+   },
+   {
+    "name": "Taşlıçay",
+    "lat": 39.635,
+    "lon": 43.37861
+   },
+   {
+    "name": "Tutak",
+    "lat": 39.53861,
+    "lon": 42.77139
+   }
+  ]
+ },
+ {
+  "plate": 5,
+  "name": "Amasya",
+  "lat": 40.65333,
+  "lon": 35.83306,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.64917,
+    "lon": 35.82639
+   },
+   {
+    "name": "Göynücek",
+    "lat": 40.39528,
+    "lon": 35.52389
+   },
+   {
+    "name": "Gümüşhacıköy",
+    "lat": 40.87556,
+    "lon": 35.21528
+   },
+   {
+    "name": "Hamamözü",
+    "lat": 40.78444,
+    "lon": 35.02417
+   },
+   {
+    "name": "Merzifon",
+    "lat": 40.87056,
+    "lon": 35.46278
+   },
+   {
+    "name": "Suluova",
+    "lat": 40.83361,
+    "lon": 35.64528
+   },
+   {
+    "name": "Taşova",
+    "lat": 40.75778,
+    "lon": 36.31917
+   }
+  ]
+ },
+ {
+  "plate": 6,
+  "name": "Ankara",
+  "lat": 39.91987,
+  "lon": 32.85427,
+  "districts": [
+   {
+    "name": "Akyurt",
+    "lat": 40.13028,
+    "lon": 33.08667
+   },
+   {
+    "name": "Altındağ",
+    "lat": 39.95083,
+    "lon": 32.86556
+   },
+   {
+    "name": "Ayaş",
+    "lat": 40.0175,
+    "lon": 32.3325
+   },
+   {
+    "name": "Bala",
+    "lat": 39.5525,
+    "lon": 33.12361
+   },
+   {
+    "name": "Beypazarı",
+    "lat": 40.1625,
+    "lon": 31.92139
+   },
+   {
+    "name": "Çamlıdere",
+    "lat": 40.49083,
+    "lon": 32.47556
+   },
+   {
+    "name": "Çankaya",
+    "lat": 39.89694,
+    "lon": 32.84667
+   },
+   {
+    "name": "Çubuk",
+    "lat": 40.23694,
+    "lon": 33.02889
+   },
+   {
+    "name": "Elmadağ",
+    "lat": 39.91556,
+    "lon": 33.23444
+   },
+   {
+    "name": "Etimesgut",
+    "lat": 39.93833,
+    "lon": 32.66306
+   },
+   {
+    "name": "Evren",
+    "lat": 39.02083,
+    "lon": 33.80778
+   },
+   {
+    "name": "Gölbaşı",
+    "lat": 39.79222,
+    "lon": 32.80667
+   },
+   {
+    "name": "Güdül",
+    "lat": 40.21083,
+    "lon": 32.24333
+   },
+   {
+    "name": "Haymana",
+    "lat": 39.43528,
+    "lon": 32.49861
+   },
+   {
+    "name": "Kahramankazan",
+    "lat": 40.20417,
+    "lon": 32.68083
+   },
+   {
+    "name": "Kalecik",
+    "lat": 40.09917,
+    "lon": 33.40806
+   },
+   {
+    "name": "Keçiören",
+    "lat": 39.99139,
+    "lon": 32.85778
+   },
+   {
+    "name": "Kızılcahamam",
+    "lat": 40.47167,
+    "lon": 32.65333
+   },
+   {
+    "name": "Mamak",
+    "lat": 39.93083,
+    "lon": 32.90722
+   },
+   {
+    "name": "Nallıhan",
+    "lat": 40.18778,
+    "lon": 31.35083
+   },
+   {
+    "name": "Polatlı",
+    "lat": 39.58278,
+    "lon": 32.14361
+   },
+   {
+    "name": "Pursaklar",
+    "lat": 40.0375,
+    "lon": 32.89667
+   },
+   {
+    "name": "Sincan",
+    "lat": 39.96444,
+    "lon": 32.57972
+   },
+   {
+    "name": "Şereflikoçhisar",
+    "lat": 38.93639,
+    "lon": 33.54389
+   },
+   {
+    "name": "Yenimahalle",
+    "lat": 39.96417,
+    "lon": 32.79806
+   }
+  ]
+ },
+ {
+  "plate": 7,
+  "name": "Antalya",
+  "lat": 36.90812,
+  "lon": 30.69556,
+  "districts": [
+   {
+    "name": "Akseki",
+    "lat": 37.04583,
+    "lon": 31.78972
+   },
+   {
+    "name": "Aksu",
+    "lat": 36.94889,
+    "lon": 30.8475
+   },
+   {
+    "name": "Alanya",
+    "lat": 36.54167,
+    "lon": 31.99583
+   },
+   {
+    "name": "Demre",
+    "lat": 36.24389,
+    "lon": 29.98722
+   },
+   {
+    "name": "Döşemealtı",
+    "lat": 37.02194,
+    "lon": 30.6025
+   },
+   {
+    "name": "Elmalı",
+    "lat": 36.73639,
+    "lon": 29.91806
+   },
+   {
+    "name": "Finike",
+    "lat": 36.305,
+    "lon": 30.145
+   },
+   {
+    "name": "Gazipaşa",
+    "lat": 36.26694,
+    "lon": 32.3175
+   },
+   {
+    "name": "Gündoğmuş",
+    "lat": 36.81333,
+    "lon": 31.99806
+   },
+   {
+    "name": "İbradı",
+    "lat": 37.09528,
+    "lon": 31.59611
+   },
+   {
+    "name": "Kaş",
+    "lat": 36.20083,
+    "lon": 29.64194
+   },
+   {
+    "name": "Kemer",
+    "lat": 36.60056,
+    "lon": 30.56306
+   },
+   {
+    "name": "Kepez",
+    "lat": 36.92694,
+    "lon": 30.715
+   },
+   {
+    "name": "Konyaaltı",
+    "lat": 36.88222,
+    "lon": 30.63833
+   },
+   {
+    "name": "Korkuteli",
+    "lat": 37.06722,
+    "lon": 30.1975
+   },
+   {
+    "name": "Kumluca",
+    "lat": 36.36722,
+    "lon": 30.28556
+   },
+   {
+    "name": "Manavgat",
+    "lat": 36.78639,
+    "lon": 31.44083
+   },
+   {
+    "name": "Muratpaşa",
+    "lat": 36.89417,
+    "lon": 30.71806
+   },
+   {
+    "name": "Serik",
+    "lat": 36.91694,
+    "lon": 31.10417
+   }
+  ]
+ },
+ {
+  "plate": 8,
+  "name": "Artvin",
+  "lat": 41.18161,
+  "lon": 41.82172,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.18056,
+    "lon": 41.82583
+   },
+   {
+    "name": "Ardanuç",
+    "lat": 41.1225,
+    "lon": 42.065
+   },
+   {
+    "name": "Arhavi",
+    "lat": 41.35,
+    "lon": 41.30611
+   },
+   {
+    "name": "Borçka",
+    "lat": 41.35917,
+    "lon": 41.675
+   },
+   {
+    "name": "Hopa",
+    "lat": 41.39056,
+    "lon": 41.41778
+   },
+   {
+    "name": "Kemalpaşa",
+    "lat": 41.48,
+    "lon": 41.52694
+   },
+   {
+    "name": "Murgul",
+    "lat": 41.27861,
+    "lon": 41.56389
+   },
+   {
+    "name": "Şavşat",
+    "lat": 41.25028,
+    "lon": 42.35556
+   },
+   {
+    "name": "Yusufeli",
+    "lat": 40.80833,
+    "lon": 41.52722
+   }
+  ]
+ },
+ {
+  "plate": 9,
+  "name": "Aydın",
+  "lat": 37.84501,
+  "lon": 27.83963,
+  "districts": [
+   {
+    "name": "Bozdoğan",
+    "lat": 37.67194,
+    "lon": 28.31194
+   },
+   {
+    "name": "Buharkent",
+    "lat": 37.965,
+    "lon": 28.74222
+   },
+   {
+    "name": "Çine",
+    "lat": 37.61389,
+    "lon": 28.06167
+   },
+   {
+    "name": "Didim",
+    "lat": 37.37111,
+    "lon": 27.26806
+   },
+   {
+    "name": "Efeler",
+    "lat": 37.84583,
+    "lon": 27.83389
+   },
+   {
+    "name": "Germencik",
+    "lat": 37.87083,
+    "lon": 27.60167
+   },
+   {
+    "name": "İncirliova",
+    "lat": 37.85333,
+    "lon": 27.72333
+   },
+   {
+    "name": "Karacasu",
+    "lat": 37.72972,
+    "lon": 28.60583
+   },
+   {
+    "name": "Karpuzlu",
+    "lat": 37.55833,
+    "lon": 27.83556
+   },
+   {
+    "name": "Koçarlı",
+    "lat": 37.76056,
+    "lon": 27.70583
+   },
+   {
+    "name": "Köşk",
+    "lat": 37.85083,
+    "lon": 28.05194
+   },
+   {
+    "name": "Kuşadası",
+    "lat": 37.85528,
+    "lon": 27.26389
+   },
+   {
+    "name": "Kuyucak",
+    "lat": 37.91278,
+    "lon": 28.45861
+   },
+   {
+    "name": "Nazilli",
+    "lat": 37.91139,
+    "lon": 28.32528
+   },
+   {
+    "name": "Söke",
+    "lat": 37.75111,
+    "lon": 27.40528
+   },
+   {
+    "name": "Sultanhisar",
+    "lat": 37.88917,
+    "lon": 28.15472
+   },
+   {
+    "name": "Yenipazar",
+    "lat": 37.82472,
+    "lon": 28.19583
+   }
+  ]
+ },
+ {
+  "plate": 10,
+  "name": "Balıkesir",
+  "lat": 39.64917,
+  "lon": 27.88611,
+  "districts": [
+   {
+    "name": "Altıeylül",
+    "lat": 39.64278,
+    "lon": 27.88417
+   },
+   {
+    "name": "Ayvalık",
+    "lat": 39.31972,
+    "lon": 26.69556
+   },
+   {
+    "name": "Balya",
+    "lat": 39.74972,
+    "lon": 27.57778
+   },
+   {
+    "name": "Bandırma",
+    "lat": 40.35194,
+    "lon": 27.96972
+   },
+   {
+    "name": "Bigadiç",
+    "lat": 39.38972,
+    "lon": 28.13222
+   },
+   {
+    "name": "Burhaniye",
+    "lat": 39.50028,
+    "lon": 26.98
+   },
+   {
+    "name": "Dursunbey",
+    "lat": 39.58639,
+    "lon": 28.62556
+   },
+   {
+    "name": "Edremit",
+    "lat": 39.59194,
+    "lon": 27.01583
+   },
+   {
+    "name": "Erdek",
+    "lat": 40.39944,
+    "lon": 27.79083
+   },
+   {
+    "name": "Gömeç",
+    "lat": 39.39,
+    "lon": 26.83889
+   },
+   {
+    "name": "Gönen",
+    "lat": 40.10444,
+    "lon": 27.65389
+   },
+   {
+    "name": "Havran",
+    "lat": 39.5575,
+    "lon": 27.09833
+   },
+   {
+    "name": "İvrindi",
+    "lat": 39.58167,
+    "lon": 27.48333
+   },
+   {
+    "name": "Karesi",
+    "lat": 39.65167,
+    "lon": 27.88389
+   },
+   {
+    "name": "Kepsut",
+    "lat": 39.68972,
+    "lon": 28.15194
+   },
+   {
+    "name": "Manyas",
+    "lat": 40.0475,
+    "lon": 27.96639
+   },
+   {
+    "name": "Marmara",
+    "lat": 40.58611,
+    "lon": 27.55444
+   },
+   {
+    "name": "Savaştepe",
+    "lat": 39.385,
+    "lon": 27.65417
+   },
+   {
+    "name": "Sındırgı",
+    "lat": 39.23806,
+    "lon": 28.17194
+   },
+   {
+    "name": "Susurluk",
+    "lat": 39.91694,
+    "lon": 28.15278
+   }
+  ]
+ },
+ {
+  "plate": 11,
+  "name": "Bilecik",
+  "lat": 40.14192,
+  "lon": 29.97932,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.14361,
+    "lon": 29.97278
+   },
+   {
+    "name": "Bozüyük",
+    "lat": 39.90722,
+    "lon": 30.03472
+   },
+   {
+    "name": "Gölpazarı",
+    "lat": 40.28361,
+    "lon": 30.31361
+   },
+   {
+    "name": "İnhisar",
+    "lat": 40.05056,
+    "lon": 30.38444
+   },
+   {
+    "name": "Osmaneli",
+    "lat": 40.35972,
+    "lon": 30.01667
+   },
+   {
+    "name": "Pazaryeri",
+    "lat": 39.99583,
+    "lon": 29.90278
+   },
+   {
+    "name": "Söğüt",
+    "lat": 40.01611,
+    "lon": 30.18139
+   },
+   {
+    "name": "Yenipazar",
+    "lat": 40.17722,
+    "lon": 30.51889
+   }
+  ]
+ },
+ {
+  "plate": 12,
+  "name": "Bingöl",
+  "lat": 38.88472,
+  "lon": 40.49389,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.88861,
+    "lon": 40.49722
+   },
+   {
+    "name": "Adaklı",
+    "lat": 39.22889,
+    "lon": 40.4825
+   },
+   {
+    "name": "Genç",
+    "lat": 38.75056,
+    "lon": 40.55639
+   },
+   {
+    "name": "Karlıova",
+    "lat": 39.29528,
+    "lon": 41.01
+   },
+   {
+    "name": "Kiğı",
+    "lat": 39.31083,
+    "lon": 40.34944
+   },
+   {
+    "name": "Solhan",
+    "lat": 38.96639,
+    "lon": 41.05167
+   },
+   {
+    "name": "Yayladere",
+    "lat": 39.22778,
+    "lon": 40.06833
+   },
+   {
+    "name": "Yedisu",
+    "lat": 39.43417,
+    "lon": 40.545
+   }
+  ]
+ },
+ {
+  "plate": 13,
+  "name": "Bitlis",
+  "lat": 38.40115,
+  "lon": 42.10784,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.40222,
+    "lon": 42.10806
+   },
+   {
+    "name": "Adilcevaz",
+    "lat": 38.80582,
+    "lon": 42.73654
+   },
+   {
+    "name": "Ahlat",
+    "lat": 38.75556,
+    "lon": 42.48278
+   },
+   {
+    "name": "Güroymak",
+    "lat": 38.57444,
+    "lon": 42.025
+   },
+   {
+    "name": "Hizan",
+    "lat": 38.225,
+    "lon": 42.42583
+   },
+   {
+    "name": "Mutki",
+    "lat": 38.40944,
+    "lon": 41.92167
+   },
+   {
+    "name": "Tatvan",
+    "lat": 38.49417,
+    "lon": 42.28778
+   }
+  ]
+ },
+ {
+  "plate": 14,
+  "name": "Bolu",
+  "lat": 40.73583,
+  "lon": 31.60611,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.73389,
+    "lon": 31.61083
+   },
+   {
+    "name": "Dörtdivan",
+    "lat": 40.72111,
+    "lon": 32.0625
+   },
+   {
+    "name": "Gerede",
+    "lat": 40.8008,
+    "lon": 32.1969
+   },
+   {
+    "name": "Göynük",
+    "lat": 40.39889,
+    "lon": 30.78639
+   },
+   {
+    "name": "Kıbrıscık",
+    "lat": 40.40917,
+    "lon": 31.84833
+   },
+   {
+    "name": "Mengen",
+    "lat": 40.94,
+    "lon": 32.07472
+   },
+   {
+    "name": "Mudurnu",
+    "lat": 40.46611,
+    "lon": 31.21083
+   },
+   {
+    "name": "Seben",
+    "lat": 40.40889,
+    "lon": 31.57139
+   },
+   {
+    "name": "Yeniçağa",
+    "lat": 40.77056,
+    "lon": 32.03361
+   }
+  ]
+ },
+ {
+  "plate": 15,
+  "name": "Burdur",
+  "lat": 37.72028,
+  "lon": 30.29083,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.72556,
+    "lon": 30.28861
+   },
+   {
+    "name": "Ağlasun",
+    "lat": 37.64972,
+    "lon": 30.53278
+   },
+   {
+    "name": "Altınyayla",
+    "lat": 36.99667,
+    "lon": 29.54667
+   },
+   {
+    "name": "Bucak",
+    "lat": 37.45944,
+    "lon": 30.58528
+   },
+   {
+    "name": "Çavdır",
+    "lat": 37.15528,
+    "lon": 29.69
+   },
+   {
+    "name": "Çeltikçi",
+    "lat": 37.53417,
+    "lon": 30.4825
+   },
+   {
+    "name": "Gölhisar",
+    "lat": 37.15139,
+    "lon": 29.51056
+   },
+   {
+    "name": "Karamanlı",
+    "lat": 37.37139,
+    "lon": 29.8225
+   },
+   {
+    "name": "Kemer",
+    "lat": 37.35417,
+    "lon": 30.06083
+   },
+   {
+    "name": "Tefenni",
+    "lat": 37.31333,
+    "lon": 29.77583
+   },
+   {
+    "name": "Yeşilova",
+    "lat": 37.50694,
+    "lon": 29.75528
+   }
+  ]
+ },
+ {
+  "plate": 16,
+  "name": "Bursa",
+  "lat": 40.19559,
+  "lon": 29.06013,
+  "districts": [
+   {
+    "name": "Büyükorhan",
+    "lat": 39.77083,
+    "lon": 28.88528
+   },
+   {
+    "name": "Gemlik",
+    "lat": 40.43056,
+    "lon": 29.15694
+   },
+   {
+    "name": "Gürsu",
+    "lat": 40.21806,
+    "lon": 29.19333
+   },
+   {
+    "name": "Harmancık",
+    "lat": 39.6775,
+    "lon": 29.15361
+   },
+   {
+    "name": "İnegöl",
+    "lat": 40.08083,
+    "lon": 29.50944
+   },
+   {
+    "name": "İznik",
+    "lat": 40.43056,
+    "lon": 29.72222
+   },
+   {
+    "name": "Karacabey",
+    "lat": 40.21667,
+    "lon": 28.35889
+   },
+   {
+    "name": "Keles",
+    "lat": 39.91306,
+    "lon": 29.23417
+   },
+   {
+    "name": "Kestel",
+    "lat": 40.20111,
+    "lon": 29.21278
+   },
+   {
+    "name": "Mudanya",
+    "lat": 40.37528,
+    "lon": 28.88361
+   },
+   {
+    "name": "Mustafakemalpaşa",
+    "lat": 40.03583,
+    "lon": 28.41278
+   },
+   {
+    "name": "Nilüfer",
+    "lat": 40.21722,
+    "lon": 28.98472
+   },
+   {
+    "name": "Orhaneli",
+    "lat": 39.90306,
+    "lon": 28.98639
+   },
+   {
+    "name": "Orhangazi",
+    "lat": 40.49583,
+    "lon": 29.31083
+   },
+   {
+    "name": "Osmangazi",
+    "lat": 40.19861,
+    "lon": 29.06111
+   },
+   {
+    "name": "Yenişehir",
+    "lat": 40.26278,
+    "lon": 29.65194
+   },
+   {
+    "name": "Yıldırım",
+    "lat": 40.1875,
+    "lon": 29.12806
+   }
+  ]
+ },
+ {
+  "plate": 17,
+  "name": "Çanakkale",
+  "lat": 40.15552,
+  "lon": 26.41271,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.1475,
+    "lon": 26.40306
+   },
+   {
+    "name": "Ayvacık",
+    "lat": 39.60139,
+    "lon": 26.40306
+   },
+   {
+    "name": "Bayramiç",
+    "lat": 39.80889,
+    "lon": 26.61278
+   },
+   {
+    "name": "Biga",
+    "lat": 40.22722,
+    "lon": 27.24278
+   },
+   {
+    "name": "Bozcaada",
+    "lat": 39.835,
+    "lon": 26.07
+   },
+   {
+    "name": "Çan",
+    "lat": 40.03,
+    "lon": 27.05083
+   },
+   {
+    "name": "Eceabat",
+    "lat": 40.18556,
+    "lon": 26.35889
+   },
+   {
+    "name": "Ezine",
+    "lat": 39.78611,
+    "lon": 26.34333
+   },
+   {
+    "name": "Gelibolu",
+    "lat": 40.40639,
+    "lon": 26.67222
+   },
+   {
+    "name": "Gökçeada",
+    "lat": 40.20083,
+    "lon": 25.90833
+   },
+   {
+    "name": "Lapseki",
+    "lat": 40.34472,
+    "lon": 26.68417
+   },
+   {
+    "name": "Yenice",
+    "lat": 39.93,
+    "lon": 27.25528
+   }
+  ]
+ },
+ {
+  "plate": 18,
+  "name": "Çankırı",
+  "lat": 40.59995,
+  "lon": 33.6153,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.59778,
+    "lon": 33.62111
+   },
+   {
+    "name": "Atkaracalar",
+    "lat": 40.81639,
+    "lon": 33.07528
+   },
+   {
+    "name": "Bayramören",
+    "lat": 40.94361,
+    "lon": 33.20389
+   },
+   {
+    "name": "Çerkeş",
+    "lat": 40.81167,
+    "lon": 32.89083
+   },
+   {
+    "name": "Eldivan",
+    "lat": 40.53111,
+    "lon": 33.49639
+   },
+   {
+    "name": "Ilgaz",
+    "lat": 40.92528,
+    "lon": 33.62528
+   },
+   {
+    "name": "Kızılırmak",
+    "lat": 40.34611,
+    "lon": 33.98694
+   },
+   {
+    "name": "Korgun",
+    "lat": 40.735,
+    "lon": 33.51833
+   },
+   {
+    "name": "Kurşunlu",
+    "lat": 40.84111,
+    "lon": 33.26139
+   },
+   {
+    "name": "Orta",
+    "lat": 40.6275,
+    "lon": 33.10778
+   },
+   {
+    "name": "Şabanözü",
+    "lat": 40.48361,
+    "lon": 33.2825
+   },
+   {
+    "name": "Yapraklı",
+    "lat": 40.75778,
+    "lon": 33.77833
+   }
+  ]
+ },
+ {
+  "plate": 19,
+  "name": "Çorum",
+  "lat": 40.54889,
+  "lon": 34.95333,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.55056,
+    "lon": 34.95444
+   },
+   {
+    "name": "Alaca",
+    "lat": 40.16972,
+    "lon": 34.84139
+   },
+   {
+    "name": "Bayat",
+    "lat": 40.64528,
+    "lon": 34.25667
+   },
+   {
+    "name": "Boğazkale",
+    "lat": 40.02167,
+    "lon": 34.60917
+   },
+   {
+    "name": "Dodurga",
+    "lat": 40.85583,
+    "lon": 34.81028
+   },
+   {
+    "name": "İskilip",
+    "lat": 40.73111,
+    "lon": 34.47111
+   },
+   {
+    "name": "Kargı",
+    "lat": 41.13333,
+    "lon": 34.49111
+   },
+   {
+    "name": "Laçin",
+    "lat": 40.77444,
+    "lon": 34.88389
+   },
+   {
+    "name": "Mecitözü",
+    "lat": 40.52139,
+    "lon": 35.29528
+   },
+   {
+    "name": "Oğuzlar",
+    "lat": 40.75417,
+    "lon": 34.70417
+   },
+   {
+    "name": "Ortaköy",
+    "lat": 40.27333,
+    "lon": 35.25028
+   },
+   {
+    "name": "Osmancık",
+    "lat": 40.97278,
+    "lon": 34.80083
+   },
+   {
+    "name": "Sungurlu",
+    "lat": 40.16444,
+    "lon": 34.37528
+   },
+   {
+    "name": "Uğurludağ",
+    "lat": 40.44694,
+    "lon": 34.45222
+   }
+  ]
+ },
+ {
+  "plate": 20,
+  "name": "Denizli",
+  "lat": 37.77417,
+  "lon": 29.0875,
+  "districts": [
+   {
+    "name": "Acıpayam",
+    "lat": 37.42833,
+    "lon": 29.35028
+   },
+   {
+    "name": "Babadağ",
+    "lat": 37.80833,
+    "lon": 28.85639
+   },
+   {
+    "name": "Baklan",
+    "lat": 37.97722,
+    "lon": 29.60667
+   },
+   {
+    "name": "Bekilli",
+    "lat": 38.23028,
+    "lon": 29.42056
+   },
+   {
+    "name": "Beyağaç",
+    "lat": 37.23583,
+    "lon": 28.89583
+   },
+   {
+    "name": "Bozkurt",
+    "lat": 37.82306,
+    "lon": 29.60722
+   },
+   {
+    "name": "Buldan",
+    "lat": 38.04472,
+    "lon": 28.8325
+   },
+   {
+    "name": "Çal",
+    "lat": 38.08167,
+    "lon": 29.39722
+   },
+   {
+    "name": "Çameli",
+    "lat": 37.07667,
+    "lon": 29.34472
+   },
+   {
+    "name": "Çardak",
+    "lat": 37.82833,
+    "lon": 29.67306
+   },
+   {
+    "name": "Çivril",
+    "lat": 38.30139,
+    "lon": 29.73722
+   },
+   {
+    "name": "Güney",
+    "lat": 38.15444,
+    "lon": 29.065
+   },
+   {
+    "name": "Honaz",
+    "lat": 37.75306,
+    "lon": 29.26972
+   },
+   {
+    "name": "Kale",
+    "lat": 37.4392,
+    "lon": 28.8453
+   },
+   {
+    "name": "Merkezefendi",
+    "lat": 37.785,
+    "lon": 29.08389
+   },
+   {
+    "name": "Pamukkale",
+    "lat": 37.91694,
+    "lon": 29.12194
+   },
+   {
+    "name": "Sarayköy",
+    "lat": 37.92472,
+    "lon": 28.92278
+   },
+   {
+    "name": "Serinhisar",
+    "lat": 37.58028,
+    "lon": 29.26389
+   },
+   {
+    "name": "Tavas",
+    "lat": 37.57333,
+    "lon": 29.07111
+   }
+  ]
+ },
+ {
+  "plate": 21,
+  "name": "Diyarbakır",
+  "lat": 37.91363,
+  "lon": 40.21721,
+  "districts": [
+   {
+    "name": "Bağlar",
+    "lat": 37.91778,
+    "lon": 40.20806
+   },
+   {
+    "name": "Bismil",
+    "lat": 37.84833,
+    "lon": 40.66333
+   },
+   {
+    "name": "Çermik",
+    "lat": 38.13556,
+    "lon": 39.44944
+   },
+   {
+    "name": "Çınar",
+    "lat": 37.72417,
+    "lon": 40.415
+   },
+   {
+    "name": "Çüngüş",
+    "lat": 38.21194,
+    "lon": 39.28806
+   },
+   {
+    "name": "Dicle",
+    "lat": 38.37306,
+    "lon": 40.07167
+   },
+   {
+    "name": "Eğil",
+    "lat": 38.25778,
+    "lon": 40.08444
+   },
+   {
+    "name": "Ergani",
+    "lat": 38.26944,
+    "lon": 39.76083
+   },
+   {
+    "name": "Hani",
+    "lat": 38.41194,
+    "lon": 40.39528
+   },
+   {
+    "name": "Hazro",
+    "lat": 38.25417,
+    "lon": 40.78056
+   },
+   {
+    "name": "Kayapınar",
+    "lat": 37.945,
+    "lon": 40.18444
+   },
+   {
+    "name": "Kocaköy",
+    "lat": 38.29083,
+    "lon": 40.50417
+   },
+   {
+    "name": "Kulp",
+    "lat": 38.50139,
+    "lon": 41.01194
+   },
+   {
+    "name": "Lice",
+    "lat": 38.46056,
+    "lon": 40.6475
+   },
+   {
+    "name": "Silvan",
+    "lat": 38.14167,
+    "lon": 41.00528
+   },
+   {
+    "name": "Sur",
+    "lat": 37.91167,
+    "lon": 40.23667
+   },
+   {
+    "name": "Yenişehir",
+    "lat": 37.92056,
+    "lon": 40.22972
+   }
+  ]
+ },
+ {
+  "plate": 22,
+  "name": "Edirne",
+  "lat": 41.67719,
+  "lon": 26.55597,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.67639,
+    "lon": 26.55833
+   },
+   {
+    "name": "Enez",
+    "lat": 40.72528,
+    "lon": 26.08444
+   },
+   {
+    "name": "Havsa",
+    "lat": 41.55,
+    "lon": 26.82028
+   },
+   {
+    "name": "İpsala",
+    "lat": 40.92194,
+    "lon": 26.38389
+   },
+   {
+    "name": "Keşan",
+    "lat": 40.85528,
+    "lon": 26.63028
+   },
+   {
+    "name": "Lalapaşa",
+    "lat": 41.83917,
+    "lon": 26.73583
+   },
+   {
+    "name": "Meriç",
+    "lat": 41.19139,
+    "lon": 26.42
+   },
+   {
+    "name": "Süloğlu",
+    "lat": 41.76583,
+    "lon": 26.90778
+   },
+   {
+    "name": "Uzunköprü",
+    "lat": 41.26333,
+    "lon": 26.68528
+   }
+  ]
+ },
+ {
+  "plate": 23,
+  "name": "Elazığ",
+  "lat": 38.67431,
+  "lon": 39.22321,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.67556,
+    "lon": 39.2225
+   },
+   {
+    "name": "Ağın",
+    "lat": 38.94417,
+    "lon": 38.71389
+   },
+   {
+    "name": "Alacakaya",
+    "lat": 38.4625,
+    "lon": 39.86222
+   },
+   {
+    "name": "Arıcak",
+    "lat": 38.56361,
+    "lon": 40.13444
+   },
+   {
+    "name": "Baskil",
+    "lat": 38.56806,
+    "lon": 38.82361
+   },
+   {
+    "name": "Karakoçan",
+    "lat": 38.95694,
+    "lon": 40.03694
+   },
+   {
+    "name": "Keban",
+    "lat": 38.79472,
+    "lon": 38.74361
+   },
+   {
+    "name": "Kovancılar",
+    "lat": 38.71972,
+    "lon": 39.86583
+   },
+   {
+    "name": "Maden",
+    "lat": 38.39361,
+    "lon": 39.67
+   },
+   {
+    "name": "Palu",
+    "lat": 38.69417,
+    "lon": 39.92861
+   },
+   {
+    "name": "Sivrice",
+    "lat": 38.44806,
+    "lon": 39.3075
+   }
+  ]
+ },
+ {
+  "plate": 24,
+  "name": "Erzincan",
+  "lat": 39.73919,
+  "lon": 39.49015,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.7475,
+    "lon": 39.49083
+   },
+   {
+    "name": "Çayırlı",
+    "lat": 39.80444,
+    "lon": 40.03722
+   },
+   {
+    "name": "İliç",
+    "lat": 39.45694,
+    "lon": 38.56472
+   },
+   {
+    "name": "Kemah",
+    "lat": 39.60111,
+    "lon": 39.03528
+   },
+   {
+    "name": "Kemaliye",
+    "lat": 39.26278,
+    "lon": 38.49639
+   },
+   {
+    "name": "Otlukbeli",
+    "lat": 39.9725,
+    "lon": 40.02139
+   },
+   {
+    "name": "Refahiye",
+    "lat": 39.90361,
+    "lon": 38.76833
+   },
+   {
+    "name": "Tercan",
+    "lat": 39.77722,
+    "lon": 40.38306
+   },
+   {
+    "name": "Üzümlü",
+    "lat": 39.71083,
+    "lon": 39.70083
+   }
+  ]
+ },
+ {
+  "plate": 25,
+  "name": "Erzurum",
+  "lat": 39.90861,
+  "lon": 41.27694,
+  "districts": [
+   {
+    "name": "Aşkale",
+    "lat": 39.92222,
+    "lon": 40.69417
+   },
+   {
+    "name": "Aziziye",
+    "lat": 39.94611,
+    "lon": 41.10583
+   },
+   {
+    "name": "Çat",
+    "lat": 39.6125,
+    "lon": 40.97722
+   },
+   {
+    "name": "Hınıs",
+    "lat": 39.35944,
+    "lon": 41.70028
+   },
+   {
+    "name": "Horasan",
+    "lat": 40.04056,
+    "lon": 42.16889
+   },
+   {
+    "name": "İspir",
+    "lat": 40.48389,
+    "lon": 40.99972
+   },
+   {
+    "name": "Karaçoban",
+    "lat": 39.35139,
+    "lon": 42.11167
+   },
+   {
+    "name": "Karayazı",
+    "lat": 39.70278,
+    "lon": 42.14306
+   },
+   {
+    "name": "Köprüköy",
+    "lat": 39.97111,
+    "lon": 41.8725
+   },
+   {
+    "name": "Narman",
+    "lat": 40.34639,
+    "lon": 41.87111
+   },
+   {
+    "name": "Oltu",
+    "lat": 40.54667,
+    "lon": 41.99583
+   },
+   {
+    "name": "Olur",
+    "lat": 40.82722,
+    "lon": 42.13306
+   },
+   {
+    "name": "Palandöken",
+    "lat": 39.88861,
+    "lon": 41.27028
+   },
+   {
+    "name": "Pasinler",
+    "lat": 39.97806,
+    "lon": 41.67444
+   },
+   {
+    "name": "Pazaryolu",
+    "lat": 40.41472,
+    "lon": 40.77361
+   },
+   {
+    "name": "Şenkaya",
+    "lat": 40.56194,
+    "lon": 42.34528
+   },
+   {
+    "name": "Tekman",
+    "lat": 39.64778,
+    "lon": 41.50917
+   },
+   {
+    "name": "Tortum",
+    "lat": 40.29861,
+    "lon": 41.55056
+   },
+   {
+    "name": "Uzundere",
+    "lat": 40.53444,
+    "lon": 41.54806
+   },
+   {
+    "name": "Yakutiye",
+    "lat": 39.91944,
+    "lon": 41.27889
+   }
+  ]
+ },
+ {
+  "plate": 26,
+  "name": "Eskişehir",
+  "lat": 39.77667,
+  "lon": 30.52056,
+  "districts": [
+   {
+    "name": "Alpu",
+    "lat": 39.76667,
+    "lon": 30.95806
+   },
+   {
+    "name": "Beylikova",
+    "lat": 39.69278,
+    "lon": 31.2075
+   },
+   {
+    "name": "Çifteler",
+    "lat": 39.37667,
+    "lon": 31.03778
+   },
+   {
+    "name": "Günyüzü",
+    "lat": 39.38472,
+    "lon": 31.80944
+   },
+   {
+    "name": "Han",
+    "lat": 39.15861,
+    "lon": 30.86333
+   },
+   {
+    "name": "İnönü",
+    "lat": 39.81611,
+    "lon": 30.1425
+   },
+   {
+    "name": "Mahmudiye",
+    "lat": 39.49528,
+    "lon": 30.9875
+   },
+   {
+    "name": "Mihalgazi",
+    "lat": 40.02667,
+    "lon": 30.57806
+   },
+   {
+    "name": "Mihalıççık",
+    "lat": 39.86694,
+    "lon": 31.49583
+   },
+   {
+    "name": "Odunpazarı",
+    "lat": 39.76639,
+    "lon": 30.52361
+   },
+   {
+    "name": "Sarıcakaya",
+    "lat": 40.03917,
+    "lon": 30.61889
+   },
+   {
+    "name": "Seyitgazi",
+    "lat": 39.44472,
+    "lon": 30.69583
+   },
+   {
+    "name": "Sivrihisar",
+    "lat": 39.45139,
+    "lon": 31.53667
+   },
+   {
+    "name": "Tepebaşı",
+    "lat": 39.78167,
+    "lon": 30.51389
+   }
+  ]
+ },
+ {
+  "plate": 27,
+  "name": "Gaziantep",
+  "lat": 37.05944,
+  "lon": 37.3825,
+  "districts": [
+   {
+    "name": "Araban",
+    "lat": 37.42556,
+    "lon": 37.68944
+   },
+   {
+    "name": "İslahiye",
+    "lat": 37.02528,
+    "lon": 36.63306
+   },
+   {
+    "name": "Karkamış",
+    "lat": 36.8325,
+    "lon": 37.99917
+   },
+   {
+    "name": "Nizip",
+    "lat": 37.01056,
+    "lon": 37.79694
+   },
+   {
+    "name": "Nurdağı",
+    "lat": 37.17833,
+    "lon": 36.74083
+   },
+   {
+    "name": "Oğuzeli",
+    "lat": 36.96556,
+    "lon": 37.50833
+   },
+   {
+    "name": "Şahinbey",
+    "lat": 37.05806,
+    "lon": 37.37917
+   },
+   {
+    "name": "Şehitkamil",
+    "lat": 37.07306,
+    "lon": 37.395
+   },
+   {
+    "name": "Yavuzeli",
+    "lat": 37.31806,
+    "lon": 37.56667
+   }
+  ]
+ },
+ {
+  "plate": 28,
+  "name": "Giresun",
+  "lat": 40.91698,
+  "lon": 38.38741,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.91583,
+    "lon": 38.38444
+   },
+   {
+    "name": "Alucra",
+    "lat": 40.32,
+    "lon": 38.765
+   },
+   {
+    "name": "Bulancak",
+    "lat": 40.9375,
+    "lon": 38.23167
+   },
+   {
+    "name": "Çamoluk",
+    "lat": 40.13667,
+    "lon": 38.73389
+   },
+   {
+    "name": "Çanakçı",
+    "lat": 40.91806,
+    "lon": 39.00917
+   },
+   {
+    "name": "Dereli",
+    "lat": 40.74056,
+    "lon": 38.44889
+   },
+   {
+    "name": "Doğankent",
+    "lat": 40.81083,
+    "lon": 38.91444
+   },
+   {
+    "name": "Espiye",
+    "lat": 40.94583,
+    "lon": 38.71167
+   },
+   {
+    "name": "Eynesil",
+    "lat": 41.06278,
+    "lon": 39.14333
+   },
+   {
+    "name": "Görele",
+    "lat": 41.03139,
+    "lon": 38.99861
+   },
+   {
+    "name": "Güce",
+    "lat": 40.89417,
+    "lon": 38.80778
+   },
+   {
+    "name": "Keşap",
+    "lat": 40.9125,
+    "lon": 38.51333
+   },
+   {
+    "name": "Piraziz",
+    "lat": 40.94972,
+    "lon": 38.12472
+   },
+   {
+    "name": "Şebinkarahisar",
+    "lat": 40.28917,
+    "lon": 38.42333
+   },
+   {
+    "name": "Tirebolu",
+    "lat": 41.00417,
+    "lon": 38.81444
+   },
+   {
+    "name": "Yağlıdere",
+    "lat": 40.85861,
+    "lon": 38.625
+   }
+  ]
+ },
+ {
+  "plate": 29,
+  "name": "Gümüşhane",
+  "lat": 40.46001,
+  "lon": 39.47176,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.4625,
+    "lon": 39.47556
+   },
+   {
+    "name": "Kelkit",
+    "lat": 40.12639,
+    "lon": 39.43583
+   },
+   {
+    "name": "Köse",
+    "lat": 40.21,
+    "lon": 39.65278
+   },
+   {
+    "name": "Kürtün",
+    "lat": 40.7025,
+    "lon": 39.08556
+   },
+   {
+    "name": "Şiran",
+    "lat": 40.19139,
+    "lon": 39.125
+   },
+   {
+    "name": "Torul",
+    "lat": 40.55833,
+    "lon": 39.2925
+   }
+  ]
+ },
+ {
+  "plate": 30,
+  "name": "Hakkari",
+  "lat": 37.57444,
+  "lon": 43.74083,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.57694,
+    "lon": 43.7375
+   },
+   {
+    "name": "Çukurca",
+    "lat": 37.2475,
+    "lon": 43.61111
+   },
+   {
+    "name": "Derecik",
+    "lat": 37.08194,
+    "lon": 44.31167
+   },
+   {
+    "name": "Şemdinli",
+    "lat": 37.30722,
+    "lon": 44.57222
+   },
+   {
+    "name": "Yüksekova",
+    "lat": 37.54627,
+    "lon": 44.25827
+   }
+  ]
+ },
+ {
+  "plate": 31,
+  "name": "Hatay",
+  "lat": 36.20655,
+  "lon": 36.15722,
+  "districts": [
+   {
+    "name": "Altınözü",
+    "lat": 36.11472,
+    "lon": 36.24917
+   },
+   {
+    "name": "Antakya",
+    "lat": 36.20389,
+    "lon": 36.16361
+   },
+   {
+    "name": "Arsuz",
+    "lat": 36.41111,
+    "lon": 35.88639
+   },
+   {
+    "name": "Belen",
+    "lat": 36.48944,
+    "lon": 36.19444
+   },
+   {
+    "name": "Defne",
+    "lat": 36.15501,
+    "lon": 36.13829
+   },
+   {
+    "name": "Dörtyol",
+    "lat": 36.83806,
+    "lon": 36.22694
+   },
+   {
+    "name": "Erzin",
+    "lat": 36.9575,
+    "lon": 36.19889
+   },
+   {
+    "name": "Hassa",
+    "lat": 36.80139,
+    "lon": 36.51694
+   },
+   {
+    "name": "İskenderun",
+    "lat": 36.58833,
+    "lon": 36.17056
+   },
+   {
+    "name": "Kırıkhan",
+    "lat": 36.49972,
+    "lon": 36.36194
+   },
+   {
+    "name": "Kumlu",
+    "lat": 36.36583,
+    "lon": 36.45389
+   },
+   {
+    "name": "Payas",
+    "lat": 36.75694,
+    "lon": 36.21528
+   },
+   {
+    "name": "Reyhanlı",
+    "lat": 36.26889,
+    "lon": 36.56722
+   },
+   {
+    "name": "Samandağ",
+    "lat": 36.08556,
+    "lon": 35.97972
+   },
+   {
+    "name": "Yayladağı",
+    "lat": 35.90333,
+    "lon": 36.0625
+   }
+  ]
+ },
+ {
+  "plate": 32,
+  "name": "Isparta",
+  "lat": 37.76444,
+  "lon": 30.55222,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.76417,
+    "lon": 30.555
+   },
+   {
+    "name": "Aksu",
+    "lat": 37.79917,
+    "lon": 31.07083
+   },
+   {
+    "name": "Atabey",
+    "lat": 37.95139,
+    "lon": 30.63722
+   },
+   {
+    "name": "Eğirdir",
+    "lat": 37.87417,
+    "lon": 30.84889
+   },
+   {
+    "name": "Gelendost",
+    "lat": 38.1225,
+    "lon": 31.01361
+   },
+   {
+    "name": "Gönen",
+    "lat": 37.95806,
+    "lon": 30.51278
+   },
+   {
+    "name": "Keçiborlu",
+    "lat": 37.945,
+    "lon": 30.30028
+   },
+   {
+    "name": "Senirkent",
+    "lat": 38.10833,
+    "lon": 30.55028
+   },
+   {
+    "name": "Sütçüler",
+    "lat": 37.49556,
+    "lon": 30.98028
+   },
+   {
+    "name": "Şarkikaraağaç",
+    "lat": 38.08111,
+    "lon": 31.36583
+   },
+   {
+    "name": "Uluborlu",
+    "lat": 38.07917,
+    "lon": 30.44917
+   },
+   {
+    "name": "Yalvaç",
+    "lat": 38.30111,
+    "lon": 31.17417
+   },
+   {
+    "name": "Yenişarbademli",
+    "lat": 37.7075,
+    "lon": 31.38778
+   }
+  ]
+ },
+ {
+  "plate": 33,
+  "name": "Mersin",
+  "lat": 36.81196,
+  "lon": 34.63886,
+  "districts": [
+   {
+    "name": "Akdeniz",
+    "lat": 36.8025,
+    "lon": 34.63306
+   },
+   {
+    "name": "Anamur",
+    "lat": 36.08083,
+    "lon": 32.83111
+   },
+   {
+    "name": "Aydıncık",
+    "lat": 36.14583,
+    "lon": 33.32222
+   },
+   {
+    "name": "Bozyazı",
+    "lat": 36.10528,
+    "lon": 32.97417
+   },
+   {
+    "name": "Çamlıyayla",
+    "lat": 37.1665,
+    "lon": 34.593
+   },
+   {
+    "name": "Erdemli",
+    "lat": 36.60611,
+    "lon": 34.31
+   },
+   {
+    "name": "Gülnar",
+    "lat": 36.33917,
+    "lon": 33.39889
+   },
+   {
+    "name": "Mezitli",
+    "lat": 36.75,
+    "lon": 34.53056
+   },
+   {
+    "name": "Mut",
+    "lat": 36.64389,
+    "lon": 33.43694
+   },
+   {
+    "name": "Silifke",
+    "lat": 36.37833,
+    "lon": 33.92556
+   },
+   {
+    "name": "Tarsus",
+    "lat": 36.91694,
+    "lon": 34.895
+   },
+   {
+    "name": "Toroslar",
+    "lat": 36.82139,
+    "lon": 34.61028
+   },
+   {
+    "name": "Yenişehir",
+    "lat": 36.78278,
+    "lon": 34.59222
+   }
+  ]
+ },
+ {
+  "plate": 34,
+  "name": "İstanbul",
+  "lat": 41.01384,
+  "lon": 28.94966,
+  "districts": [
+   {
+    "name": "Adalar",
+    "lat": 40.87222,
+    "lon": 29.08861
+   },
+   {
+    "name": "Arnavutköy",
+    "lat": 41.185,
+    "lon": 28.74111
+   },
+   {
+    "name": "Ataşehir",
+    "lat": 40.99333,
+    "lon": 29.11333
+   },
+   {
+    "name": "Avcılar",
+    "lat": 40.98056,
+    "lon": 28.72167
+   },
+   {
+    "name": "Bağcılar",
+    "lat": 40.98028,
+    "lon": 28.72167
+   },
+   {
+    "name": "Bahçelievler",
+    "lat": 41.00361,
+    "lon": 28.86556
+   },
+   {
+    "name": "Bakırköy",
+    "lat": 40.97833,
+    "lon": 28.87417
+   },
+   {
+    "name": "Başakşehir",
+    "lat": 41.10806,
+    "lon": 28.795
+   },
+   {
+    "name": "Bayrampaşa",
+    "lat": 41.035,
+    "lon": 28.91167
+   },
+   {
+    "name": "Beşiktaş",
+    "lat": 41.04306,
+    "lon": 29.0075
+   },
+   {
+    "name": "Beykoz",
+    "lat": 41.13444,
+    "lon": 29.09194
+   },
+   {
+    "name": "Beylikdüzü",
+    "lat": 41.00444,
+    "lon": 28.63694
+   },
+   {
+    "name": "Beyoğlu",
+    "lat": 41.02889,
+    "lon": 28.97361
+   },
+   {
+    "name": "Büyükçekmece",
+    "lat": 41.02222,
+    "lon": 28.57944
+   },
+   {
+    "name": "Çatalca",
+    "lat": 41.14389,
+    "lon": 28.46028
+   },
+   {
+    "name": "Çekmeköy",
+    "lat": 41.03583,
+    "lon": 29.17389
+   },
+   {
+    "name": "Esenler",
+    "lat": 41.03806,
+    "lon": 28.88222
+   },
+   {
+    "name": "Esenyurt",
+    "lat": 41.03528,
+    "lon": 28.68
+   },
+   {
+    "name": "Eyüpsultan",
+    "lat": 41.04806,
+    "lon": 28.9325
+   },
+   {
+    "name": "Fatih",
+    "lat": 41.01944,
+    "lon": 28.94778
+   },
+   {
+    "name": "Gaziosmanpaşa",
+    "lat": 41.05806,
+    "lon": 28.91194
+   },
+   {
+    "name": "Güngören",
+    "lat": 41.02583,
+    "lon": 28.8725
+   },
+   {
+    "name": "Kadıköy",
+    "lat": 40.99167,
+    "lon": 29.02444
+   },
+   {
+    "name": "Kağıthane",
+    "lat": 41.08167,
+    "lon": 28.97278
+   },
+   {
+    "name": "Kartal",
+    "lat": 40.88917,
+    "lon": 29.18556
+   },
+   {
+    "name": "Küçükçekmece",
+    "lat": 40.99222,
+    "lon": 28.77111
+   },
+   {
+    "name": "Maltepe",
+    "lat": 40.925,
+    "lon": 29.13083
+   },
+   {
+    "name": "Pendik",
+    "lat": 40.87722,
+    "lon": 29.235
+   },
+   {
+    "name": "Sancaktepe",
+    "lat": 40.99111,
+    "lon": 29.22861
+   },
+   {
+    "name": "Sarıyer",
+    "lat": 41.16889,
+    "lon": 29.05722
+   },
+   {
+    "name": "Silivri",
+    "lat": 41.07528,
+    "lon": 28.24806
+   },
+   {
+    "name": "Sultanbeyli",
+    "lat": 40.96722,
+    "lon": 29.26694
+   },
+   {
+    "name": "Sultangazi",
+    "lat": 41.10472,
+    "lon": 28.86139
+   },
+   {
+    "name": "Şile",
+    "lat": 41.17556,
+    "lon": 29.6125
+   },
+   {
+    "name": "Şişli",
+    "lat": 41.06417,
+    "lon": 28.98306
+   },
+   {
+    "name": "Tuzla",
+    "lat": 40.81972,
+    "lon": 29.30361
+   },
+   {
+    "name": "Ümraniye",
+    "lat": 41.02611,
+    "lon": 29.09639
+   },
+   {
+    "name": "Üsküdar",
+    "lat": 41.02694,
+    "lon": 29.015
+   },
+   {
+    "name": "Zeytinburnu",
+    "lat": 40.99028,
+    "lon": 28.90361
+   }
+  ]
+ },
+ {
+  "plate": 35,
+  "name": "İzmir",
+  "lat": 38.41273,
+  "lon": 27.13838,
+  "districts": [
+   {
+    "name": "Aliağa",
+    "lat": 38.80389,
+    "lon": 26.97111
+   },
+   {
+    "name": "Balçova",
+    "lat": 38.39722,
+    "lon": 27.05778
+   },
+   {
+    "name": "Bayındır",
+    "lat": 38.22056,
+    "lon": 27.64833
+   },
+   {
+    "name": "Bayraklı",
+    "lat": 38.46639,
+    "lon": 27.16333
+   },
+   {
+    "name": "Bergama",
+    "lat": 39.11972,
+    "lon": 27.17722
+   },
+   {
+    "name": "Beydağ",
+    "lat": 38.08778,
+    "lon": 28.21056
+   },
+   {
+    "name": "Bornova",
+    "lat": 38.46694,
+    "lon": 27.21889
+   },
+   {
+    "name": "Buca",
+    "lat": 38.38417,
+    "lon": 27.16833
+   },
+   {
+    "name": "Çeşme",
+    "lat": 38.325,
+    "lon": 26.30278
+   },
+   {
+    "name": "Çiğli",
+    "lat": 38.49528,
+    "lon": 27.06167
+   },
+   {
+    "name": "Dikili",
+    "lat": 39.07611,
+    "lon": 26.88917
+   },
+   {
+    "name": "Foça",
+    "lat": 38.66694,
+    "lon": 26.75472
+   },
+   {
+    "name": "Gaziemir",
+    "lat": 38.3225,
+    "lon": 27.12667
+   },
+   {
+    "name": "Güzelbahçe",
+    "lat": 38.37361,
+    "lon": 26.87556
+   },
+   {
+    "name": "Karabağlar",
+    "lat": 38.39472,
+    "lon": 27.1275
+   },
+   {
+    "name": "Karaburun",
+    "lat": 38.63611,
+    "lon": 26.50889
+   },
+   {
+    "name": "Karşıyaka",
+    "lat": 38.45611,
+    "lon": 27.11944
+   },
+   {
+    "name": "Kemalpaşa",
+    "lat": 38.42806,
+    "lon": 27.41611
+   },
+   {
+    "name": "Kınık",
+    "lat": 39.08833,
+    "lon": 27.38028
+   },
+   {
+    "name": "Kiraz",
+    "lat": 38.23139,
+    "lon": 28.20139
+   },
+   {
+    "name": "Konak",
+    "lat": 38.42,
+    "lon": 27.13
+   },
+   {
+    "name": "Menderes",
+    "lat": 38.25417,
+    "lon": 27.13806
+   },
+   {
+    "name": "Menemen",
+    "lat": 38.61056,
+    "lon": 27.08583
+   },
+   {
+    "name": "Narlıdere",
+    "lat": 38.39833,
+    "lon": 27.00056
+   },
+   {
+    "name": "Ödemiş",
+    "lat": 38.23083,
+    "lon": 27.97694
+   },
+   {
+    "name": "Seferihisar",
+    "lat": 38.19583,
+    "lon": 26.83417
+   },
+   {
+    "name": "Selçuk",
+    "lat": 37.94861,
+    "lon": 27.36833
+   },
+   {
+    "name": "Tire",
+    "lat": 38.09,
+    "lon": 27.73167
+   },
+   {
+    "name": "Torbalı",
+    "lat": 38.15111,
+    "lon": 27.36139
+   },
+   {
+    "name": "Urla",
+    "lat": 38.32333,
+    "lon": 26.76722
+   }
+  ]
+ },
+ {
+  "plate": 36,
+  "name": "Kars",
+  "lat": 40.59825,
+  "lon": 43.08548,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.60806,
+    "lon": 43.09444
+   },
+   {
+    "name": "Akyaka",
+    "lat": 40.74028,
+    "lon": 43.62361
+   },
+   {
+    "name": "Arpaçay",
+    "lat": 40.84694,
+    "lon": 43.32889
+   },
+   {
+    "name": "Digor",
+    "lat": 40.3775,
+    "lon": 43.41194
+   },
+   {
+    "name": "Kağızman",
+    "lat": 40.14111,
+    "lon": 43.12028
+   },
+   {
+    "name": "Sarıkamış",
+    "lat": 40.33472,
+    "lon": 42.58944
+   },
+   {
+    "name": "Selim",
+    "lat": 40.465,
+    "lon": 42.79056
+   },
+   {
+    "name": "Susuz",
+    "lat": 40.78028,
+    "lon": 43.12861
+   }
+  ]
+ },
+ {
+  "plate": 37,
+  "name": "Kastamonu",
+  "lat": 41.37805,
+  "lon": 33.77528,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.37694,
+    "lon": 33.77694
+   },
+   {
+    "name": "Abana",
+    "lat": 41.97528,
+    "lon": 34.0075
+   },
+   {
+    "name": "Ağlı",
+    "lat": 41.68806,
+    "lon": 33.55361
+   },
+   {
+    "name": "Araç",
+    "lat": 41.24167,
+    "lon": 33.32472
+   },
+   {
+    "name": "Azdavay",
+    "lat": 41.64444,
+    "lon": 33.30056
+   },
+   {
+    "name": "Bozkurt",
+    "lat": 41.95972,
+    "lon": 34.0125
+   },
+   {
+    "name": "Cide",
+    "lat": 41.89306,
+    "lon": 33.00333
+   },
+   {
+    "name": "Çatalzeytin",
+    "lat": 41.95056,
+    "lon": 34.22222
+   },
+   {
+    "name": "Daday",
+    "lat": 41.4775,
+    "lon": 33.46361
+   },
+   {
+    "name": "Devrekani",
+    "lat": 41.60389,
+    "lon": 33.83778
+   },
+   {
+    "name": "Doğanyurt",
+    "lat": 42.00167,
+    "lon": 33.46028
+   },
+   {
+    "name": "Hanönü",
+    "lat": 41.6275,
+    "lon": 34.46778
+   },
+   {
+    "name": "İhsangazi",
+    "lat": 41.20667,
+    "lon": 33.55556
+   },
+   {
+    "name": "İnebolu",
+    "lat": 41.97556,
+    "lon": 33.75972
+   },
+   {
+    "name": "Küre",
+    "lat": 41.80667,
+    "lon": 33.71
+   },
+   {
+    "name": "Pınarbaşı",
+    "lat": 41.60528,
+    "lon": 33.11028
+   },
+   {
+    "name": "Seydiler",
+    "lat": 41.61972,
+    "lon": 33.71833
+   },
+   {
+    "name": "Şenpazar",
+    "lat": 41.81,
+    "lon": 33.2325
+   },
+   {
+    "name": "Taşköprü",
+    "lat": 41.51056,
+    "lon": 34.2125
+   },
+   {
+    "name": "Tosya",
+    "lat": 41.01861,
+    "lon": 34.0375
+   }
+  ]
+ },
+ {
+  "plate": 38,
+  "name": "Kayseri",
+  "lat": 38.73222,
+  "lon": 35.48528,
+  "districts": [
+   {
+    "name": "Akkışla",
+    "lat": 39.00083,
+    "lon": 36.17167
+   },
+   {
+    "name": "Bünyan",
+    "lat": 38.84833,
+    "lon": 35.86
+   },
+   {
+    "name": "Develi",
+    "lat": 38.38861,
+    "lon": 35.4925
+   },
+   {
+    "name": "Felahiye",
+    "lat": 39.08972,
+    "lon": 35.56833
+   },
+   {
+    "name": "Hacılar",
+    "lat": 38.64583,
+    "lon": 35.4525
+   },
+   {
+    "name": "İncesu",
+    "lat": 38.61944,
+    "lon": 35.18278
+   },
+   {
+    "name": "Kocasinan",
+    "lat": 38.73389,
+    "lon": 35.49361
+   },
+   {
+    "name": "Melikgazi",
+    "lat": 38.72111,
+    "lon": 35.50028
+   },
+   {
+    "name": "Özvatan",
+    "lat": 39.10667,
+    "lon": 35.69944
+   },
+   {
+    "name": "Pınarbaşı",
+    "lat": 38.72139,
+    "lon": 36.39278
+   },
+   {
+    "name": "Sarıoğlan",
+    "lat": 39.07556,
+    "lon": 35.96944
+   },
+   {
+    "name": "Sarız",
+    "lat": 38.47944,
+    "lon": 36.49778
+   },
+   {
+    "name": "Talas",
+    "lat": 38.69278,
+    "lon": 35.54944
+   },
+   {
+    "name": "Tomarza",
+    "lat": 38.44778,
+    "lon": 35.79889
+   },
+   {
+    "name": "Yahyalı",
+    "lat": 38.10583,
+    "lon": 35.35861
+   },
+   {
+    "name": "Yeşilhisar",
+    "lat": 38.3525,
+    "lon": 35.08889
+   }
+  ]
+ },
+ {
+  "plate": 39,
+  "name": "Kırklareli",
+  "lat": 41.73508,
+  "lon": 27.22521,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.73722,
+    "lon": 27.22333
+   },
+   {
+    "name": "Babaeski",
+    "lat": 41.43083,
+    "lon": 27.09167
+   },
+   {
+    "name": "Demirköy",
+    "lat": 41.82472,
+    "lon": 27.76528
+   },
+   {
+    "name": "Kofçaz",
+    "lat": 41.94528,
+    "lon": 27.15778
+   },
+   {
+    "name": "Lüleburgaz",
+    "lat": 41.405,
+    "lon": 27.35528
+   },
+   {
+    "name": "Pehlivanköy",
+    "lat": 41.34722,
+    "lon": 26.92
+   },
+   {
+    "name": "Pınarhisar",
+    "lat": 41.62611,
+    "lon": 27.51528
+   },
+   {
+    "name": "Vize",
+    "lat": 41.57306,
+    "lon": 27.76694
+   }
+  ]
+ },
+ {
+  "plate": 40,
+  "name": "Kırşehir",
+  "lat": 39.14583,
+  "lon": 34.16389,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.14639,
+    "lon": 34.16028
+   },
+   {
+    "name": "Akçakent",
+    "lat": 39.62528,
+    "lon": 34.09611
+   },
+   {
+    "name": "Akpınar",
+    "lat": 39.44861,
+    "lon": 33.96389
+   },
+   {
+    "name": "Boztepe",
+    "lat": 39.27194,
+    "lon": 34.26389
+   },
+   {
+    "name": "Çiçekdağı",
+    "lat": 39.60389,
+    "lon": 34.41556
+   },
+   {
+    "name": "Kaman",
+    "lat": 39.35917,
+    "lon": 33.72417
+   },
+   {
+    "name": "Mucur",
+    "lat": 39.06083,
+    "lon": 34.37972
+   }
+  ]
+ },
+ {
+  "plate": 41,
+  "name": "Kocaeli",
+  "lat": 40.76499,
+  "lon": 29.92928,
+  "districts": [
+   {
+    "name": "Başiskele",
+    "lat": 40.71333,
+    "lon": 29.92861
+   },
+   {
+    "name": "Çayırova",
+    "lat": 40.83389,
+    "lon": 29.38139
+   },
+   {
+    "name": "Darıca",
+    "lat": 40.75806,
+    "lon": 29.38389
+   },
+   {
+    "name": "Derince",
+    "lat": 40.75889,
+    "lon": 29.83056
+   },
+   {
+    "name": "Dilovası",
+    "lat": 40.77639,
+    "lon": 29.52583
+   },
+   {
+    "name": "Gebze",
+    "lat": 40.80111,
+    "lon": 29.43167
+   },
+   {
+    "name": "Gölcük",
+    "lat": 40.71778,
+    "lon": 29.81944
+   },
+   {
+    "name": "İzmit",
+    "lat": 40.77278,
+    "lon": 29.95056
+   },
+   {
+    "name": "Kandıra",
+    "lat": 41.07167,
+    "lon": 30.15222
+   },
+   {
+    "name": "Karamürsel",
+    "lat": 40.68917,
+    "lon": 29.61639
+   },
+   {
+    "name": "Kartepe",
+    "lat": 40.7522,
+    "lon": 30.0235
+   },
+   {
+    "name": "Körfez",
+    "lat": 40.75833,
+    "lon": 29.78361
+   }
+  ]
+ },
+ {
+  "plate": 42,
+  "name": "Konya",
+  "lat": 37.87135,
+  "lon": 32.48464,
+  "districts": [
+   {
+    "name": "Ahırlı",
+    "lat": 37.23944,
+    "lon": 32.11889
+   },
+   {
+    "name": "Akören",
+    "lat": 37.45361,
+    "lon": 32.37194
+   },
+   {
+    "name": "Akşehir",
+    "lat": 38.36,
+    "lon": 31.42028
+   },
+   {
+    "name": "Altınekin",
+    "lat": 38.30861,
+    "lon": 32.86889
+   },
+   {
+    "name": "Beyşehir",
+    "lat": 37.68167,
+    "lon": 31.72278
+   },
+   {
+    "name": "Bozkır",
+    "lat": 37.19028,
+    "lon": 32.24694
+   },
+   {
+    "name": "Cihanbeyli",
+    "lat": 38.65944,
+    "lon": 32.92361
+   },
+   {
+    "name": "Çeltik",
+    "lat": 39.02444,
+    "lon": 31.79028
+   },
+   {
+    "name": "Çumra",
+    "lat": 37.57194,
+    "lon": 32.78111
+   },
+   {
+    "name": "Derbent",
+    "lat": 38.01389,
+    "lon": 32.01667
+   },
+   {
+    "name": "Derebucak",
+    "lat": 37.39167,
+    "lon": 31.51056
+   },
+   {
+    "name": "Doğanhisar",
+    "lat": 38.14611,
+    "lon": 31.67667
+   },
+   {
+    "name": "Emirgazi",
+    "lat": 37.90389,
+    "lon": 33.83583
+   },
+   {
+    "name": "Ereğli",
+    "lat": 37.51444,
+    "lon": 34.04722
+   },
+   {
+    "name": "Güneysınır",
+    "lat": 37.29861,
+    "lon": 32.72083
+   },
+   {
+    "name": "Hadim",
+    "lat": 36.98667,
+    "lon": 32.45556
+   },
+   {
+    "name": "Halkapınar",
+    "lat": 37.43389,
+    "lon": 34.18639
+   },
+   {
+    "name": "Hüyük",
+    "lat": 37.95583,
+    "lon": 31.59722
+   },
+   {
+    "name": "Ilgın",
+    "lat": 38.2825,
+    "lon": 31.91778
+   },
+   {
+    "name": "Kadınhanı",
+    "lat": 38.24056,
+    "lon": 32.21194
+   },
+   {
+    "name": "Karapınar",
+    "lat": 37.71917,
+    "lon": 33.54722
+   },
+   {
+    "name": "Karatay",
+    "lat": 37.87194,
+    "lon": 32.50278
+   },
+   {
+    "name": "Kulu",
+    "lat": 39.09056,
+    "lon": 33.08028
+   },
+   {
+    "name": "Meram",
+    "lat": 37.86861,
+    "lon": 32.49444
+   },
+   {
+    "name": "Sarayönü",
+    "lat": 38.26417,
+    "lon": 32.40556
+   },
+   {
+    "name": "Selçuklu",
+    "lat": 37.8775,
+    "lon": 32.48722
+   },
+   {
+    "name": "Seydişehir",
+    "lat": 37.41972,
+    "lon": 31.84806
+   },
+   {
+    "name": "Taşkent",
+    "lat": 36.92444,
+    "lon": 32.4925
+   },
+   {
+    "name": "Tuzlukçu",
+    "lat": 38.47333,
+    "lon": 31.62694
+   },
+   {
+    "name": "Yalıhüyük",
+    "lat": 37.30083,
+    "lon": 32.08528
+   },
+   {
+    "name": "Yunak",
+    "lat": 38.81111,
+    "lon": 31.73778
+   }
+  ]
+ },
+ {
+  "plate": 43,
+  "name": "Kütahya",
+  "lat": 39.42417,
+  "lon": 29.98333,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.42028,
+    "lon": 29.98556
+   },
+   {
+    "name": "Altıntaş",
+    "lat": 39.06056,
+    "lon": 30.1075
+   },
+   {
+    "name": "Aslanapa",
+    "lat": 39.21556,
+    "lon": 29.86944
+   },
+   {
+    "name": "Çavdarhisar",
+    "lat": 39.19444,
+    "lon": 29.61944
+   },
+   {
+    "name": "Domaniç",
+    "lat": 39.80167,
+    "lon": 29.61194
+   },
+   {
+    "name": "Dumlupınar",
+    "lat": 38.85472,
+    "lon": 29.9775
+   },
+   {
+    "name": "Emet",
+    "lat": 39.34194,
+    "lon": 29.25833
+   },
+   {
+    "name": "Gediz",
+    "lat": 38.99056,
+    "lon": 29.39361
+   },
+   {
+    "name": "Hisarcık",
+    "lat": 39.25083,
+    "lon": 29.23111
+   },
+   {
+    "name": "Pazarlar",
+    "lat": 38.995,
+    "lon": 29.12278
+   },
+   {
+    "name": "Simav",
+    "lat": 39.08889,
+    "lon": 28.97972
+   },
+   {
+    "name": "Şaphane",
+    "lat": 39.02583,
+    "lon": 29.21972
+   },
+   {
+    "name": "Tavşanlı",
+    "lat": 39.54556,
+    "lon": 29.49528
+   }
+  ]
+ },
+ {
+  "plate": 44,
+  "name": "Malatya",
+  "lat": 38.35018,
+  "lon": 38.31667,
+  "districts": [
+   {
+    "name": "Akçadağ",
+    "lat": 38.345,
+    "lon": 37.97083
+   },
+   {
+    "name": "Arapgir",
+    "lat": 39.04278,
+    "lon": 38.48972
+   },
+   {
+    "name": "Arguvan",
+    "lat": 38.78222,
+    "lon": 38.26417
+   },
+   {
+    "name": "Battalgazi",
+    "lat": 38.42528,
+    "lon": 38.36528
+   },
+   {
+    "name": "Darende",
+    "lat": 38.55778,
+    "lon": 37.4925
+   },
+   {
+    "name": "Doğanşehir",
+    "lat": 38.09361,
+    "lon": 37.87833
+   },
+   {
+    "name": "Doğanyol",
+    "lat": 38.31028,
+    "lon": 39.03778
+   },
+   {
+    "name": "Hekimhan",
+    "lat": 38.81722,
+    "lon": 37.93056
+   },
+   {
+    "name": "Kale",
+    "lat": 38.41806,
+    "lon": 38.76861
+   },
+   {
+    "name": "Kuluncak",
+    "lat": 38.885,
+    "lon": 37.67056
+   },
+   {
+    "name": "Pütürge",
+    "lat": 38.19778,
+    "lon": 38.87
+   },
+   {
+    "name": "Yazıhan",
+    "lat": 38.59611,
+    "lon": 38.18
+   },
+   {
+    "name": "Yeşilyurt",
+    "lat": 38.29611,
+    "lon": 38.24722
+   }
+  ]
+ },
+ {
+  "plate": 45,
+  "name": "Manisa",
+  "lat": 38.61202,
+  "lon": 27.42647,
+  "districts": [
+   {
+    "name": "Ahmetli",
+    "lat": 38.52056,
+    "lon": 27.93833
+   },
+   {
+    "name": "Akhisar",
+    "lat": 38.92472,
+    "lon": 27.84
+   },
+   {
+    "name": "Alaşehir",
+    "lat": 38.35167,
+    "lon": 28.51639
+   },
+   {
+    "name": "Demirci",
+    "lat": 39.04778,
+    "lon": 28.65833
+   },
+   {
+    "name": "Gölmarmara",
+    "lat": 38.7125,
+    "lon": 27.91556
+   },
+   {
+    "name": "Gördes",
+    "lat": 38.93333,
+    "lon": 28.28861
+   },
+   {
+    "name": "Kırkağaç",
+    "lat": 39.11028,
+    "lon": 27.67278
+   },
+   {
+    "name": "Köprübaşı",
+    "lat": 38.74889,
+    "lon": 28.40278
+   },
+   {
+    "name": "Kula",
+    "lat": 38.5475,
+    "lon": 28.64722
+   },
+   {
+    "name": "Salihli",
+    "lat": 38.48639,
+    "lon": 28.13889
+   },
+   {
+    "name": "Sarıgöl",
+    "lat": 38.23861,
+    "lon": 28.69639
+   },
+   {
+    "name": "Saruhanlı",
+    "lat": 38.73556,
+    "lon": 27.57167
+   },
+   {
+    "name": "Selendi",
+    "lat": 38.75481,
+    "lon": 28.87401
+   },
+   {
+    "name": "Soma",
+    "lat": 39.18583,
+    "lon": 27.60861
+   },
+   {
+    "name": "Şehzadeler",
+    "lat": 38.61472,
+    "lon": 27.43028
+   },
+   {
+    "name": "Turgutlu",
+    "lat": 38.50278,
+    "lon": 27.70833
+   },
+   {
+    "name": "Yunusemre",
+    "lat": 38.60917,
+    "lon": 27.41917
+   }
+  ]
+ },
+ {
+  "plate": 46,
+  "name": "Kahramanmaraş",
+  "lat": 37.5847,
+  "lon": 36.92641,
+  "districts": [
+   {
+    "name": "Afşin",
+    "lat": 38.24444,
+    "lon": 36.91528
+   },
+   {
+    "name": "Andırın",
+    "lat": 37.57611,
+    "lon": 36.35472
+   },
+   {
+    "name": "Çağlayancerit",
+    "lat": 37.75056,
+    "lon": 37.2925
+   },
+   {
+    "name": "Dulkadiroğlu",
+    "lat": 37.58028,
+    "lon": 36.93111
+   },
+   {
+    "name": "Ekinözü",
+    "lat": 38.06111,
+    "lon": 37.18917
+   },
+   {
+    "name": "Elbistan",
+    "lat": 38.2025,
+    "lon": 37.19028
+   },
+   {
+    "name": "Göksun",
+    "lat": 38.02194,
+    "lon": 36.49444
+   },
+   {
+    "name": "Nurhak",
+    "lat": 37.96667,
+    "lon": 37.44194
+   },
+   {
+    "name": "Onikişubat",
+    "lat": 37.57833,
+    "lon": 36.92361
+   },
+   {
+    "name": "Pazarcık",
+    "lat": 37.49056,
+    "lon": 37.29333
+   },
+   {
+    "name": "Türkoğlu",
+    "lat": 37.38694,
+    "lon": 36.84722
+   }
+  ]
+ },
+ {
+  "plate": 47,
+  "name": "Mardin",
+  "lat": 37.31309,
+  "lon": 40.74357,
+  "districts": [
+   {
+    "name": "Artuklu",
+    "lat": 37.32139,
+    "lon": 40.725
+   },
+   {
+    "name": "Dargeçit",
+    "lat": 37.54667,
+    "lon": 41.72028
+   },
+   {
+    "name": "Derik",
+    "lat": 37.36528,
+    "lon": 40.26972
+   },
+   {
+    "name": "Kızıltepe",
+    "lat": 37.19222,
+    "lon": 40.58472
+   },
+   {
+    "name": "Mazıdağı",
+    "lat": 37.47778,
+    "lon": 40.48639
+   },
+   {
+    "name": "Midyat",
+    "lat": 37.41583,
+    "lon": 41.37306
+   },
+   {
+    "name": "Nusaybin",
+    "lat": 37.06722,
+    "lon": 41.21639
+   },
+   {
+    "name": "Ömerli",
+    "lat": 37.40278,
+    "lon": 40.95361
+   },
+   {
+    "name": "Savur",
+    "lat": 37.5375,
+    "lon": 40.88722
+   },
+   {
+    "name": "Yeşilli",
+    "lat": 37.34,
+    "lon": 40.82278
+   }
+  ]
+ },
+ {
+  "plate": 48,
+  "name": "Muğla",
+  "lat": 37.21807,
+  "lon": 28.3665,
+  "districts": [
+   {
+    "name": "Bodrum",
+    "lat": 37.03472,
+    "lon": 27.43056
+   },
+   {
+    "name": "Dalaman",
+    "lat": 36.7675,
+    "lon": 28.8
+   },
+   {
+    "name": "Datça",
+    "lat": 36.72694,
+    "lon": 27.68722
+   },
+   {
+    "name": "Fethiye",
+    "lat": 36.62333,
+    "lon": 29.115
+   },
+   {
+    "name": "Kavaklıdere",
+    "lat": 37.44611,
+    "lon": 28.36472
+   },
+   {
+    "name": "Köyceğiz",
+    "lat": 36.95889,
+    "lon": 28.68889
+   },
+   {
+    "name": "Marmaris",
+    "lat": 36.85278,
+    "lon": 28.27417
+   },
+   {
+    "name": "Menteşe",
+    "lat": 37.21833,
+    "lon": 28.36444
+   },
+   {
+    "name": "Milas",
+    "lat": 37.31667,
+    "lon": 27.77972
+   },
+   {
+    "name": "Ortaca",
+    "lat": 36.83944,
+    "lon": 28.76528
+   },
+   {
+    "name": "Seydikemer",
+    "lat": 36.64861,
+    "lon": 29.36194
+   },
+   {
+    "name": "Ula",
+    "lat": 37.10333,
+    "lon": 28.41611
+   },
+   {
+    "name": "Yatağan",
+    "lat": 37.34222,
+    "lon": 28.13944
+   }
+  ]
+ },
+ {
+  "plate": 49,
+  "name": "Muş",
+  "lat": 38.73163,
+  "lon": 41.48482,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.7325,
+    "lon": 41.48972
+   },
+   {
+    "name": "Bulanık",
+    "lat": 39.09278,
+    "lon": 42.27056
+   },
+   {
+    "name": "Hasköy",
+    "lat": 38.68306,
+    "lon": 41.68806
+   },
+   {
+    "name": "Korkut",
+    "lat": 38.73917,
+    "lon": 41.78278
+   },
+   {
+    "name": "Malazgirt",
+    "lat": 39.14639,
+    "lon": 42.54083
+   },
+   {
+    "name": "Varto",
+    "lat": 39.1725,
+    "lon": 41.45444
+   }
+  ]
+ },
+ {
+  "plate": 50,
+  "name": "Nevşehir",
+  "lat": 38.625,
+  "lon": 34.71222,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.62556,
+    "lon": 34.715
+   },
+   {
+    "name": "Acıgöl",
+    "lat": 38.55056,
+    "lon": 34.50861
+   },
+   {
+    "name": "Avanos",
+    "lat": 38.71917,
+    "lon": 34.84667
+   },
+   {
+    "name": "Derinkuyu",
+    "lat": 38.37472,
+    "lon": 34.73333
+   },
+   {
+    "name": "Gülşehir",
+    "lat": 38.74306,
+    "lon": 34.61917
+   },
+   {
+    "name": "Hacıbektaş",
+    "lat": 38.94333,
+    "lon": 34.56056
+   },
+   {
+    "name": "Kozaklı",
+    "lat": 39.21528,
+    "lon": 34.85306
+   },
+   {
+    "name": "Ürgüp",
+    "lat": 38.63056,
+    "lon": 34.91139
+   }
+  ]
+ },
+ {
+  "plate": 51,
+  "name": "Niğde",
+  "lat": 37.96583,
+  "lon": 34.67935,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.97028,
+    "lon": 34.67611
+   },
+   {
+    "name": "Altunhisar",
+    "lat": 37.99944,
+    "lon": 34.37139
+   },
+   {
+    "name": "Bor",
+    "lat": 37.89667,
+    "lon": 34.5625
+   },
+   {
+    "name": "Çamardı",
+    "lat": 37.83472,
+    "lon": 34.98639
+   },
+   {
+    "name": "Çiftlik",
+    "lat": 38.17556,
+    "lon": 34.48472
+   },
+   {
+    "name": "Ulukışla",
+    "lat": 37.54694,
+    "lon": 34.48417
+   }
+  ]
+ },
+ {
+  "plate": 52,
+  "name": "Ordu",
+  "lat": 40.97782,
+  "lon": 37.89047,
+  "districts": [
+   {
+    "name": "Akkuş",
+    "lat": 40.79306,
+    "lon": 37.0175
+   },
+   {
+    "name": "Altınordu",
+    "lat": 40.97917,
+    "lon": 37.89611
+   },
+   {
+    "name": "Aybastı",
+    "lat": 40.685,
+    "lon": 37.39861
+   },
+   {
+    "name": "Çamaş",
+    "lat": 40.90306,
+    "lon": 37.52778
+   },
+   {
+    "name": "Çatalpınar",
+    "lat": 40.87944,
+    "lon": 37.45306
+   },
+   {
+    "name": "Çaybaşı",
+    "lat": 41.0175,
+    "lon": 37.09833
+   },
+   {
+    "name": "Fatsa",
+    "lat": 41.03139,
+    "lon": 37.5
+   },
+   {
+    "name": "Gölköy",
+    "lat": 40.68778,
+    "lon": 37.61528
+   },
+   {
+    "name": "Gülyalı",
+    "lat": 40.96667,
+    "lon": 38.05833
+   },
+   {
+    "name": "Gürgentepe",
+    "lat": 40.78917,
+    "lon": 37.60056
+   },
+   {
+    "name": "İkizce",
+    "lat": 41.055,
+    "lon": 37.0775
+   },
+   {
+    "name": "Kabadüz",
+    "lat": 40.86028,
+    "lon": 37.89056
+   },
+   {
+    "name": "Kabataş",
+    "lat": 40.75278,
+    "lon": 37.44972
+   },
+   {
+    "name": "Korgan",
+    "lat": 40.83,
+    "lon": 37.34389
+   },
+   {
+    "name": "Kumru",
+    "lat": 40.8725,
+    "lon": 37.26167
+   },
+   {
+    "name": "Mesudiye",
+    "lat": 40.46417,
+    "lon": 37.77333
+   },
+   {
+    "name": "Perşembe",
+    "lat": 41.0675,
+    "lon": 37.77222
+   },
+   {
+    "name": "Ulubey",
+    "lat": 40.87361,
+    "lon": 37.75833
+   },
+   {
+    "name": "Ünye",
+    "lat": 41.12861,
+    "lon": 37.28528
+   }
+  ]
+ },
+ {
+  "plate": 53,
+  "name": "Rize",
+  "lat": 41.02083,
+  "lon": 40.52194,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.0225,
+    "lon": 40.51972
+   },
+   {
+    "name": "Ardeşen",
+    "lat": 41.19222,
+    "lon": 40.98917
+   },
+   {
+    "name": "Çamlıhemşin",
+    "lat": 41.04611,
+    "lon": 41.00556
+   },
+   {
+    "name": "Çayeli",
+    "lat": 41.08833,
+    "lon": 40.72333
+   },
+   {
+    "name": "Derepazarı",
+    "lat": 41.025,
+    "lon": 40.42139
+   },
+   {
+    "name": "Fındıklı",
+    "lat": 41.27167,
+    "lon": 41.14111
+   },
+   {
+    "name": "Güneysu",
+    "lat": 40.97778,
+    "lon": 40.61333
+   },
+   {
+    "name": "Hemşin",
+    "lat": 41.04806,
+    "lon": 40.89861
+   },
+   {
+    "name": "İkizdere",
+    "lat": 40.77861,
+    "lon": 40.55944
+   },
+   {
+    "name": "İyidere",
+    "lat": 41.0125,
+    "lon": 40.36083
+   },
+   {
+    "name": "Kalkandere",
+    "lat": 40.92833,
+    "lon": 40.44222
+   },
+   {
+    "name": "Pazar",
+    "lat": 41.18111,
+    "lon": 40.88667
+   }
+  ]
+ },
+ {
+  "plate": 54,
+  "name": "Sakarya",
+  "lat": 40.78056,
+  "lon": 30.40333,
+  "districts": [
+   {
+    "name": "Adapazarı",
+    "lat": 40.77306,
+    "lon": 30.40361
+   },
+   {
+    "name": "Akyazı",
+    "lat": 40.68194,
+    "lon": 30.62444
+   },
+   {
+    "name": "Arifiye",
+    "lat": 40.715,
+    "lon": 30.36194
+   },
+   {
+    "name": "Erenler",
+    "lat": 40.7575,
+    "lon": 30.41056
+   },
+   {
+    "name": "Ferizli",
+    "lat": 40.94056,
+    "lon": 30.48444
+   },
+   {
+    "name": "Geyve",
+    "lat": 40.50944,
+    "lon": 30.29
+   },
+   {
+    "name": "Hendek",
+    "lat": 40.79611,
+    "lon": 30.745
+   },
+   {
+    "name": "Karapürçek",
+    "lat": 40.64278,
+    "lon": 30.53722
+   },
+   {
+    "name": "Karasu",
+    "lat": 41.09611,
+    "lon": 30.69222
+   },
+   {
+    "name": "Kaynarca",
+    "lat": 41.03444,
+    "lon": 30.30528
+   },
+   {
+    "name": "Kocaali",
+    "lat": 41.05472,
+    "lon": 30.85056
+   },
+   {
+    "name": "Pamukova",
+    "lat": 40.50611,
+    "lon": 30.16917
+   },
+   {
+    "name": "Sapanca",
+    "lat": 40.69222,
+    "lon": 30.26722
+   },
+   {
+    "name": "Serdivan",
+    "lat": 40.76083,
+    "lon": 30.36278
+   },
+   {
+    "name": "Söğütlü",
+    "lat": 40.90444,
+    "lon": 30.47139
+   },
+   {
+    "name": "Taraklı",
+    "lat": 40.39694,
+    "lon": 30.49194
+   }
+  ]
+ },
+ {
+  "plate": 55,
+  "name": "Samsun",
+  "lat": 41.27976,
+  "lon": 36.3361,
+  "districts": [
+   {
+    "name": "Alaçam",
+    "lat": 41.60722,
+    "lon": 35.59722
+   },
+   {
+    "name": "Asarcık",
+    "lat": 41.03639,
+    "lon": 36.23472
+   },
+   {
+    "name": "Atakum",
+    "lat": 41.33278,
+    "lon": 36.27028
+   },
+   {
+    "name": "Ayvacık",
+    "lat": 40.98944,
+    "lon": 36.63028
+   },
+   {
+    "name": "Bafra",
+    "lat": 41.56694,
+    "lon": 35.90222
+   },
+   {
+    "name": "Canik",
+    "lat": 41.2675,
+    "lon": 36.35528
+   },
+   {
+    "name": "Çarşamba",
+    "lat": 41.19889,
+    "lon": 36.72694
+   },
+   {
+    "name": "Havza",
+    "lat": 40.96639,
+    "lon": 35.66528
+   },
+   {
+    "name": "İlkadım",
+    "lat": 41.29056,
+    "lon": 36.33444
+   },
+   {
+    "name": "Kavak",
+    "lat": 41.07778,
+    "lon": 36.04306
+   },
+   {
+    "name": "Ladik",
+    "lat": 40.90861,
+    "lon": 35.89444
+   },
+   {
+    "name": "19 Mayıs",
+    "lat": 41.49417,
+    "lon": 36.08083
+   },
+   {
+    "name": "Salıpazarı",
+    "lat": 41.08194,
+    "lon": 36.82556
+   },
+   {
+    "name": "Tekkeköy",
+    "lat": 41.21389,
+    "lon": 36.4575
+   },
+   {
+    "name": "Terme",
+    "lat": 41.20944,
+    "lon": 36.97194
+   },
+   {
+    "name": "Vezirköprü",
+    "lat": 41.14389,
+    "lon": 35.46028
+   },
+   {
+    "name": "Yakakent",
+    "lat": 41.63194,
+    "lon": 35.53139
+   }
+  ]
+ },
+ {
+  "plate": 56,
+  "name": "Siirt",
+  "lat": 37.9293,
+  "lon": 41.94134,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.92778,
+    "lon": 41.94194
+   },
+   {
+    "name": "Baykan",
+    "lat": 38.16333,
+    "lon": 41.78556
+   },
+   {
+    "name": "Eruh",
+    "lat": 37.75111,
+    "lon": 42.18056
+   },
+   {
+    "name": "Kurtalan",
+    "lat": 37.92667,
+    "lon": 41.7
+   },
+   {
+    "name": "Pervari",
+    "lat": 37.93694,
+    "lon": 42.5475
+   },
+   {
+    "name": "Şirvan",
+    "lat": 38.06222,
+    "lon": 42.02972
+   },
+   {
+    "name": "Tillo",
+    "lat": 37.95056,
+    "lon": 42.01222
+   }
+  ]
+ },
+ {
+  "plate": 57,
+  "name": "Sinop",
+  "lat": 42.02683,
+  "lon": 35.16253,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 42.025,
+    "lon": 35.14139
+   },
+   {
+    "name": "Ayancık",
+    "lat": 41.94389,
+    "lon": 34.58806
+   },
+   {
+    "name": "Boyabat",
+    "lat": 41.46944,
+    "lon": 34.76694
+   },
+   {
+    "name": "Dikmen",
+    "lat": 41.65222,
+    "lon": 35.265
+   },
+   {
+    "name": "Durağan",
+    "lat": 41.41861,
+    "lon": 35.05417
+   },
+   {
+    "name": "Erfelek",
+    "lat": 41.87972,
+    "lon": 34.90778
+   },
+   {
+    "name": "Gerze",
+    "lat": 41.80333,
+    "lon": 35.19333
+   },
+   {
+    "name": "Saraydüzü",
+    "lat": 41.32889,
+    "lon": 34.84806
+   },
+   {
+    "name": "Türkeli",
+    "lat": 41.94889,
+    "lon": 34.33944
+   }
+  ]
+ },
+ {
+  "plate": 58,
+  "name": "Sivas",
+  "lat": 39.74833,
+  "lon": 37.01611,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.75083,
+    "lon": 37.01444
+   },
+   {
+    "name": "Akıncılar",
+    "lat": 40.07917,
+    "lon": 38.34667
+   },
+   {
+    "name": "Altınyayla",
+    "lat": 39.27222,
+    "lon": 36.75139
+   },
+   {
+    "name": "Divriği",
+    "lat": 39.37167,
+    "lon": 38.11528
+   },
+   {
+    "name": "Doğanşar",
+    "lat": 40.21472,
+    "lon": 37.53639
+   },
+   {
+    "name": "Gemerek",
+    "lat": 39.18361,
+    "lon": 36.07083
+   },
+   {
+    "name": "Gölova",
+    "lat": 40.06167,
+    "lon": 38.60833
+   },
+   {
+    "name": "Gürün",
+    "lat": 38.72194,
+    "lon": 37.27083
+   },
+   {
+    "name": "Hafik",
+    "lat": 39.855,
+    "lon": 37.38889
+   },
+   {
+    "name": "İmranlı",
+    "lat": 39.87639,
+    "lon": 38.11278
+   },
+   {
+    "name": "Kangal",
+    "lat": 39.23611,
+    "lon": 37.39083
+   },
+   {
+    "name": "Koyulhisar",
+    "lat": 40.30167,
+    "lon": 37.83222
+   },
+   {
+    "name": "Suşehri",
+    "lat": 40.16333,
+    "lon": 38.08528
+   },
+   {
+    "name": "Şarkışla",
+    "lat": 39.35111,
+    "lon": 36.40972
+   },
+   {
+    "name": "Ulaş",
+    "lat": 39.44472,
+    "lon": 37.04111
+   },
+   {
+    "name": "Yıldızeli",
+    "lat": 39.86722,
+    "lon": 36.60139
+   },
+   {
+    "name": "Zara",
+    "lat": 39.89778,
+    "lon": 37.75889
+   }
+  ]
+ },
+ {
+  "plate": 59,
+  "name": "Tekirdağ",
+  "lat": 40.9781,
+  "lon": 27.51101,
+  "districts": [
+   {
+    "name": "Çerkezköy",
+    "lat": 41.28667,
+    "lon": 27.99917
+   },
+   {
+    "name": "Çorlu",
+    "lat": 41.15944,
+    "lon": 27.80389
+   },
+   {
+    "name": "Ergene",
+    "lat": 41.18806,
+    "lon": 27.7675
+   },
+   {
+    "name": "Hayrabolu",
+    "lat": 41.21528,
+    "lon": 27.10806
+   },
+   {
+    "name": "Kapaklı",
+    "lat": 41.32722,
+    "lon": 27.97583
+   },
+   {
+    "name": "Malkara",
+    "lat": 40.89361,
+    "lon": 26.90222
+   },
+   {
+    "name": "Marmaraereğlisi",
+    "lat": 40.96972,
+    "lon": 27.95472
+   },
+   {
+    "name": "Muratlı",
+    "lat": 41.17278,
+    "lon": 27.50139
+   },
+   {
+    "name": "Saray",
+    "lat": 41.44306,
+    "lon": 27.92111
+   },
+   {
+    "name": "Süleymanpaşa",
+    "lat": 40.9775,
+    "lon": 27.50361
+   },
+   {
+    "name": "Şarköy",
+    "lat": 40.61528,
+    "lon": 27.11194
+   }
+  ]
+ },
+ {
+  "plate": 60,
+  "name": "Tokat",
+  "lat": 40.31389,
+  "lon": 36.55444,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.32389,
+    "lon": 36.55194
+   },
+   {
+    "name": "Almus",
+    "lat": 40.37556,
+    "lon": 36.90361
+   },
+   {
+    "name": "Artova",
+    "lat": 40.11833,
+    "lon": 36.29139
+   },
+   {
+    "name": "Başçiftlik",
+    "lat": 40.54722,
+    "lon": 37.16806
+   },
+   {
+    "name": "Erbaa",
+    "lat": 40.67333,
+    "lon": 36.57139
+   },
+   {
+    "name": "Niksar",
+    "lat": 40.59167,
+    "lon": 36.94333
+   },
+   {
+    "name": "Pazar",
+    "lat": 40.27639,
+    "lon": 36.28222
+   },
+   {
+    "name": "Reşadiye",
+    "lat": 40.3925,
+    "lon": 37.33806
+   },
+   {
+    "name": "Sulusaray",
+    "lat": 39.99806,
+    "lon": 36.08333
+   },
+   {
+    "name": "Turhal",
+    "lat": 40.38833,
+    "lon": 36.08333
+   },
+   {
+    "name": "Yeşilyurt",
+    "lat": 40.00833,
+    "lon": 36.21806
+   },
+   {
+    "name": "Zile",
+    "lat": 40.30139,
+    "lon": 35.8825
+   }
+  ]
+ },
+ {
+  "plate": 61,
+  "name": "Trabzon",
+  "lat": 41.005,
+  "lon": 39.72694,
+  "districts": [
+   {
+    "name": "Akçaabat",
+    "lat": 41.02056,
+    "lon": 39.57056
+   },
+   {
+    "name": "Araklı",
+    "lat": 40.93472,
+    "lon": 40.05694
+   },
+   {
+    "name": "Arsin",
+    "lat": 40.95194,
+    "lon": 39.9325
+   },
+   {
+    "name": "Beşikdüzü",
+    "lat": 41.05111,
+    "lon": 39.22778
+   },
+   {
+    "name": "Çarşıbaşı",
+    "lat": 41.08083,
+    "lon": 39.37833
+   },
+   {
+    "name": "Çaykara",
+    "lat": 40.74833,
+    "lon": 40.24194
+   },
+   {
+    "name": "Dernekpazarı",
+    "lat": 40.80028,
+    "lon": 40.24778
+   },
+   {
+    "name": "Düzköy",
+    "lat": 40.87444,
+    "lon": 39.42583
+   },
+   {
+    "name": "Hayrat",
+    "lat": 40.88972,
+    "lon": 40.36778
+   },
+   {
+    "name": "Köprübaşı",
+    "lat": 40.80833,
+    "lon": 40.12389
+   },
+   {
+    "name": "Maçka",
+    "lat": 40.8125,
+    "lon": 39.6125
+   },
+   {
+    "name": "Of",
+    "lat": 40.94806,
+    "lon": 40.26917
+   },
+   {
+    "name": "Ortahisar",
+    "lat": 41.00444,
+    "lon": 39.72556
+   },
+   {
+    "name": "Sürmene",
+    "lat": 40.91111,
+    "lon": 40.11333
+   },
+   {
+    "name": "Şalpazarı",
+    "lat": 40.9425,
+    "lon": 39.19361
+   },
+   {
+    "name": "Tonya",
+    "lat": 40.88917,
+    "lon": 39.29028
+   },
+   {
+    "name": "Vakfıkebir",
+    "lat": 41.04556,
+    "lon": 39.27611
+   },
+   {
+    "name": "Yomra",
+    "lat": 40.9575,
+    "lon": 39.84694
+   }
+  ]
+ },
+ {
+  "plate": 62,
+  "name": "Tunceli",
+  "lat": 39.09921,
+  "lon": 39.54351,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.10639,
+    "lon": 39.54806
+   },
+   {
+    "name": "Çemişgezek",
+    "lat": 39.06333,
+    "lon": 38.91028
+   },
+   {
+    "name": "Hozat",
+    "lat": 39.10889,
+    "lon": 39.21806
+   },
+   {
+    "name": "Mazgirt",
+    "lat": 39.02028,
+    "lon": 39.60528
+   },
+   {
+    "name": "Nazımiye",
+    "lat": 39.18,
+    "lon": 39.82861
+   },
+   {
+    "name": "Ovacık",
+    "lat": 39.35889,
+    "lon": 39.21417
+   },
+   {
+    "name": "Pertek",
+    "lat": 38.86611,
+    "lon": 39.3275
+   },
+   {
+    "name": "Pülümür",
+    "lat": 39.48611,
+    "lon": 39.89639
+   }
+  ]
+ },
+ {
+  "plate": 63,
+  "name": "Şanlıurfa",
+  "lat": 37.16708,
+  "lon": 38.79392,
+  "districts": [
+   {
+    "name": "Akçakale",
+    "lat": 36.70889,
+    "lon": 38.94861
+   },
+   {
+    "name": "Birecik",
+    "lat": 37.03056,
+    "lon": 37.98
+   },
+   {
+    "name": "Bozova",
+    "lat": 37.3625,
+    "lon": 38.52528
+   },
+   {
+    "name": "Ceylanpınar",
+    "lat": 36.84389,
+    "lon": 40.05111
+   },
+   {
+    "name": "Eyyübiye",
+    "lat": 37.14889,
+    "lon": 38.78222
+   },
+   {
+    "name": "Halfeti",
+    "lat": 37.23139,
+    "lon": 37.94556
+   },
+   {
+    "name": "Haliliye",
+    "lat": 37.16806,
+    "lon": 38.79528
+   },
+   {
+    "name": "Harran",
+    "lat": 36.86667,
+    "lon": 39.0275
+   },
+   {
+    "name": "Hilvan",
+    "lat": 37.58667,
+    "lon": 38.95444
+   },
+   {
+    "name": "Karaköprü",
+    "lat": 37.20528,
+    "lon": 38.79556
+   },
+   {
+    "name": "Siverek",
+    "lat": 37.75472,
+    "lon": 39.3175
+   },
+   {
+    "name": "Suruç",
+    "lat": 36.97583,
+    "lon": 38.42417
+   },
+   {
+    "name": "Viranşehir",
+    "lat": 37.23333,
+    "lon": 39.76194
+   }
+  ]
+ },
+ {
+  "plate": 64,
+  "name": "Uşak",
+  "lat": 38.67351,
+  "lon": 29.4058,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.67444,
+    "lon": 29.40556
+   },
+   {
+    "name": "Banaz",
+    "lat": 38.74056,
+    "lon": 29.75306
+   },
+   {
+    "name": "Eşme",
+    "lat": 38.40028,
+    "lon": 28.96667
+   },
+   {
+    "name": "Karahallı",
+    "lat": 38.32111,
+    "lon": 29.53111
+   },
+   {
+    "name": "Sivaslı",
+    "lat": 38.50056,
+    "lon": 29.68361
+   },
+   {
+    "name": "Ulubey",
+    "lat": 38.41972,
+    "lon": 29.29083
+   }
+  ]
+ },
+ {
+  "plate": 65,
+  "name": "Van",
+  "lat": 38.49457,
+  "lon": 43.38323,
+  "districts": [
+   {
+    "name": "Bahçesaray",
+    "lat": 38.12472,
+    "lon": 42.8075
+   },
+   {
+    "name": "Başkale",
+    "lat": 38.04556,
+    "lon": 44.01611
+   },
+   {
+    "name": "Çaldıran",
+    "lat": 39.1432,
+    "lon": 43.9107
+   },
+   {
+    "name": "Çatak",
+    "lat": 38.0075,
+    "lon": 43.05889
+   },
+   {
+    "name": "Edremit",
+    "lat": 38.42278,
+    "lon": 43.26
+   },
+   {
+    "name": "Erciş",
+    "lat": 39.02944,
+    "lon": 43.35889
+   },
+   {
+    "name": "Gevaş",
+    "lat": 38.29583,
+    "lon": 43.10806
+   },
+   {
+    "name": "Gürpınar",
+    "lat": 38.32444,
+    "lon": 43.4075
+   },
+   {
+    "name": "İpekyolu",
+    "lat": 38.50611,
+    "lon": 43.39528
+   },
+   {
+    "name": "Muradiye",
+    "lat": 38.98889,
+    "lon": 43.7625
+   },
+   {
+    "name": "Özalp",
+    "lat": 38.65611,
+    "lon": 43.98861
+   },
+   {
+    "name": "Saray",
+    "lat": 38.65,
+    "lon": 44.16944
+   },
+   {
+    "name": "Tuşba",
+    "lat": 38.51444,
+    "lon": 43.37472
+   }
+  ]
+ },
+ {
+  "plate": 66,
+  "name": "Yozgat",
+  "lat": 39.82,
+  "lon": 34.80444,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.8225,
+    "lon": 34.80778
+   },
+   {
+    "name": "Akdağmadeni",
+    "lat": 39.66167,
+    "lon": 35.88028
+   },
+   {
+    "name": "Aydıncık",
+    "lat": 40.13083,
+    "lon": 35.285
+   },
+   {
+    "name": "Boğazlıyan",
+    "lat": 39.1925,
+    "lon": 35.24611
+   },
+   {
+    "name": "Çandır",
+    "lat": 39.245,
+    "lon": 35.51361
+   },
+   {
+    "name": "Çayıralan",
+    "lat": 39.30528,
+    "lon": 35.64611
+   },
+   {
+    "name": "Çekerek",
+    "lat": 40.06556,
+    "lon": 35.50694
+   },
+   {
+    "name": "Kadışehri",
+    "lat": 39.99806,
+    "lon": 35.79167
+   },
+   {
+    "name": "Saraykent",
+    "lat": 39.69417,
+    "lon": 35.51
+   },
+   {
+    "name": "Sarıkaya",
+    "lat": 39.49417,
+    "lon": 35.37528
+   },
+   {
+    "name": "Sorgun",
+    "lat": 39.81028,
+    "lon": 35.18528
+   },
+   {
+    "name": "Şefaatli",
+    "lat": 39.49667,
+    "lon": 34.75667
+   },
+   {
+    "name": "Yenifakılı",
+    "lat": 39.21167,
+    "lon": 35.00167
+   },
+   {
+    "name": "Yerköy",
+    "lat": 39.64167,
+    "lon": 34.46806
+   }
+  ]
+ },
+ {
+  "plate": 67,
+  "name": "Zonguldak",
+  "lat": 41.45139,
+  "lon": 31.79305,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.45111,
+    "lon": 31.79194
+   },
+   {
+    "name": "Alaplı",
+    "lat": 41.17833,
+    "lon": 31.38611
+   },
+   {
+    "name": "Çaycuma",
+    "lat": 41.4275,
+    "lon": 32.0725
+   },
+   {
+    "name": "Devrek",
+    "lat": 41.22,
+    "lon": 31.95556
+   },
+   {
+    "name": "Ereğli",
+    "lat": 41.27917,
+    "lon": 31.42972
+   },
+   {
+    "name": "Gökçebey",
+    "lat": 41.30611,
+    "lon": 32.14278
+   },
+   {
+    "name": "Kilimli",
+    "lat": 41.4875,
+    "lon": 31.83833
+   },
+   {
+    "name": "Kozlu",
+    "lat": 41.4325,
+    "lon": 31.74722
+   }
+  ]
+ },
+ {
+  "plate": 68,
+  "name": "Aksaray",
+  "lat": 38.37255,
+  "lon": 34.02537,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 38.37194,
+    "lon": 34.02361
+   },
+   {
+    "name": "Ağaçören",
+    "lat": 38.87083,
+    "lon": 33.91556
+   },
+   {
+    "name": "Eskil",
+    "lat": 38.40139,
+    "lon": 33.4125
+   },
+   {
+    "name": "Gülağaç",
+    "lat": 38.3925,
+    "lon": 34.34556
+   },
+   {
+    "name": "Güzelyurt",
+    "lat": 38.27667,
+    "lon": 34.37194
+   },
+   {
+    "name": "Ortaköy",
+    "lat": 38.73556,
+    "lon": 34.03972
+   },
+   {
+    "name": "Sarıyahşi",
+    "lat": 38.98361,
+    "lon": 33.84444
+   },
+   {
+    "name": "Sultanhanı",
+    "lat": 38.24611,
+    "lon": 33.54917
+   }
+  ]
+ },
+ {
+  "plate": 69,
+  "name": "Bayburt",
+  "lat": 40.25631,
+  "lon": 40.22289,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.25528,
+    "lon": 40.22417
+   },
+   {
+    "name": "Aydıntepe",
+    "lat": 40.38917,
+    "lon": 40.14556
+   },
+   {
+    "name": "Demirözü",
+    "lat": 40.16278,
+    "lon": 39.88944
+   }
+  ]
+ },
+ {
+  "plate": 70,
+  "name": "Karaman",
+  "lat": 37.18111,
+  "lon": 33.215,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.18139,
+    "lon": 33.21944
+   },
+   {
+    "name": "Ayrancı",
+    "lat": 37.36111,
+    "lon": 33.68917
+   },
+   {
+    "name": "Başyayla",
+    "lat": 36.75333,
+    "lon": 32.67972
+   },
+   {
+    "name": "Ermenek",
+    "lat": 36.64,
+    "lon": 32.88861
+   },
+   {
+    "name": "Kazımkarabekir",
+    "lat": 37.22722,
+    "lon": 32.95806
+   },
+   {
+    "name": "Sarıveliler",
+    "lat": 36.69889,
+    "lon": 32.61806
+   }
+  ]
+ },
+ {
+  "plate": 71,
+  "name": "Kırıkkale",
+  "lat": 39.84528,
+  "lon": 33.50639,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.84139,
+    "lon": 33.50556
+   },
+   {
+    "name": "Bahşılı",
+    "lat": 39.81417,
+    "lon": 33.47167
+   },
+   {
+    "name": "Balışeyh",
+    "lat": 39.91111,
+    "lon": 33.71833
+   },
+   {
+    "name": "Çelebi",
+    "lat": 39.46389,
+    "lon": 33.52417
+   },
+   {
+    "name": "Delice",
+    "lat": 39.94667,
+    "lon": 34.03111
+   },
+   {
+    "name": "Karakeçili",
+    "lat": 39.59361,
+    "lon": 33.37778
+   },
+   {
+    "name": "Keskin",
+    "lat": 39.67444,
+    "lon": 33.615
+   },
+   {
+    "name": "Sulakyurt",
+    "lat": 40.15806,
+    "lon": 33.71556
+   },
+   {
+    "name": "Yahşihan",
+    "lat": 39.85,
+    "lon": 33.45222
+   }
+  ]
+ },
+ {
+  "plate": 72,
+  "name": "Batman",
+  "lat": 37.88738,
+  "lon": 41.13221,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.88333,
+    "lon": 41.12333
+   },
+   {
+    "name": "Beşiri",
+    "lat": 37.91583,
+    "lon": 41.28944
+   },
+   {
+    "name": "Gercüş",
+    "lat": 37.56778,
+    "lon": 41.38361
+   },
+   {
+    "name": "Hasankeyf",
+    "lat": 37.72972,
+    "lon": 41.41472
+   },
+   {
+    "name": "Kozluk",
+    "lat": 38.19333,
+    "lon": 41.48833
+   },
+   {
+    "name": "Sason",
+    "lat": 38.33333,
+    "lon": 41.41917
+   }
+  ]
+ },
+ {
+  "plate": 73,
+  "name": "Şırnak",
+  "lat": 37.51393,
+  "lon": 42.45432,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.5225,
+    "lon": 42.45694
+   },
+   {
+    "name": "Beytüşşebap",
+    "lat": 37.57083,
+    "lon": 43.16694
+   },
+   {
+    "name": "Cizre",
+    "lat": 37.33306,
+    "lon": 42.18528
+   },
+   {
+    "name": "Güçlükonak",
+    "lat": 37.47167,
+    "lon": 41.91083
+   },
+   {
+    "name": "İdil",
+    "lat": 37.34083,
+    "lon": 41.89222
+   },
+   {
+    "name": "Silopi",
+    "lat": 37.24972,
+    "lon": 42.47056
+   },
+   {
+    "name": "Uludere",
+    "lat": 37.44583,
+    "lon": 42.85139
+   }
+  ]
+ },
+ {
+  "plate": 74,
+  "name": "Bartın",
+  "lat": 41.63583,
+  "lon": 32.3375,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.63389,
+    "lon": 32.33639
+   },
+   {
+    "name": "Amasra",
+    "lat": 41.74833,
+    "lon": 32.38639
+   },
+   {
+    "name": "Kurucaşile",
+    "lat": 41.8425,
+    "lon": 32.72056
+   },
+   {
+    "name": "Ulus",
+    "lat": 41.58333,
+    "lon": 32.63861
+   }
+  ]
+ },
+ {
+  "plate": 75,
+  "name": "Ardahan",
+  "lat": 41.10871,
+  "lon": 42.70222,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.10944,
+    "lon": 42.70306
+   },
+   {
+    "name": "Çıldır",
+    "lat": 41.12556,
+    "lon": 43.13444
+   },
+   {
+    "name": "Damal",
+    "lat": 41.34167,
+    "lon": 42.83972
+   },
+   {
+    "name": "Göle",
+    "lat": 40.79194,
+    "lon": 42.60861
+   },
+   {
+    "name": "Hanak",
+    "lat": 41.23583,
+    "lon": 42.845
+   },
+   {
+    "name": "Posof",
+    "lat": 41.5075,
+    "lon": 42.72722
+   }
+  ]
+ },
+ {
+  "plate": 76,
+  "name": "Iğdır",
+  "lat": 39.92371,
+  "lon": 44.045,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 39.9225,
+    "lon": 44.04667
+   },
+   {
+    "name": "Aralık",
+    "lat": 39.87389,
+    "lon": 44.51583
+   },
+   {
+    "name": "Karakoyunlu",
+    "lat": 39.97167,
+    "lon": 44.17333
+   },
+   {
+    "name": "Tuzluca",
+    "lat": 40.04056,
+    "lon": 43.66361
+   }
+  ]
+ },
+ {
+  "plate": 77,
+  "name": "Yalova",
+  "lat": 40.65501,
+  "lon": 29.27693,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.65694,
+    "lon": 29.27
+   },
+   {
+    "name": "Altınova",
+    "lat": 40.69694,
+    "lon": 29.50972
+   },
+   {
+    "name": "Armutlu",
+    "lat": 40.51944,
+    "lon": 28.8275
+   },
+   {
+    "name": "Çınarcık",
+    "lat": 40.64194,
+    "lon": 29.11917
+   },
+   {
+    "name": "Çiftlikköy",
+    "lat": 40.66306,
+    "lon": 29.32278
+   },
+   {
+    "name": "Termal",
+    "lat": 40.60667,
+    "lon": 29.17417
+   }
+  ]
+ },
+ {
+  "plate": 78,
+  "name": "Karabük",
+  "lat": 41.20488,
+  "lon": 32.62768,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 41.19611,
+    "lon": 32.62306
+   },
+   {
+    "name": "Eflani",
+    "lat": 41.42389,
+    "lon": 32.95806
+   },
+   {
+    "name": "Eskipazar",
+    "lat": 40.945,
+    "lon": 32.53139
+   },
+   {
+    "name": "Ovacık",
+    "lat": 41.07611,
+    "lon": 32.91972
+   },
+   {
+    "name": "Safranbolu",
+    "lat": 41.24639,
+    "lon": 32.69278
+   },
+   {
+    "name": "Yenice",
+    "lat": 41.20111,
+    "lon": 32.32778
+   }
+  ]
+ },
+ {
+  "plate": 79,
+  "name": "Kilis",
+  "lat": 36.71611,
+  "lon": 37.115,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 36.71694,
+    "lon": 37.11444
+   },
+   {
+    "name": "Elbeyli",
+    "lat": 36.67556,
+    "lon": 37.46667
+   },
+   {
+    "name": "Musabeyli",
+    "lat": 36.88639,
+    "lon": 36.91528
+   },
+   {
+    "name": "Polateli",
+    "lat": 36.84111,
+    "lon": 37.14306
+   }
+  ]
+ },
+ {
+  "plate": 80,
+  "name": "Osmaniye",
+  "lat": 37.07417,
+  "lon": 36.24778,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 37.07389,
+    "lon": 36.25056
+   },
+   {
+    "name": "Bahçe",
+    "lat": 37.20472,
+    "lon": 36.58194
+   },
+   {
+    "name": "Düziçi",
+    "lat": 37.24056,
+    "lon": 36.45306
+   },
+   {
+    "name": "Hasanbeyli",
+    "lat": 37.13139,
+    "lon": 36.55528
+   },
+   {
+    "name": "Kadirli",
+    "lat": 37.37444,
+    "lon": 36.09722
+   },
+   {
+    "name": "Sumbas",
+    "lat": 37.45417,
+    "lon": 36.02444
+   },
+   {
+    "name": "Toprakkale",
+    "lat": 37.06778,
+    "lon": 36.14556
+   }
+  ]
+ },
+ {
+  "plate": 81,
+  "name": "Düzce",
+  "lat": 40.83889,
+  "lon": 31.16389,
+  "districts": [
+   {
+    "name": "Merkez",
+    "lat": 40.83944,
+    "lon": 31.15944
+   },
+   {
+    "name": "Akçakoca",
+    "lat": 41.08833,
+    "lon": 31.12389
+   },
+   {
+    "name": "Cumayeri",
+    "lat": 40.875,
+    "lon": 30.95028
+   },
+   {
+    "name": "Çilimli",
+    "lat": 40.89361,
+    "lon": 31.04639
+   },
+   {
+    "name": "Gölyaka",
+    "lat": 40.77694,
+    "lon": 30.99639
+   },
+   {
+    "name": "Gümüşova",
+    "lat": 40.84694,
+    "lon": 30.93833
+   },
+   {
+    "name": "Kaynaşlı",
+    "lat": 40.77222,
+    "lon": 31.31917
+   },
+   {
+    "name": "Yığılca",
+    "lat": 40.96028,
+    "lon": 31.44444
+   }
+  ]
+ }
+]
