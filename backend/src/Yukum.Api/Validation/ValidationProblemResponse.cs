@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 
@@ -29,6 +30,25 @@ public static class ValidationProblemResponse
             problem.Extensions[extension.Key] = extension.Value;
 
         return new BadRequestObjectResult(problem) { ContentTypes = { "application/problem+json" } };
+    }
+
+    /// <summary>
+    /// FluentValidation hatalarını aynı 400 biçimine çevirir (başlık "Doğrulama hatası", alan adları camelCase,
+    /// örn. <c>vehicles[1].capacityKg</c>); iOS her iki kaynaktan gelen doğrulama hatasını aynı şekilde okur.
+    /// </summary>
+    /// <param name="failures">Doğrulama kurallarının bulduğu hatalar.</param>
+    public static ValidationProblemDetails FromFailures(IEnumerable<ValidationFailure> failures)
+    {
+        var errors = failures
+            .GroupBy(f => ToCamelCase(f.PropertyName))
+            .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).Distinct().ToArray());
+
+        return new ValidationProblemDetails(errors)
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "Doğrulama hatası",
+            Detail = "Bir veya daha fazla alan geçersiz."
+        };
     }
 
     private static string ToCamelCase(string path) =>

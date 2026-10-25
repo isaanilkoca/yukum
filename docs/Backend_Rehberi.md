@@ -63,6 +63,9 @@ iOS uygulaması (SwiftUI)
 - `Abstractions/Persistence/IRepository.cs` — "Kayıt getir / ekle / sil" sözleşmesi. İş kuralı kodu yalnız bunu bilir.
 - `Abstractions/Persistence/IGeographyRepository.cs` — İl/ilçe okuma sözleşmesi (il listesi, il var mı, ilin ilçeleri). İl/ilçe GUID'li `BaseEntity` olmadığı için genel `IRepository` yerine bu özel depo kullanılır.
 - `Common/NotFoundException.cs` — "İstenen kayıt yok" hatası. API bunu 404'e çevirir.
+- `Common/ConflictException.cs` — "Çakışma" hatası (örn. e-posta kayıtlı). API bunu 409'a çevirir.
+- `Abstractions/Identity/IAccountService.cs` — Hesap oluşturma sözleşmesi. İş kuralı kodu ASP.NET Identity'yi bilmez.
+- `Accounts/` — Kayıt akışı: komutlar (`RegisterShipperCommand`, `RegisterCarrierCommand`), Türkçe doğrulama kuralları (`RegisterValidators`, FluentValidation), `PasswordPolicy` (şifre kuralının tek kaynağı), `PhoneNumberNormalizer` (her telefon yazılışı → `+905…`), handler'lar.
 - `Geography/` — İl/ilçe sorguları: `GetCitiesHandler`, `GetDistrictsHandler` ve istemciye giden `CityDto` / `DistrictDto` (yalnız `id` ve `name`).
 - `Abstractions/Persistence/IUnitOfWork.cs` — "Yaptığım değişiklikleri tek seferde kaydet" sözleşmesi.
 - `Abstractions/Messaging/IHandlers.cs` — `ICommandHandler` (durumu değiştirir) ve `IQueryHandler` (sadece okur) sözleşmeleri.
@@ -75,6 +78,8 @@ iOS uygulaması (SwiftUI)
 - `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: il/ilçe, `AppUser`, `Role`, iki profil, araç, çalışma bölgesi, `RefreshToken`. `AppDbContext` bunları tek satırla toplar.
 - `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
 - `Persistence/GeographyRepository.cs` — `IGeographyRepository`'nin gerçeği; sonuçları `IMemoryCache`'te 24 saat saklar (boş sonuç saklanmaz).
+- `Identity/AccountService.cs` — Hesabı tek işlemde kurar: kullanıcı + rol + profil + araçlar + çalışma illeri; çift e-posta/telefon → `ConflictException`.
+- `Identity/PasswordPolicyValidator.cs` — Şifre kuralını Identity'ye bağlar (Identity'nin ASCII-yalnız harf kontrolü yerine).
 - `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.
 - `Persistence/UnitOfWork.cs` — `IUnitOfWork`'in gerçeği.
 - `Persistence/Migrations/` — Veritabanı şemasının sürüm kaydı (aşağıda). Elle düzenlenmez, `dotnet ef` üretir.
@@ -82,8 +87,9 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Api
 - `Program.cs` — Uygulamanın açılış planı: hangi servisler var, isteğin hangi sırayla işleneceği.
+- `Controllers/AuthController.cs` — `POST /api/v1/auth/register/shipper` ve `/register/carrier` (anonim). İstemci sözleşmesi: `docs/api/Auth.md`.
 - `Controllers/CitiesController.cs` — `GET /api/v1/cities` ve `GET /api/v1/cities/{cityId}/districts` (anonim, istemci tarafında 1 gün önbellek). İlk gerçek uçlar. İstemci sözleşmesi: `docs/api/Cities.md`.
-- `Middleware/GlobalExceptionHandler.cs` — Yakalanmamış hatayı çevirir: `NotFoundException` → 404 (mesaj gösterilir), diğer her şey → sade 500 (iç detay sızmaz).
+- `Middleware/GlobalExceptionHandler.cs` — Yakalanmamış hatayı çevirir: `NotFoundException` → 404, `ConflictException` → 409, FluentValidation `ValidationException` → 400 (mesajlar gösterilir), diğer her şey → sade 500 (iç detay sızmaz).
 - `Health/DatabaseHealthCheck.cs` — `GET /health`: veritabanı ayakta mı? (200 / 503)
 - `Json/JsonSetup.cs` + `Json/UtcDateTimeConverters.cs` — JSON kuralları: camelCase, enum string, tarih UTC `…T10:15:00Z`.
 - `Validation/ValidationProblemResponse.cs` — Geçersiz veri (400) cevabını hata formatına ve camelCase alan adlarına çevirir.
@@ -116,6 +122,8 @@ iOS uygulaması (SwiftUI)
 | `Microsoft.EntityFrameworkCore.Design` | Api | `dotnet ef` aracının kodu okuması için (yalnız geliştirme zamanı) |
 | `Microsoft.EntityFrameworkCore.SqlServer` | Infrastructure | EF Core'un SQL Server ile konuşması (ORM) |
 | `System.Security.Cryptography.Pkcs` | Infrastructure | SQL kütüphanesinin dolaylı getirdiği paketin **güvenlik açığı olmayan** sürümünü sabitler |
+| `FluentValidation` (+`.DependencyInjectionExtensions`) | Application | Doğrulama kuralları okunaklı yazılır, Türkçe mesajlar; alan adı ile hata eşlenir |
+| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | Infrastructure | Kullanıcı/rol tabloları, şifre hash'leme (PBKDF2), hesap kilidi |
 | `Microsoft.Extensions.DependencyInjection.Abstractions` | Application | Handler'ları kaydeden mekanizma için (DI arayüzleri) |
 | `xunit` | Testler | Test çerçevesi (`[Fact]` = Swift Testing'deki `@Test`) |
 | `Microsoft.AspNetCore.Mvc.Testing` | Integration | Gerçek API'yi bellekte ayağa kaldırıp testten çağırır |

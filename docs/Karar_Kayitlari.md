@@ -50,3 +50,15 @@
 - **Neden:** (1) Clean Architecture bağımlılık kuralı. (3) Metin içinde il numarası tutmak yabancı anahtar korumasını kaybettirir ve "şu ilde çalışanlar" sorgusunu zorlaştırır. (5) Uygulama katmanı atlansa bile veritabanı çift kaydı reddeder. (6) App Store hesap silme zorunluluğu ve KVKK.
 - **Eklenmeyenler (kapsam):** `CarrierProfiles.CurrentLat/Lon` (konum özelliği gelince), `ShipperProfiles.DistrictId` (rapor tablosunda yok), e-posta doğrulama ve şifre sıfırlama (D planında yok).
 - **Geri dönüş maliyeti:** Orta. Tablo adları ve Id türleri sonradan değişirse migration ve istemci etkilenir.
+
+## K-017 — Kayıt uçları: şifre kuralı, telefon biçimi, tek işlem, hata biçimi (25 Ekim 2026)
+- **Karar:**
+  1. **Şifre:** 8–128 karakter, en az bir büyük harf, bir küçük harf, bir rakam; sembol zorunlu değil. Kural **tek yerde** (`PasswordPolicy`, Application) tutulur; hem kayıt doğrulaması (Türkçe mesajlar) hem Identity (`PasswordPolicyValidator`, ikinci savunma) aynı koddan okur. Identity'nin kendi büyük/küçük harf seçenekleri kapalıdır.
+  2. **Telefon:** yalnız Türkiye cep telefonu; her yazılış `+905XXXXXXXXX` biçimine çevrilip saklanır ve benzersizdir. **E-posta:** küçük harfe çevrilip saklanır, benzersizdir. Bir e-posta/telefon tek hesaptur (Yük Veren ve Taşımacı arasında da).
+  3. **Kayıt tek işlemdir** (kullanıcı + rol + profil + araçlar + çalışma illeri): bir adım başarısız olursa hiçbiri kaydedilmez. Eşzamanlı çift kayıt veritabanının benzersiz indeksi ile yakalanır ve 409'a çevrilir.
+  4. **Taşımacı kaydında en az 1 araç zorunlu**, çalışma illeri opsiyoneldir. Yük Veren'de il zorunlu, ilçe saklanmaz (K-016).
+  5. **Hata biçimi:** doğrulama → 400 (başlık "Doğrulama hatası", `errors` sözlüğü, camelCase alan adları, liste için `vehicles[1].capacityKg`); çakışma → 409 "Çakışma"; kayıt yok → 404. FluentValidation hataları ve MVC model hataları aynı 400 biçimini kullanır. Kayıt cevabı 201 + kullanıcı özeti; **oturum açılmaz** (giriş D3).
+  6. Kayıt uçları `[AllowAnonymous]`; rol endpoint'ten gelir, gövdedeki `role/userType` yok sayılır.
+- **Neden:** (1) Identity'nin ASCII-yalnız harf kontrolü "Şifre1234"ü reddedip 500 üretirdi; tek kaynak ayrışmayı önler. "En yaygın kural" (8+, büyük+küçük+rakam) kullanıcı tercihi. (2) Aynı numara/e-posta farklı yazılışla ikinci hesap açmasın; telefonla giriş (D3) için tek biçim şart. (3) Yarım hesap kalması (kullanıcı var, profil yok) tutarsız ve giriş sonrası çöker. (5) iOS her hatayı tek biçimde okur.
+- **Eklenmeyenler (kapsam):** e-posta/telefon doğrulama, şifre sıfırlama, hız sınırı (D5'te).
+- **Geri dönüş maliyeti:** Düşük (şifre kuralı tek sabit/sınıf). Telefon biçimi sonradan değişirse saklanan veriler dönüştürülmelidir.

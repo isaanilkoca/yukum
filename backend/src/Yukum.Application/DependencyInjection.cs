@@ -1,4 +1,5 @@
 using System.Reflection;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Yukum.Application.Abstractions.Messaging;
 
@@ -7,9 +8,16 @@ namespace Yukum.Application;
 /// <summary>Application katmanının servislerini (handler'ları) uygulamaya kaydeder.</summary>
 public static class DependencyInjection
 {
-    /// <summary>Application projesindeki tüm handler'ları bulup kaydeder. <c>Program.cs</c> bunu çağırır.</summary>
-    public static IServiceCollection AddApplication(this IServiceCollection services) =>
-        services.AddHandlersFromAssembly(typeof(DependencyInjection).Assembly);
+    /// <summary>
+    /// Application projesindeki tüm handler'ları ve doğrulama kurallarını (FluentValidation) bulup kaydeder.
+    /// <c>Program.cs</c> bunu çağırır.
+    /// </summary>
+    public static IServiceCollection AddApplication(this IServiceCollection services)
+    {
+        // Doğrulayıcılar scoped: il listesi gibi scoped servislere (repository) bağlanırlar.
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, ServiceLifetime.Scoped);
+        return services.AddHandlersFromAssembly(typeof(DependencyInjection).Assembly);
+    }
 
     /// <summary>
     /// Verilen derlemedeki üst düzey, soyut olmayan handler sınıflarını bulup kaydeder.
