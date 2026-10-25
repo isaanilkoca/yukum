@@ -45,7 +45,11 @@ Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
 
 ## Dokümantasyon
 - `docs/Ilerleme_Gunlugu.md` — günlük ilerleme, adım adım
-- `docs/Backend_Rehberi.md` — hangi araç/paket/dosya ne işe yarar, komutlar
-- `docs/Karar_Kayitlari.md` — alınan kararların gerekçeleri
-- `docs/veri/` — il/ilçe verisi ve kaynakları
-- Kodun içinde: her sınıf ve metotta `/// <summary>` açıklaması (VS Code'da üzerine gelince görünür)
+- `docs/Kod_Anlatimi.md` — **kodu nasıl okursun**: üç gerçek isteğin (il/ilçe, kayıt, giriş) dosya ve satır numaralı yolculuğu
+- `docs/SQL_Rehberi.md` + `docs/veri/Sema.sql` — veritabanı: tablolar, ilişkiler, örnek sorgular, açıklamalı şema
+- `docs/Backend_Rehberi.md` — hangi araç/paket/dosya ne işe yarar, komutlar, Swift karşılıkları
+- `docs/iOS_Yol_Haritasi.md` — iOS tarafı için adım adım yol haritası
+- `docs/api/` — iOS için API sözleşme kartları (`Cities.md`, `Auth.md`)
+- `docs/Karar_Kayitlari.md` — neden öyle karar verdik (K-001 … K-018)
+- `docs/veri/Veri_Kaynaklari.md` — il/ilçe verisinin kaynakları ve doğrulama yöntemi
+- Kod içinde: her sınıf, metot ve önemli satırda Türkçe açıklama (`///` ve `//`)

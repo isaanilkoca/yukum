@@ -67,6 +67,15 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | D3 | **Giriş.** `POST /api/v1/auth/login` (e-posta **ya da** telefonla; telefon her yazılışta tanınır): 200 + erişim jetonu (JWT, 15 dk, yalnız `sub`/`role`/`jti`) + bitiş zamanı + kullanıcı özeti. Yanlış şifre ile olmayan kullanıcı **aynı 401** ("E-posta veya şifre hatalı."), olmayan kullanıcıda da şifre doğrulama süresi harcanır; 5 hatada **423** + `Retry-After` (kilitliyken doğru şifre de reddedilir, başarıda sayaç sıfırlanır); pasif/engelli hesap doğru şifreyle 403. JwtBearer doğrulaması: yalnız HS256, imza + yayıncı + hedef + süre; süresi dolmuş / yanlış anahtar / yanlış hedef jetonlar 401, rol uyuşmazlığı 403. İmza anahtarı yalnız user-secrets'ta, kısa/eksikse uygulama açılırken durur. Hata eşlemeleri tek yerde (`GlobalExceptionHandler` yeniden düzenlendi). Sözleşme kartı güncellendi (`docs/api/Auth.md`). K-018. | **279/279 test yeşil** (114 birim + 165 entegrasyon; D3 için 68 yeni: doğrulayıcı, handler, JWT içeriği/imzası/ömrü/ayar doğrulaması, hesap servisi gerçek SQL Server ile kilit senaryoları, API uçtan uca + jetonlu korumalı uçlar + rol testi). Gerçek API gerçek veritabanı ve gerçek JWT anahtarıyla denendi: giriş (telefonla, Türkçe şifreyle), 4×401 sonra 423 + `Retry-After: 900`, olmayan kullanıcı aynı 401; jeton yükü kontrol edildi; **loglarda şifre/jeton/e-posta yok**; test kullanıcısı temizlendi |
 <!--D-->
 
+### Açıklama ve rapor paketi (25 Ekim 2026, D3'ten sonra)
+| Ne | Ne yapıldı | Kanıt |
+|---|---|---|
+| Satır satır kod açıklaması | API, Application ve Infrastructure katmanındaki tüm dosyalara önemli satırlarda Türkçe `//` açıklaması eklendi (sınıf/metot `///` açıklamaları zaten vardı). Yalnız yorum: davranış değişmedi | 301 satır eklendi, **0 silindi**, derleme ve doküman denetimi 0 uyarı, **279/279 test yeşil**; commit `409e739` |
+| Kod anlatımı | `docs/Kod_Anlatimi.md`: katmanlar, ilk gün okuma sırası, üç isteğin (il/ilçe, kayıt, giriş) dosya + satır numaralı yolculuğu, C#↔Swift sözlüğü, "şunu değiştirmek istersem nereye bakarım" | Satır numaraları koddan otomatik hesaplandı (53 referans) |
+| SQL rehberi | `docs/SQL_Rehberi.md` (veritabanına nasıl bakılır: VS Code eklentisi, terminal, API; şema diyagramı; örnek sorgular — hepsi gerçek veritabanında denendi; terimler) ve `docs/veri/Sema.sql` (EF'in ürettiği gerçek `CREATE TABLE`/indeks komutları, her sütunun yanında Türkçe açıklama) | Şema doğrudan SQL Server'dan okunup yazıldı |
+| iOS yol haritası | `docs/iOS_Yol_Haritasi.md`: "backend bitince mi?" sorusunun cevabı (hayır, dilim dilim), neyin hazır olduğu tablosu, C3–C5 ve D6–D8 adım adım (dosya/klasör/ayar, "bitti" ölçütü, takılınca nasıl yazılır) | Rapor Bölüm 10–11'e dayalı |
+| İlerleme raporu (PDF, 12 sayfa) | Abisine göstermek için: özet rakamlar, plan ilerlemesi, mimari, canlı API ekran görüntüsü, veritabanı şeması, güvenlik, testler, **Graphify kod haritası görüntüsü**, kod örnekleri, sıradaki adımlar ve dürüst notlar | Masaüstünde `Yukum_Ilerleme_Raporu.pdf`; plan ilerlemesi 12/57 adım (%21), MVP yolunda 12/34 (%35) |
+
 ### Gün 1 kapanış özeti (25 Ekim 2026)
 **Bugün biten:** Aşama A (hazırlık) ve Aşama B (backend temeli) tamamen; Aşama C'nin veri hazırlığı (C1a).
 **Elde olan:** çalışan Web API iskeleti (/health, Scalar, /api/v1, hata formatı, loglama, JSON kuralları), veritabanı katmanı (AppDbContext, yumuşak silme, RowVersion, migration), Repository + Unit of Work + CQRS-lite handler yapısı, doğrulanmış 81 il / 973 ilçe verisi.
@@ -92,6 +101,8 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 2. Hazır `AddDbContextCheck`, ayar eksikken hatayı yakalamayıp 500 döndürdü. Kendi `DatabaseHealthCheck`'imizi yazdık: her hata 503 Unhealthy, ayrıntı yalnız loga. Gereksiz paket kaldırıldı.
 
 ### Bilinen borçlar
+- **OpenAPI/Scalar şema cilası:** Scalar'da bazı örnek alanlar yanıltıcı görünüyor (`accessTokenExpiresAt` örneği `1`, sayılar "integer | string", opsiyonel alanlar "required"). **Gerçek cevaplar doğru ve testli**; yalnız deneme sayfasındaki örnek/şema. E aşamasında sözleşme kartlarıyla birlikte cilalanacak.
+- E-posta/telefon doğrulama kodu ve şifre sıfırlama henüz yok (planda D'de değil; kapsam kararı bekliyor).
 - ~~Doğrulama mesaj metinleri İngilizce~~ → D2'de FluentValidation ile Türkçe oldu. Kalan: bozuk JSON / bilinmeyen enum değerinde .NET'in İngilizce mesajı (normal kullanımda oluşmaz).
 - ~~Uygulamanın user-secrets'tan bağlantıyı gerçekten okuması~~ → B3c-2'de doğrulandı.
 - HTTPS yönlendirme uyarısı (http profili) → C3'te iOS bağlantısıyla netleşecek.
