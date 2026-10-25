@@ -59,6 +59,9 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Application
 - `Abstractions/Persistence/IRepository.cs` — "Kayıt getir / ekle / sil" sözleşmesi. İş kuralı kodu yalnız bunu bilir.
+- `Abstractions/Persistence/IGeographyRepository.cs` — İl/ilçe okuma sözleşmesi (il listesi, il var mı, ilin ilçeleri). İl/ilçe GUID'li `BaseEntity` olmadığı için genel `IRepository` yerine bu özel depo kullanılır.
+- `Common/NotFoundException.cs` — "İstenen kayıt yok" hatası. API bunu 404'e çevirir.
+- `Geography/` — İl/ilçe sorguları: `GetCitiesHandler`, `GetDistrictsHandler` ve istemciye giden `CityDto` / `DistrictDto` (yalnız `id` ve `name`).
 - `Abstractions/Persistence/IUnitOfWork.cs` — "Yaptığım değişiklikleri tek seferde kaydet" sözleşmesi.
 - `Abstractions/Messaging/IHandlers.cs` — `ICommandHandler` (durumu değiştirir) ve `IQueryHandler` (sadece okur) sözleşmeleri.
 - `DependencyInjection.cs` — Handler sınıflarını kendisi bulup kaydeder; aynı komut için iki handler varsa açılışta hata verir.
@@ -67,6 +70,7 @@ iOS uygulaması (SwiftUI)
 - `Persistence/AppDbContext.cs` — Veritabanıyla konuşan merkez. Tarih damgası, yumuşak silme, RowVersion kurallarını **tek yerde** uygular.
 - `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: `CityConfiguration`, `DistrictConfiguration`. `AppDbContext` bunları tek satırla toplar.
 - `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
+- `Persistence/GeographyRepository.cs` — `IGeographyRepository`'nin gerçeği; sonuçları `IMemoryCache`'te 24 saat saklar (boş sonuç saklanmaz).
 - `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.
 - `Persistence/UnitOfWork.cs` — `IUnitOfWork`'in gerçeği.
 - `Persistence/Migrations/` — Veritabanı şemasının sürüm kaydı (aşağıda). Elle düzenlenmez, `dotnet ef` üretir.
@@ -74,7 +78,8 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Api
 - `Program.cs` — Uygulamanın açılış planı: hangi servisler var, isteğin hangi sırayla işleneceği.
-- `Middleware/GlobalExceptionHandler.cs` — Beklenmeyen hatayı yakalar, istemciye sade 500 döner (iç detay sızmaz).
+- `Controllers/CitiesController.cs` — `GET /api/v1/cities` ve `GET /api/v1/cities/{cityId}/districts` (anonim, istemci tarafında 1 gün önbellek). İlk gerçek uçlar. İstemci sözleşmesi: `docs/api/Cities.md`.
+- `Middleware/GlobalExceptionHandler.cs` — Yakalanmamış hatayı çevirir: `NotFoundException` → 404 (mesaj gösterilir), diğer her şey → sade 500 (iç detay sızmaz).
 - `Health/DatabaseHealthCheck.cs` — `GET /health`: veritabanı ayakta mı? (200 / 503)
 - `Json/JsonSetup.cs` + `Json/UtcDateTimeConverters.cs` — JSON kuralları: camelCase, enum string, tarih UTC `…T10:15:00Z`.
 - `Validation/ValidationProblemResponse.cs` — Geçersiz veri (400) cevabını hata formatına ve camelCase alan adlarına çevirir.

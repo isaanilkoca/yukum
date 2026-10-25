@@ -39,6 +39,10 @@ public static class DependencyInjection
     {
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // İl/ilçe okuması (özel repository) ve onun önbelleği.
+        services.AddMemoryCache();
+        services.AddScoped<IGeographyRepository, GeographyRepository>();
         return services;
     }
 }
