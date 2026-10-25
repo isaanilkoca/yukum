@@ -55,6 +55,7 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Domain
 - `Common/BaseEntity.cs` — Tüm tabloların ortak alanları: `Id`, `CreatedAt`, `UpdatedAt`, `IsDeleted`, `RowVersion`.
+- `Geography/City.cs`, `Geography/District.cs` — 81 il ve 973 ilçe. Sabit referans verisi olduğu için `BaseEntity`'den **türemez**: Id'leri GUID değil, plaka kodu (il) ve sıra numarasıdır (K-013).
 
 ### Yukum.Application
 - `Abstractions/Persistence/IRepository.cs` — "Kayıt getir / ekle / sil" sözleşmesi. İş kuralı kodu yalnız bunu bilir.
@@ -64,6 +65,8 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Infrastructure
 - `Persistence/AppDbContext.cs` — Veritabanıyla konuşan merkez. Tarih damgası, yumuşak silme, RowVersion kurallarını **tek yerde** uygular.
+- `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: `CityConfiguration`, `DistrictConfiguration`. `AppDbContext` bunları tek satırla toplar.
+- `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
 - `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.
 - `Persistence/UnitOfWork.cs` — `IUnitOfWork`'in gerçeği.
 - `Persistence/Migrations/` — Veritabanı şemasının sürüm kaydı (aşağıda). Elle düzenlenmez, `dotnet ef` üretir.

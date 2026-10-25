@@ -9,6 +9,11 @@
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- İl/ilçe seed verisi: tek kaynak docs/veri/il-ilce.json, derlemeye gömülür (GeographySeed okur). -->
+    <EmbeddedResource Include="../../../docs/veri/il-ilce.json" LogicalName="Yukum.Infrastructure.il-ilce.json" Link="Persistence/Seed/il-ilce.json" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

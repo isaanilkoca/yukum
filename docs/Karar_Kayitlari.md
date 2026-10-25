@@ -27,3 +27,9 @@
 - **Neden:** Rapor 9.5 "resmî listeden alınıp doğrulanır". Tek kaynağa güvenilmedi; 5 kaynak çapraz kontrol edildi ve Vikipedi'de 9, Wikidata'da 2 hata bulundu.
 - **Rapordan fark:** Rapor `PlateCode` sütunu sayıyor; Id ile aynı olduğu için eklenmedi. DTO'da `id` plaka kodudur.
 - **Geri dönüş maliyeti:** Düşük (seed migration'ı yeniden üretilir).
+
+## K-014 — İl/ilçe tabloları `BaseEntity`'den türemez, seed JSON'dan okunur (25 Ekim 2026)
+- **Karar:** `City` ve `District` kendi `int Id`'sine sahiptir (Id'yi veritabanı üretmez), `BaseEntity`'den türemez. Seed verisi koda kopyalanmaz: `docs/veri/il-ilce.json` derlemeye gömülür ve `GeographySeed` onu okur; `HasData` ile migration'a yazılır.
+- **Neden:** `BaseEntity.Id` GUID'dir, K-013 plaka kodunu ve sıra numarasını Id yapar. İl ve ilçe kullanıcı tarafından oluşturulmayan, silinmeyen, değiştirilmeyen sabit veridir; `CreatedAt`, `IsDeleted`, `RowVersion` onlara anlam katmaz. Tek kaynak (JSON) verinin kodla ayrışmasını önler; testler veritabanını aynı JSON ile karşılaştırır.
+- **Sonuç:** Aynı ilde aynı ilçe adı yoktur (benzersiz indeks `CityId + Name`); il adı benzersizdir; ilçe bir ile bağlıdır (`Restrict`: il silinirse ilçeleri sessizce silinmez).
+- **Geri dönüş maliyeti:** Orta. Id türü sonradan değişirse migration ve ona bağlı ilan tabloları etkilenir.

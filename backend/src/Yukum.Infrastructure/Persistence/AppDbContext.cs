@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Yukum.Domain.Common;
+using Yukum.Domain.Geography;
 
 namespace Yukum.Infrastructure.Persistence;
 
@@ -15,6 +16,12 @@ namespace Yukum.Infrastructure.Persistence;
 /// </summary>
 public class AppDbContext : DbContext
 {
+    /// <summary>Türkiye'nin 81 ili (sabit referans verisi, plaka koduyla).</summary>
+    public DbSet<City> Cities => Set<City>();
+
+    /// <summary>Türkiye'nin 973 ilçesi (sabit referans verisi).</summary>
+    public DbSet<District> Districts => Set<District>();
+
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     protected TimeProvider Time { get; }
 
@@ -37,6 +44,9 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Her tablonun kendi kuralları Persistence/Configurations klasöründeki sınıflardan toplanır.
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
 
         // BaseEntity'den türeyen her tablo için ortak kurallar.
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
