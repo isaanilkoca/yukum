@@ -54,6 +54,7 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | Alt adım | Ne yapıldı | Kanıt |
 |---|---|---|
 | C1a | **Veri seti hazırlandı ve doğrulandı** (kod yok, yalnız veri): 81 il, 973 ilçe, plaka kodları, il ve ilçe merkezi koordinatları. 5 kaynak çapraz kontrol edildi (Vikipedi iki tablo, GeoNames, Wikidata, 2 GitHub seti). "922 mi 973 mü?" tuzağı çözüldü: 922 belediye sayısı, 973 idari ilçe; "Merkez" ilçesi sayısı tam 51. **Bulunan hatalar:** Wikidata'da Konya ve Uşak plakası yanlış; Vikipedi'de 9 ilçe koordinatı yanlış (5'i başka ilçenin koordinatının kopyası). Hepsi düzeltildi. | `docs/veri/il-ilce.json`, `docs/veri/Veri_Kaynaklari.md`, K-013; değişmez kontrolleri geçti |
+| C1b-1 | **Varlık sınıfları ve kırmızı testler.** `City` (Id = plaka kodu) ve `District` (Id = sıralı 1–973, `CityId` ile ile bağlı) yazıldı. İkisi de `BaseEntity`'den **türemez**: o sınıfın Id'si GUID, bunların Id'si plaka/sıra numarası, ayrıca sabit referans verisi oldukları için silinme/değişme/RowVersion'a ihtiyaçları yok. 18 test yazıldı: 81/973 sayıları, plaka kodları (Konya 42, Uşak 64...), her il ve ilçenin `il-ilce.json` ile birebir eşleşmesi, ilçe numaralarının donmuş sırası (1 = Adana/Aladağ, 973 = Düzce'nin son ilçesi), il başına ilçe sayısı, aynı ilde tekrar eden ilçe adı ve tekrar eden il adının reddi, olmayan ile bağlı ilçenin reddi. | Testler **kırmızı**: 18/18 başarısız, sebep doğru ("City/District modelde yok"); `Domain/Geography/City.cs`, `District.cs`, `tests/.../Data/GeographySeedTests.cs` |
 <!--C1-->
 
 ### Gün 1 kapanış özeti (25 Ekim 2026)
@@ -87,4 +88,4 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
 ### Sıradaki (yarın buradan devam)
-**C1b** (Cities/Districts entity'leri + EF yapılandırması + migration + seed; veri testleri), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).
+**C1b-2** (EF yapılandırması: `DbSet`, indeksler, ilişki; seed'i `il-ilce.json`'dan okuyup `HasData`'ya vermek → testler yeşil), **C1b-3** (migration + geliştirme veritabanına uygulama + SQL'de doğrulama), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).
