@@ -31,3 +31,9 @@ DerivedData/
 
 # Uygulama log dosyaları
 logs/
+
+# Graphify çıktısı (kodun yapı haritası, public depoya girmesin)
+graphify-out/
+
+# Claude Code yerel ayarları (kişisel yollar içerir, commit edilmez)
+.claude/settings.local.json
