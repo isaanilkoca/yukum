@@ -81,6 +81,18 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<AppDbContext>();
 
         services.AddScoped<IAccountService, AccountService>();
+        services.AddScoped<IAuthService, AuthService>();
+
+        // Erişim jetonu (JWT): ayarlar "Jwt" bölümünden; eksik/zayıf anahtar uygulama açılırken hata verir (sessizce zayıf başlamaz).
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration("Jwt")
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer) && !string.IsNullOrWhiteSpace(o.Audience),
+                "Jwt:Issuer ve Jwt:Audience tanımlı olmalı.")
+            .Validate(o => System.Text.Encoding.UTF8.GetByteCount(o.SigningKey ?? "") >= 32,
+                "Jwt:SigningKey tanımlı değil ya da 32 karakterden kısa. README'deki user-secrets adımını uygulayın.")
+            .Validate(o => o.AccessTokenMinutes is >= 5 and <= 60, "Jwt:AccessTokenMinutes 5 ile 60 arasında olmalı.")
+            .ValidateOnStart();
+        services.AddSingleton<ITokenService, JwtTokenService>();
         return services;
     }
 }

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Yukum.IntegrationTests.Support;
@@ -32,6 +33,19 @@ public class TestEndpointsController : ControllerBase
 
     [HttpGet("boom")]
     public IActionResult Boom() => throw new InvalidOperationException("GIZLI-IC-DETAY tablo Users sutun PasswordHash");
+
+    // Jeton ve rol denemeleri için korumalı örnek uçlar.
+    [Authorize]
+    [HttpGet("secure")]
+    public object Secure() => new { sub = User.FindFirst("sub")?.Value, role = User.FindFirst("role")?.Value, isShipper = User.IsInRole("Shipper") };
+
+    [Authorize(Roles = "Admin")]
+    [HttpGet("admin-only")]
+    public IActionResult AdminOnly() => Ok();
+
+    [Authorize(Roles = "Shipper")]
+    [HttpGet("shipper-only")]
+    public IActionResult ShipperOnly() => Ok();
 
     [HttpPost("validate")]
     public IActionResult Validate(EmailRequest request) => Ok(request);

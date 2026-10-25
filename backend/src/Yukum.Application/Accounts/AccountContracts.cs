@@ -58,3 +58,23 @@ public sealed record RegisterCarrierCommand(
 /// <param name="Email">Normalleştirilmiş e-posta (küçük harf).</param>
 /// <param name="UserType">Kullanıcı türü (Shipper veya Carrier).</param>
 public sealed record RegisteredUserDto(Guid Id, string FullName, string Email, UserType UserType);
+
+/// <summary>Giriş isteği. Alanlar "boş olabilir" (<c>?</c>) tanımlıdır ki eksik alan bizim Türkçe doğrulama mesajımızla reddedilsin.</summary>
+/// <param name="EmailOrPhone">E-posta ya da cep telefonu (telefon "0532 123 45 67", "+90 532…" gibi yazılabilir).</param>
+/// <param name="Password">Şifre.</param>
+/// <param name="DeviceId">Cihazın kimliği (iOS'ta kalıcı bir UUID). Oturum jetonları cihaz bazında yönetilir (D4).</param>
+/// <param name="DeviceName">Cihazın adı (opsiyonel, örn. "Anıl'ın iPhone'u").</param>
+public sealed record LoginCommand(string? EmailOrPhone, string? Password, string? DeviceId, string? DeviceName);
+
+/// <summary>Giriş yapmış kullanıcının istemciye gösterilen özeti.</summary>
+/// <param name="Id">Kullanıcı numarası.</param>
+/// <param name="DisplayName">Ekranda görünen ad (ad-soyad ya da firma adı).</param>
+/// <param name="Role">Rol: <c>Shipper</c>, <c>Carrier</c> ya da <c>Admin</c>. İstemci ana ekranı buna göre seçer.</param>
+/// <param name="AvatarUrl">Profil fotoğrafı adresi (yoksa boş).</param>
+public sealed record AuthUserDto(Guid Id, string DisplayName, string Role, string? AvatarUrl);
+
+/// <summary>Başarılı giriş cevabı.</summary>
+/// <param name="AccessToken">Kısa ömürlü erişim jetonu (JWT).</param>
+/// <param name="AccessTokenExpiresAt">Erişim jetonunun bitiş zamanı (UTC).</param>
+/// <param name="User">Kullanıcı özeti.</param>
+public sealed record LoginResponse(string AccessToken, DateTime AccessTokenExpiresAt, AuthUserDto User);

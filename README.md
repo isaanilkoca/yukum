@@ -31,6 +31,12 @@ Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
      "Server=localhost,1433;Database=Yukum;User Id=yukum_app;Password=<parola>;TrustServerCertificate=True;Encrypt=True" \
      --project backend/src/Yukum.Api
    ```
+   Erişim jetonu (JWT) imza anahtarı da **Git'e girmez**; en az 32 karakterlik rastgele bir değer üret ve user-secrets'a yaz
+   (anahtarı bilen herkes sahte giriş jetonu üretebilir). Canlıda ortam değişkeni `Jwt__SigningKey` kullanılır:
+   ```
+   dotnet user-secrets set "Jwt:SigningKey" "$(openssl rand -base64 48)" --project backend/src/Yukum.Api
+   ```
+   (Issuer, Audience ve jeton ömrü gizli değildir, `appsettings.json` içindeki `Jwt` bölümündedir. Anahtar yoksa uygulama açılırken açık bir hatayla durur.)
 4. API'yi çalıştır: `dotnet run --project backend/src/Yukum.Api --launch-profile http` → http://localhost:5054/scalar
 5. Veritabanı şemasını uygula: `dotnet tool restore` (bir kez) sonra
    `dotnet ef database update --project backend/src/Yukum.Infrastructure --startup-project backend/src/Yukum.Api`

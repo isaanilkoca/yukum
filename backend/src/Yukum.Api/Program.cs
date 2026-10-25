@@ -1,5 +1,9 @@
 using System.Diagnostics;
+using System.Text;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Context;
@@ -8,6 +12,7 @@ using Yukum.Api.Json;
 using Yukum.Api.Middleware;
 using Yukum.Application;
 using Yukum.Infrastructure;
+using Yukum.Infrastructure.Identity;
 using Yukum.Api.Validation;
 
 // Program.cs = uygulamanın açılış planı. İki bölüm: (1) builder: hangi servisler var, (2) app: istek hangi sırayla işlenir.
@@ -40,6 +45,33 @@ builder.Services.AddApiVersioning(options =>
         options.SubstituteApiVersionInUrl = true;
     })
     .AddOpenApi();
+// Kimlik doğrulama: istekteki "Authorization: Bearer <jeton>" başlığı denetlenir. İmza anahtarı ve süre ayarları
+// Jwt bölümünden gelir (anahtar user-secrets'ta). Yalnız HS256 kabul edilir; süresi dolmuş, yanlış imzalı,
+// başka yayıncı/hedef için üretilmiş jetonlar reddedilir (401). "sub" kullanıcı, "role" rol olarak okunur.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer();
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<IOptions<JwtOptions>>((bearer, jwt) =>
+    {
+        var settings = jwt.Value;
+        bearer.MapInboundClaims = false;
+        bearer.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = settings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = settings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey)),
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+            RequireSignedTokens = true,
+            RequireExpirationTime = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = "sub",
+            RoleClaimType = "role"
+        };
+    });
+
 builder.Services.AddApplication();     // handler'lar (iş kuralları), kendiliğinden bulunup kaydedilir
 builder.Services.AddInfrastructure();  // veritabanı (SQL Server), repository'ler, saat servisi
 
@@ -78,7 +110,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthorization();
+app.UseAuthentication();   // jetondan kullanıcıyı çıkarır
+app.UseAuthorization();    // [Authorize] ve rol kurallarını uygular
 
 app.MapControllers();
 app.MapHealthChecks("/health");

@@ -7,7 +7,7 @@ using Yukum.Application.Accounts;
 namespace Yukum.Api.Controllers;
 
 /// <summary>
-/// Kayıt ve (sonraki adımlarda) giriş uçları. Hepsi anonimdir: kullanıcı henüz giriş yapmamıştır.
+/// Kayıt ve giriş uçları. Hepsi anonimdir: kullanıcı henüz giriş yapmamıştır.
 /// İki kullanıcı türü için iki ayrı kayıt ucu vardır; rolü endpoint'in kendisi belirler, istemciden rol alanı gelmez.
 /// </summary>
 [ApiController]
@@ -16,8 +16,25 @@ namespace Yukum.Api.Controllers;
 [AllowAnonymous]
 public class AuthController(
     ICommandHandler<RegisterShipperCommand, RegisteredUserDto> registerShipper,
-    ICommandHandler<RegisterCarrierCommand, RegisteredUserDto> registerCarrier) : ControllerBase
+    ICommandHandler<RegisterCarrierCommand, RegisteredUserDto> registerCarrier,
+    ICommandHandler<LoginCommand, LoginResponse> login) : ControllerBase
 {
+    /// <summary>E-posta ya da telefon + şifre ile giriş yapar ve kısa ömürlü erişim jetonu (JWT) verir.</summary>
+    /// <param name="command">Giriş bilgileri (cihaz kimliği zorunludur).</param>
+    /// <param name="cancellationToken">İstemci isteği iptal ederse işlem de durur.</param>
+    /// <returns>
+    /// 200: jeton, bitiş zamanı ve kullanıcı özeti. Alan eksik: 400. Kullanıcı/şifre hatalı: 401 (hangisi olduğu söylenmez).
+    /// Hesap devre dışı: 403. 5 hatalı denemeden sonra geçici kilit: 423 ve <c>Retry-After</c> başlığı.
+    /// </returns>
+    [HttpPost("login")]
+    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status423Locked)]
+    public async Task<IActionResult> Login(LoginCommand command, CancellationToken cancellationToken) =>
+        Ok(await login.HandleAsync(command, cancellationToken));
+
     /// <summary>Yük Veren olarak kayıt olur. Rol: Shipper.</summary>
     /// <param name="command">Kayıt bilgileri.</param>
     /// <param name="cancellationToken">İstemci isteği iptal ederse işlem de durur.</param>

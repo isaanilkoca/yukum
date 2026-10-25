@@ -62,3 +62,16 @@
 - **Neden:** (1) Identity'nin ASCII-yalnız harf kontrolü "Şifre1234"ü reddedip 500 üretirdi; tek kaynak ayrışmayı önler. "En yaygın kural" (8+, büyük+küçük+rakam) kullanıcı tercihi. (2) Aynı numara/e-posta farklı yazılışla ikinci hesap açmasın; telefonla giriş (D3) için tek biçim şart. (3) Yarım hesap kalması (kullanıcı var, profil yok) tutarsız ve giriş sonrası çöker. (5) iOS her hatayı tek biçimde okur.
 - **Eklenmeyenler (kapsam):** e-posta/telefon doğrulama, şifre sıfırlama, hız sınırı (D5'te).
 - **Geri dönüş maliyeti:** Düşük (şifre kuralı tek sabit/sınıf). Telefon biçimi sonradan değişirse saklanan veriler dönüştürülmelidir.
+
+## K-018 — Giriş (D3): kimlik çözme, kilit, jeton içeriği ve ayarları (25 Ekim 2026)
+- **Karar:**
+  1. **Giriş alanı** `emailOrPhone`: `@` içeriyorsa e-posta (küçük harf), değilse cep telefonu (`+905…` biçimine çevrilir); ikisi de değilse ayrı hata değil genel 401. `deviceId` zorunlu, `deviceName` opsiyonel (oturum jetonu cihaz bazlı olacağı için D4'ten önce sözleşmeye alındı).
+  2. **Hatalı giriş tek cevap:** kullanıcı yok ve şifre yanlış aynı 401 ("E-posta veya şifre hatalı."); kullanıcı yokken de sahte hash'e karşı doğrulama yapılır (süre farkı). Hesap devre dışılığı (403) **yalnız doğru şifreden sonra** söylenir.
+  3. **Kilit:** 5 hatalı denemede 15 dk; kilit anındaki 5. denemeden itibaren **423** + `Retry-After` (saniye). Kilitliyken doğru şifre de reddedilir. Başarılı girişte sayaç sıfırlanır. Eşzamanlı yanlış denemeler sayımı ezmesin diye sayım birkaç kez yeniden denenir.
+  4. **Erişim jetonu:** JWT, HS256, 15 dk, yalnız `sub`, `role`, `jti` (+ `iss`, `aud`, `iat`, `nbf`, `exp`); kişisel veri yok. Doğrulama: yalnız HS256, imza + yayıncı + hedef + süre, saat toleransı 30 sn. `role` claim'i rol olarak okunur.
+  5. **Ayarlar:** `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` `appsettings.json`'da; `Jwt:SigningKey` (≥32 karakter) **gizli**: user-secrets / ortam değişkeni. Eksik ya da kısa anahtar uygulama açılırken hata verir (`ValidateOnStart`).
+  6. Giriş cevabında `refreshToken` **D4'e bırakıldı** (alan eklemek geriye dönük uyumlu); cevapta kullanıcı özeti `id`, `displayName`, `role`, `avatarUrl`.
+  7. Hata eşlemeleri tek yerde: 401 `InvalidCredentialsException`, 403 `ForbiddenException`, 423 `AccountLockedException`.
+- **Neden:** (2) Kayıtlı e-posta/telefon yoklamasını (kullanıcı numaralandırma) ve zamanlama saldırısını zorlaştırmak; rapor 6.2. (3) Kaba kuvvet denemesini yavaşlatmak; rapor 6.2. (4) Jeton şifreli değil imzalıdır, içeriği herkes okur: kişisel veri yazılmaz; algoritma kısıtı "alg" değiştirme saldırısını keser. (5) Anahtar sızarsa sahte giriş jetonu üretilebilir: repoya girmez, zayıf anahtarla sessizce başlamaz.
+- **Eklenmeyenler (kapsam):** yenileme jetonu (D4), `/me` ve yetki politikaları, hız sınırı (D5), şifre sıfırlama, e-posta/telefon doğrulama.
+- **Geri dönüş maliyeti:** Düşük. Jeton ömrü ve kilit kuralı sabit ayarlardır; yeni claim eklemek uyumludur.
