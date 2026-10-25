@@ -5,7 +5,7 @@ namespace Yukum.Domain.Common;
 /// Aynı alanları her tabloda tekrar yazmamak için bir kez burada tanımlanır.
 /// Domain katmanı hiçbir pakete bağlı değildir; EF Core'u veya SQL Server'ı bilmez.
 /// </summary>
-public abstract class BaseEntity
+public abstract class BaseEntity : ITimestamped
 {
     /// <summary>
     /// Kayıt numarası (GUID): tahmin edilemez, başkasının kaydını numara deneyerek bulamazsın.

@@ -59,6 +59,12 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | C2 | **İlk gerçek API uçları.** `GET /api/v1/cities` (81 il) ve `GET /api/v1/cities/{cityId}/districts` (ilin ilçeleri): anonim, sunucuda `IMemoryCache` 24 saat, istemciye `Cache-Control: public, max-age=86400`. Özel `IGeographyRepository` (il/ilçe GUID'li `BaseEntity` olmadığı için genel `IRepository` uymaz). İlk uygulama hata türü `NotFoundException` → `GlobalExceptionHandler` 404 ProblemDetails ("İl bulunamadı."); 404 `no-store`. İstemciye yalnız `id` ve `name` gider. iOS için sözleşme kartı yazıldı. K-015. | **84/84 test yeşil** (11 birim + 73 entegrasyon; 26 yeni: handler, repository+önbellek, API+OpenAPI). Gerçek API gerçek veritabanıyla curl'le denendi: 81 il, Konya 31 ilçe, 404 doğru, OpenAPI'de iki yol. `docs/api/Cities.md` |
 <!--C1-->
 
+### Aşama D — Kimlik (Login / Register / Auto-login)
+| Alt adım | Ne yapıldı | Kanıt |
+|---|---|---|
+| D1 | **Kimlik tabloları.** ASP.NET Core Identity (GUID anahtarlı) eklendi; `Users`, `Roles`, `UserRoles`..., `ShipperProfiles`, `CarrierProfiles`, `Vehicles`, `CarrierServiceCities` (çalışma bölgeleri), `RefreshTokens`. Roller seed edildi (Admin, Shipper, Carrier). Araç tipleri: Tır, Kamyon, Kamyonet, Frigorifik, Diğer. E-posta ve telefon benzersizliği veritabanında; kullanıcı silinince profili, aracı, jetonu birlikte silinir; yenileme jetonunda `RowVersion` ile yarış durumu yakalanır. Identity paketi güvenlik taramasından geçti. K-016. | **108/108 test yeşil** (24 yeni, `AccountsTests`). Migration `AddAccounts` geliştirme veritabanına uygulandı; SQL'de doğrulandı: 11 yeni tablo, 3 rol, tek ve benzersiz `EmailIndex`, benzersiz telefon (boşsa filtreli) ve jeton indeksleri, 81 il korundu. Kendi yakaladığım hata: ilk migration'da `NormalizedEmail` için gereksiz ikinci indeks çıktı, düzeltilip yeniden üretildi |
+<!--D-->
+
 ### Gün 1 kapanış özeti (25 Ekim 2026)
 **Bugün biten:** Aşama A (hazırlık) ve Aşama B (backend temeli) tamamen; Aşama C'nin veri hazırlığı (C1a).
 **Elde olan:** çalışan Web API iskeleti (/health, Scalar, /api/v1, hata formatı, loglama, JSON kuralları), veritabanı katmanı (AppDbContext, yumuşak silme, RowVersion, migration), Repository + Unit of Work + CQRS-lite handler yapısı, doğrulanmış 81 il / 973 ilçe verisi.
@@ -90,4 +96,4 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
 ### Sıradaki (yarın buradan devam)
-Aşama C (il/ilçe) **bitti** (C1a, C1b, C2). iOS tarafı **C3–C5** (Xcode projesi, il/ilçe ekranı) kullanıcıya ait; sözleşme `docs/api/Cities.md`. Bu sırada backend'de **Aşama D (kimlik: iki ayrı kayıt, giriş, JWT + yenileme jetonu)** başlayabilir. B5 (Docker Compose + CI) "ilk çalışır hâlden sonra" olarak ertelendi.
+Aşama C (il/ilçe) **bitti**. Aşama D'de **D1 (tablolar) bitti**; sıradaki **D2**: `POST /auth/register/shipper` ve `/register/carrier` (şifre kuralları, e-posta/telefon benzersizliği, KVKK onayı, kayıtta en az 1 araç, aynı e-posta 409; ilk kez FluentValidation ve Türkçe doğrulama mesajları, `ConflictException`→409). Sonra D3 (giriş, JWT, 5 yanlışta kilit), D4 (yenileme jetonu rotasyonu), D5 (yetki politikaları, hız sınırı, `/me`). iOS tarafı **C3–C5** kullanıcıya ait; sözleşme `docs/api/Cities.md`. B5 (Docker Compose + CI) "ilk çalışır hâlden sonra" olarak ertelendi.

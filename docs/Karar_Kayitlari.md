@@ -38,3 +38,15 @@
 - **Karar:** (1) İl/ilçe okuması genel `IRepository<T>` yerine özel `IGeographyRepository` ile yapılır. (2) Önbellek iki katmanlıdır: sunucuda `IMemoryCache` (24 saat; boş sonuç saklanmaz) ve istemci/ara katmanda `Cache-Control: public, max-age=86400`; 404 cevapları `no-store`. (3) "Kayıt yok" için `NotFoundException` (Application) → `GlobalExceptionHandler` 404 ProblemDetails (başlık "Bulunamadı", `detail` istemciye gösterilir). (4) İstemciye yalnız `id` ve `name` gider; koordinatlar sunucuda kalır.
 - **Neden:** (1) `IRepository<T>` `BaseEntity` ve GUID Id ister; il/ilçe K-014 gereği değil. Arayüzün kendi belgesi "özel sorgular özel repository'ye" der. (2) Rapor "cache'lenir" ve `IMemoryCache` der; veri yalnız migration/yeni sürümle değişir. Boş sonucu saklamamak, anonim uca rastgele numara göndererek belleği şişirmeyi önler. (3) İlk 404 ihtiyacı; sonraki 403/409/422 aynı kalıpla eklenir. (4) Mesafe hesabı sunucuda yapılacağı için istemcinin koordinata ihtiyacı yok; kapsam eklememe kuralı.
 - **Geri dönüş maliyeti:** Düşük. Yeni alan eklemek geriye dönük uyumludur; önbellek süresi tek sabittir.
+
+## K-016 — Kimlik tabloları (Aşama D1) (25 Ekim 2026)
+- **Karar:**
+  1. Kullanıcı sınıfı `AppUser` (ASP.NET Core Identity, GUID anahtar) **Infrastructure**'dadır; Domain hiçbir pakete bağlı kalır. Profiller, araç ve jeton Domain'dedir ve kullanıcıya yalnız `UserId` (GUID) ile bağlanır; ilişkiler Infrastructure'daki yapılandırmada kurulur.
+  2. Tablo adları raporla uyumlu: `Users`, `Roles`, `UserRoles`..., `ShipperProfiles`, `CarrierProfiles`, `Vehicles`, `RefreshTokens` (Identity'nin `AspNet...` adları değiştirildi).
+  3. Çalışma bölgeleri raporun tek `ServiceRegions` sütunu yerine ayrı **`CarrierServiceCities`** tablosunda (taşımacı + il). Rapordan fark.
+  4. Roller (`Admin`, `Shipper`, `Carrier`) sabit GUID'lerle seed edilir. Araç tipi: Tır=1, Kamyon=2, Kamyonet=3, Frigorifik=4, Diğer=99.
+  5. E-posta ve telefon benzersizliği **veritabanı düzeyindedir** (benzersiz indeks; telefon boşsa filtrelenir). `KvkkAcceptedAt` kullanıcı kaydında tutulur. `CreatedAt/UpdatedAt` kuralı `ITimestamped` arayüzüyle kullanıcıya da uygulanır; yumuşak silme yalnız `BaseEntity` tablolarında kalır.
+  6. Kullanıcı silinince profili, araçları, çalışma bölgeleri ve jetonları **gerçekten silinir** (cascade; hesap silme/KVKK için). İl bağlantıları `Restrict`.
+- **Neden:** (1) Clean Architecture bağımlılık kuralı. (3) Metin içinde il numarası tutmak yabancı anahtar korumasını kaybettirir ve "şu ilde çalışanlar" sorgusunu zorlaştırır. (5) Uygulama katmanı atlansa bile veritabanı çift kaydı reddeder. (6) App Store hesap silme zorunluluğu ve KVKK.
+- **Eklenmeyenler (kapsam):** `CarrierProfiles.CurrentLat/Lon` (konum özelliği gelince), `ShipperProfiles.DistrictId` (rapor tablosunda yok), e-posta doğrulama ve şifre sıfırlama (D planında yok).
+- **Geri dönüş maliyeti:** Orta. Tablo adları ve Id türleri sonradan değişirse migration ve istemci etkilenir.

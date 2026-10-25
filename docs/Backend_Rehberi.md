@@ -55,6 +55,8 @@ iOS uygulaması (SwiftUI)
 
 ### Yukum.Domain
 - `Common/BaseEntity.cs` — Tüm tabloların ortak alanları: `Id`, `CreatedAt`, `UpdatedAt`, `IsDeleted`, `RowVersion`.
+- `Common/ITimestamped.cs` — "Ne zaman oluştu / değişti" sözleşmesi. `BaseEntity` ve kullanıcı (`AppUser`) uygular; `AppDbContext` bu alanları otomatik doldurur.
+- `Accounts/` — Kimlik tabloları: `UserType`, `RoleNames`, `VehicleType`, `ShipperProfile`, `CarrierProfile`, `CarrierServiceCity`, `Vehicle`, `RefreshToken` (yalnız hash'i saklanır, rotasyon zinciri için).
 - `Geography/City.cs`, `Geography/District.cs` — 81 il ve 973 ilçe. Sabit referans verisi olduğu için `BaseEntity`'den **türemez**: Id'leri GUID değil, plaka kodu (il) ve sıra numarasıdır (K-013).
 
 ### Yukum.Application
@@ -67,8 +69,10 @@ iOS uygulaması (SwiftUI)
 - `DependencyInjection.cs` — Handler sınıflarını kendisi bulup kaydeder; aynı komut için iki handler varsa açılışta hata verir.
 
 ### Yukum.Infrastructure
-- `Persistence/AppDbContext.cs` — Veritabanıyla konuşan merkez. Tarih damgası, yumuşak silme, RowVersion kurallarını **tek yerde** uygular.
-- `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: `CityConfiguration`, `DistrictConfiguration`. `AppDbContext` bunları tek satırla toplar.
+- `Identity/AppUser.cs` — Giriş yapabilen kullanıcı (ASP.NET Core Identity'den türer): ad, tür, aktif/engelli, KVKK onay zamanı. Şifre hash'i, kilit sayacı Identity'den gelir.
+- `Persistence/AppDbContext.cs` — Veritabanıyla konuşan merkez (Identity'li). Tarih damgası, yumuşak silme, RowVersion kurallarını **tek yerde** uygular.
+- `Persistence/Seed/RoleSeed.cs` — Admin/Shipper/Carrier rollerinin sabit numaraları ve seed'i.
+- `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: il/ilçe, `AppUser`, `Role`, iki profil, araç, çalışma bölgesi, `RefreshToken`. `AppDbContext` bunları tek satırla toplar.
 - `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
 - `Persistence/GeographyRepository.cs` — `IGeographyRepository`'nin gerçeği; sonuçları `IMemoryCache`'te 24 saat saklar (boş sonuç saklanmaz).
 - `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.
