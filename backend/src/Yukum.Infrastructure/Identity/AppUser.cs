@@ -9,6 +9,7 @@ namespace Yukum.Infrastructure.Identity;
 /// şifre hash'i, e-posta, telefon, hesap kilidi (5 yanlışta geçici kilit) gibi alanlar hazır gelir.
 /// Anahtarı GUID'dir (tahmin edilemez). Ek bilgiler rolüne göre <see cref="ShipperProfile"/> veya <see cref="CarrierProfile"/> tablosundadır.
 /// </summary>
+// IdentityUser<Guid>'den gelenler: Id, UserName, Email, PhoneNumber, PasswordHash (şifrenin hash'i), LockoutEnd, AccessFailedCount (hatalı deneme sayacı)... Aşağıdakiler bizim eklediklerimiz.
 public class AppUser : IdentityUser<Guid>, ITimestamped
 {
     /// <summary>Ad-soyad ya da firma adı (ekranda görünen ad).</summary>

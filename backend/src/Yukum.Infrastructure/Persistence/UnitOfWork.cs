@@ -10,5 +10,6 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
 {
     /// <inheritdoc />
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        // EF, bekleyen TÜM değişiklikleri tek veritabanı işleminde (transaction) gönderir; biri hata verirse hepsi geri alınır.
         context.SaveChangesAsync(cancellationToken);
 }

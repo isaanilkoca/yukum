@@ -10,6 +10,7 @@ namespace Yukum.Application.Abstractions.Messaging;
 public interface ICommandHandler<in TCommand, TResult>
 {
     /// <summary>Komutu işler ve sonucu döner.</summary>
+    // Tek metot: komutu al, işle, sonucu döndür. MediatR gibi kütüphane yok; bilinçli olarak sade (karar: rapor).
     Task<TResult> HandleAsync(TCommand command, CancellationToken cancellationToken = default);
 }
 
@@ -21,5 +22,6 @@ public interface ICommandHandler<in TCommand, TResult>
 public interface IQueryHandler<in TQuery, TResult>
 {
     /// <summary>Sorguyu işler ve sonucu döner.</summary>
+    // Sorgu: veriyi OKUR, değiştirmez. Yapı komutla aynı, anlam ayrı (CQRS-lite).
     Task<TResult> HandleAsync(TQuery query, CancellationToken cancellationToken = default);
 }

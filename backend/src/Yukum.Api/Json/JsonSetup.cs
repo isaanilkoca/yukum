@@ -13,8 +13,11 @@ public static class JsonSetup
     /// <summary>Verilen JSON ayarlarına proje kurallarını ekler.</summary>
     public static void Configure(JsonSerializerOptions options)
     {
+        // enum'lar sayı değil metin olarak gider (örn. "Shipper"). iOS'ta String enum ile eşleşir.
         options.Converters.Add(new JsonStringEnumConverter());
+        // DateTimeOffset alanları UTC ISO 8601 yazılır/okunur.
         options.Converters.Add(new UtcDateTimeOffsetConverter());
+        // DateTime alanları UTC ISO 8601 yazılır/okunur.
         options.Converters.Add(new UtcDateTimeConverter());
     }
 }

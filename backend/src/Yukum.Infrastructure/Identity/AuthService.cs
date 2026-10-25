@@ -21,22 +21,29 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
     /// <inheritdoc />
     public async Task<AuthUserDto> VerifyCredentialsAsync(string? email, string? phone, string password, CancellationToken cancellationToken = default)
     {
+        // Kullanıcıyı bul: e-postayla (Identity büyük harfli normalleştirilmiş sütunda arar) ya da telefonla.
         var user = email is not null
             ? await users.FindByEmailAsync(email)
             : await users.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, cancellationToken);
 
+        // Kullanıcı yok: yine de bir şifre doğrulaması yapılır ki cevap süresi gerçek kullanıcıyla aynı olsun (zamanlama saldırısı).
         if (user is null)
         {
+            // Sonuç kullanılmaz; yalnız aynı süreyi harcar.
             hasher.VerifyHashedPassword(new AppUser(), DummyHash.Value, password);
             throw new InvalidCredentialsException();
         }
 
+        // Hesap kilitli mi? Kilitliyse şifreye hiç bakılmaz (423).
         if (await users.IsLockedOutAsync(user))
             throw new AccountLockedException(RemainingLock(user));
 
+        // Şifre doğru mu? Hash karşılaştırması yapılır; şifre açık metin olarak saklanmaz.
         if (!await users.CheckPasswordAsync(user, password))
         {
+            // Hatalı denemeyi say; 5. hatada Identity kilidi koyar.
             user = await CountFailedAttemptAsync(user);
+            // Bu deneme kilidi başlattı mı? Başlattıysa hemen 423, değilse genel 401.
             if (await users.IsLockedOutAsync(user))
                 throw new AccountLockedException(RemainingLock(user));
             throw new InvalidCredentialsException();
@@ -46,12 +53,15 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
         if (!user.IsActive || user.IsBlocked)
             throw new ForbiddenException(UnavailableMessage);
 
+        // Başarılı giriş: hatalı deneme sayacı sıfırlanır.
         await users.ResetAccessFailedCountAsync(user);
 
+        // Rolü Identity'den al: yetki kontrolünün baktığı gerçek kaynak budur.
         var roles = await users.GetRolesAsync(user);
         if (roles.Count != 1)
             throw new InvalidOperationException($"Kullanıcının tam olarak bir rolü olmalı (bulunan: {roles.Count}).");
 
+        // İstemciye gidecek sade özet.
         return new AuthUserDto(user.Id, user.FullName, roles[0], user.AvatarUrl);
     }
 
@@ -61,11 +71,14 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
     /// </summary>
     private async Task<AppUser> CountFailedAttemptAsync(AppUser user)
     {
+        // En fazla 5 kez dene (eşzamanlı güncelleme çakışması ihtimaline karşı).
         for (var attempt = 0; attempt < 5; attempt++)
         {
+            // Sayacı +1 yapar; 5'e ulaşırsa kilit bitiş zamanını da yazar.
             if ((await users.AccessFailedAsync(user)).Succeeded)
                 return user;
 
+            // Çakışma oldu (başka bir istek araya girdi): kullanıcıyı güncel haliyle yeniden oku ve tekrar dene.
             user = await users.FindByIdAsync(user.Id.ToString()) ?? user;
         }
 
@@ -74,6 +87,7 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
 
     private TimeSpan RemainingLock(AppUser user)
     {
+        // Kilidin açılmasına kalan süre (negatifse 0).
         var remaining = (user.LockoutEnd ?? time.GetUtcNow()) - time.GetUtcNow();
         return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
     }

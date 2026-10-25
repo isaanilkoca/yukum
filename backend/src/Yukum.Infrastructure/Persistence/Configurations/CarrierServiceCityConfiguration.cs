@@ -12,6 +12,7 @@ public class CarrierServiceCityConfiguration : IEntityTypeConfiguration<CarrierS
     public void Configure(EntityTypeBuilder<CarrierServiceCity> builder)
     {
         builder.ToTable("CarrierServiceCities");
+        // Birleşik anahtar: aynı (taşımacı, il) çifti iki kez eklenemez.
         builder.HasKey(c => new { c.CarrierId, c.CityId });
 
         builder.HasOne<City>().WithMany().HasForeignKey(c => c.CityId).OnDelete(DeleteBehavior.Restrict);

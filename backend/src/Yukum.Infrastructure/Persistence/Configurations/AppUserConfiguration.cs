@@ -10,8 +10,10 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
     /// <summary>Tablo adını, sütun sınırlarını ve benzersizlik indekslerini tanımlar.</summary>
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
+        // Identity'nin 'AspNetUsers' adı yerine sade 'Users'.
         builder.ToTable("Users");
 
+        // Ad zorunlu, en çok 150 karakter.
         builder.Property(u => u.FullName).IsRequired().HasMaxLength(150);
         builder.Property(u => u.AvatarUrl).HasMaxLength(500);
 

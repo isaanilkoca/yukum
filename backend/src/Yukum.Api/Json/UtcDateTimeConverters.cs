@@ -11,17 +11,22 @@ namespace Yukum.Api.Json;
 /// </summary>
 internal static class UtcFormat
 {
+    // Biçim: 2026-10-20T10:15:00Z. Kesirli saniye (.987) bilerek yok: Swift'in .iso8601 çözücüsü onu okuyamaz.
     private const string Pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
+    // Tarihi metne çevirir. InvariantCulture: bilgisayarın dil/bölge ayarı çıktıyı değiştirmesin.
     public static string Write(DateTime utc) => utc.ToString(Pattern, CultureInfo.InvariantCulture);
 
     public static DateTimeOffset Read(ref Utf8JsonReader reader)
     {
+        // JSON'daki tarih metnini oku.
         var text = reader.GetString();
+        // Metni tarihe çevir. AssumeUniversal: saat dilimi yazılmamışsa UTC say. AdjustToUniversal: +03:00 gibi ofsetli tarihi UTC'ye çevir.
         if (DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var value))
             return value;
 
+        // Çözülemezse hata fırlatılır; MVC bunu 400 cevabına çevirir.
         throw new JsonException("Tarih ISO 8601 biçiminde olmalıdır (örn. 2026-10-20T10:15:00Z).");
     }
 }

@@ -15,9 +15,11 @@ public static class ValidationProblemResponse
     /// <summary>Geçersiz model durumundan 400 ProblemDetails cevabı üretir.</summary>
     public static IActionResult Create(ActionContext context)
     {
+        // MVC'nin standart hata fabrikasını al: ModelState'teki (JSON/tür) hatalardan ham hata listesini üretir.
         var factory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
         var original = factory.CreateValidationProblemDetails(context.HttpContext, context.ModelState);
 
+        // Alan adlarını camelCase yap: iOS'ta JSON alan adlarıyla birebir aynı olsun.
         var errors = original.Errors.ToDictionary(e => ToCamelCase(e.Key), e => e.Value);
         var problem = new ValidationProblemDetails(errors)
         {
@@ -26,9 +28,11 @@ public static class ValidationProblemResponse
             Title = "Doğrulama hatası",
             Detail = "Bir veya daha fazla alan geçersiz."
         };
+        // Fabrikanın eklediği ek alanları (traceId gibi) cevapta koru.
         foreach (var extension in original.Extensions)
             problem.Extensions[extension.Key] = extension.Value;
 
+        // 400 Bad Request + Content-Type: application/problem+json.
         return new BadRequestObjectResult(problem) { ContentTypes = { "application/problem+json" } };
     }
 
@@ -40,6 +44,7 @@ public static class ValidationProblemResponse
     public static ValidationProblemDetails FromFailures(IEnumerable<ValidationFailure> failures)
     {
         var errors = failures
+            // Aynı alanın birden çok hatası tek anahtarın altında liste olur.
             .GroupBy(f => ToCamelCase(f.PropertyName))
             .ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).Distinct().ToArray());
 
@@ -51,6 +56,7 @@ public static class ValidationProblemResponse
         };
     }
 
+    // 'Vehicles[1].CapacityKg' → 'vehicles[1].capacityKg': noktayla ayrılan her parçanın ilk harfi küçültülür.
     private static string ToCamelCase(string path) =>
         string.Join('.', path.Split('.').Select(JsonNamingPolicy.CamelCase.ConvertName));
 }

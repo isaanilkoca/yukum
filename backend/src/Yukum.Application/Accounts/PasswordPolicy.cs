@@ -14,15 +14,18 @@ public static class PasswordPolicy
     public const int MaxLength = 128;
 
     /// <summary>En az bir büyük harf var mı?</summary>
+    // char.IsUpper Unicode'dur: Türkçe büyük harfler (Ş, İ, Ğ) da sayılır.
     public static bool HasUppercase(string password) => password.Any(char.IsUpper);
 
     /// <summary>En az bir küçük harf var mı?</summary>
     public static bool HasLowercase(string password) => password.Any(char.IsLower);
 
     /// <summary>En az bir rakam (0–9) var mı?</summary>
+    // Yalnız 0-9 rakam sayılır.
     public static bool HasDigit(string password) => password.Any(char.IsAsciiDigit);
 
     /// <summary>Şifre kuralların hepsine uyuyor mu?</summary>
+    // Hepsi birlikte: uzunluk 8-128 arası VE büyük harf VE küçük harf VE rakam.
     public static bool IsValid(string password) =>
         password.Length is >= MinLength and <= MaxLength && HasUppercase(password) && HasLowercase(password) && HasDigit(password);
 }

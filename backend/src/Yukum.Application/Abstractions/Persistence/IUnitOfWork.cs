@@ -9,5 +9,6 @@ public interface IUnitOfWork
     /// <summary>Bekleyen tüm değişiklikleri veritabanına yazar.</summary>
     /// <returns>Etkilenen satır sayısı.</returns>
     /// <remarks>Kayıt arada başkası tarafından değiştirilmişse (RowVersion çakışması) <c>DbUpdateConcurrencyException</c> fırlar; API bunu 409'a çevirecek.</remarks>
+    // Yapılan tüm Add/Remove/değişiklikleri TEK işlemde (transaction) veritabanına yazar: ya hepsi yazılır ya hiçbiri. Dönüş: etkilenen satır sayısı.
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

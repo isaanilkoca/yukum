@@ -15,13 +15,17 @@ public sealed class DatabaseHealthCheck(IServiceScopeFactory scopes, ILogger<Dat
     {
         try
         {
+            // Sağlık kontrolü uygulama boyunca tek örnek yaşar; DbContext ise 'istek başına' olmalı. Bu yüzden her kontrolde geçici bir kapsam (scope) açılır.
             await using var scope = scopes.CreateAsyncScope();
+            // Veritabanı nesnesini al.
             var database = scope.ServiceProvider.GetRequiredService<AppDbContext>().Database;
 
+            // SQL Server'a gerçekten bağlanılabiliyor mu? Evet: 200 Healthy, hayır: 503 Unhealthy.
             return await database.CanConnectAsync(cancellationToken)
                 ? HealthCheckResult.Healthy()
                 : HealthCheckResult.Unhealthy("Veritabanına bağlanılamadı.");
         }
+        // Bağlantı dizesi eksik/bozuksa ya da sunucu kapalıysa buraya düşer. Ayrıntı yalnız loga yazılır, cevaba değil.
         catch (Exception exception)
         {
             logger.LogError(exception, "Veritabanı sağlık kontrolü başarısız");

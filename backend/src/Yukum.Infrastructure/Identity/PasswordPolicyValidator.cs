@@ -13,9 +13,11 @@ public sealed class PasswordPolicyValidator : IPasswordValidator<AppUser>
     /// <inheritdoc />
     public Task<IdentityResult> ValidateAsync(UserManager<AppUser> manager, AppUser user, string? password)
     {
+        // Şifre kuralımıza uyuyorsa Identity'ye 'başarılı' denir.
         if (!string.IsNullOrEmpty(password) && PasswordPolicy.IsValid(password))
             return Task.FromResult(IdentityResult.Success);
 
+        // Uymuyorsa Identity'ye hata bildirilir (kayıt doğrulaması bunu normalde önceden yakalar; bu ikinci savunmadır).
         return Task.FromResult(IdentityResult.Failed(new IdentityError
         {
             Code = "PasswordPolicy",

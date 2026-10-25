@@ -19,9 +19,11 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
+        // Gerçek saat. Singleton: uygulama boyunca tek örnek. Testler yerine sahte saat verir.
         services.AddSingleton(TimeProvider.System);
 
         // Bağlantı dizesi DbContext ilk kullanıldığında okunur (user-secrets / ortam değişkeni / test ayarı).
+        // DbContext 'scoped': her HTTP isteği kendi örneğini alır, iş bitince atılır.
         services.AddDbContext<AppDbContext>((provider, options) =>
         {
             var connectionString = provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
@@ -29,10 +31,13 @@ public static class DependencyInjection
                 throw new InvalidOperationException(
                     "ConnectionStrings:DefaultConnection tanımlı değil. README'deki user-secrets adımını uygulayın.");
 
+            // Veritabanı olarak SQL Server, bu bağlantı dizesiyle.
             options.UseSqlServer(connectionString);
         });
 
+        // Repository ve Unit of Work kayıtları.
         services.AddRepositories();
+        // Kimlik (Identity, JWT) kayıtları.
         return services.AddAccounts();
     }
 
@@ -42,10 +47,13 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
+        // Biri IRepository<Vehicle> isterse Repository<Vehicle> verilir (açık generic kaydı: her tablo için tek satır yeter).
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+        // Biri IUnitOfWork isterse UnitOfWork verilir.
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         // İl/ilçe okuması (özel repository) ve onun önbelleği.
+        // IMemoryCache: bellek içi önbellek servisi (il/ilçe listeleri için).
         services.AddMemoryCache();
         services.AddScoped<IGeographyRepository, GeographyRepository>();
         return services;
@@ -58,6 +66,7 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddAccounts(this IServiceCollection services)
     {
+        // AddIdentityCore: UserManager (kullanıcı ekle/bul, şifre doğrula, kilitle) gibi çekirdek kimlik servislerini ekler. Çerezli giriş sayfaları yok; yalnız API için gerekenler.
         services.AddIdentityCore<AppUser>(options =>
             {
                 // Şifre kuralı (karar K-017) tek yerde, PasswordPolicy'dedir; Identity'ye aşağıda PasswordPolicyValidator ile
@@ -76,22 +85,30 @@ public static class DependencyInjection
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
             })
+            // Rol desteği (Admin, Shipper, Carrier).
             .AddRoles<IdentityRole<Guid>>()
+            // Şifre kuralımız (PasswordPolicy) Identity'ye bağlanır.
             .AddPasswordValidator<PasswordPolicyValidator>()
+            // Kullanıcı/rol verisi AppDbContext üzerinden SQL Server'da saklanır.
             .AddEntityFrameworkStores<AppDbContext>();
 
+        // Kayıt servisi (kullanıcı + profil oluşturma).
         services.AddScoped<IAccountService, AccountService>();
+        // Giriş servisi (şifre denetimi, hatalı deneme sayacı, kilit).
         services.AddScoped<IAuthService, AuthService>();
 
         // Erişim jetonu (JWT): ayarlar "Jwt" bölümünden; eksik/zayıf anahtar uygulama açılırken hata verir (sessizce zayıf başlamaz).
         services.AddOptions<JwtOptions>()
+            // appsettings.json'daki 'Jwt' bölümü JwtOptions'a doldurulur; gizli SigningKey user-secrets'tan gelir.
             .BindConfiguration("Jwt")
             .Validate(o => !string.IsNullOrWhiteSpace(o.Issuer) && !string.IsNullOrWhiteSpace(o.Audience),
                 "Jwt:Issuer ve Jwt:Audience tanımlı olmalı.")
             .Validate(o => System.Text.Encoding.UTF8.GetByteCount(o.SigningKey ?? "") >= 32,
                 "Jwt:SigningKey tanımlı değil ya da 32 karakterden kısa. README'deki user-secrets adımını uygulayın.")
             .Validate(o => o.AccessTokenMinutes is >= 5 and <= 60, "Jwt:AccessTokenMinutes 5 ile 60 arasında olmalı.")
+            // Ayar hatası ilk istekte değil, uygulama AÇILIRKEN yakalanır.
             .ValidateOnStart();
+        // Jeton üretici durumsuzdur; tek örnek yeter.
         services.AddSingleton<ITokenService, JwtTokenService>();
         return services;
     }

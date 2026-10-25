@@ -17,27 +17,39 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options, TimeProvider t
     /// <inheritdoc />
     public AccessToken CreateAccessToken(AuthUserDto user)
     {
+        // Jwt ayarları (JwtOptions): yayıncı, hedef, anahtar, ömür.
         var settings = options.Value;
+        // Şimdi (UTC); testte sahte saatle denenebilir.
         var now = time.GetUtcNow().UtcDateTime;
+        // Bitiş: şimdi + 15 dakika.
         var expires = now.AddMinutes(settings.AccessTokenMinutes);
 
+        // Jetonun içeriği ve imza bilgisi bu nesnede tarif edilir.
         var descriptor = new SecurityTokenDescriptor
         {
             Issuer = settings.Issuer,
             Audience = settings.Audience,
+            // iat: jetonun üretildiği an.
             IssuedAt = now,
+            // nbf: bu andan ÖNCE geçersiz.
             NotBefore = now,
+            // exp: bu andan SONRA geçersiz.
             Expires = expires,
             Claims = new Dictionary<string, object>
             {
+                // sub: kullanıcı numarası (jetonun sahibi). Başka kişisel veri yazılmaz.
                 ["sub"] = user.Id.ToString(),
+                // role: Shipper / Carrier / Admin. [Authorize(Roles = ...)] buna bakar.
                 ["role"] = user.Role,
+                // jti: bu jetona özel benzersiz numara (ileride tek tek izleme/iptal için).
                 ["jti"] = Guid.NewGuid().ToString()
             },
+            // İmza: gizli anahtar + HS256. Anahtarı bilmeyen biri imzayı taklit edemez; jetonun içeriği değişirse imza bozulur.
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey)), SecurityAlgorithms.HmacSha256)
         };
 
+        // Jeton metnini üret (xxxxx.yyyyy.zzzzz biçimi) ve bitiş zamanıyla birlikte döndür.
         return new AccessToken(new JsonWebTokenHandler().CreateToken(descriptor), expires);
     }
 }

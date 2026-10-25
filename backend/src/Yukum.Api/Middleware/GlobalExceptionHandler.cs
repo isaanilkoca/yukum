@@ -28,22 +28,26 @@ public sealed class GlobalExceptionHandler(
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
+        // 1) Doğrulama hatası mı? (FluentValidation: alan eksik ya da geçersiz) → 400.
         if (exception is ValidationException validation)
         {
             // Beklenen durum (kullanıcı hatalı alan girdi). Alan değerleri (şifre!) loga yazılmaz, yalnız hangi alanlar.
             logger.LogInformation("Doğrulama hatası: {Path} - alanlar: {Fields}", httpContext.Request.Path,
                 string.Join(", ", validation.Errors.Select(e => e.PropertyName).Distinct()));
 
+            // Önce HTTP durum kodu ayarlanır, sonra gövde yazılır.
             httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
             return await Write(httpContext, exception, ValidationProblemResponse.FromFailures(validation.Errors));
         }
 
+        // 2) Bilinen bir iş kuralı hatası mı (404/409/401/403/423)? Karşılığı aşağıdaki Describe tablosundan bulunur.
         if (Describe(exception) is { } expected)
         {
             // Beklenen bir durum: hata değil, sade bilgi logu. Mesaj/kimlik (e-posta, telefon) loga yazılmaz.
             logger.LogInformation("Beklenen durum {Status} ({Type}): {Path}", expected.Status, exception.GetType().Name, httpContext.Request.Path);
 
             httpContext.Response.StatusCode = expected.Status;
+            // Kilit hatasında 'şu kadar saniye sonra dene' bilgisi Retry-After başlığıyla verilir.
             if (exception is AccountLockedException locked)
                 httpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(locked.RetryAfter.TotalSeconds)).ToString();
 
@@ -55,6 +59,7 @@ public sealed class GlobalExceptionHandler(
             });
         }
 
+        // 3) Hiçbiri değilse BEKLENMEYEN hatadır (bizim hatamız): ayrıntı loga (hata düzeyinde) yazılır, istemciye sade 500 gider.
         logger.LogError(exception, "Beklenmeyen hata: {Path}", httpContext.Request.Path);
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
@@ -67,6 +72,7 @@ public sealed class GlobalExceptionHandler(
     }
 
     /// <summary>İş kuralı hatalarını HTTP durumuna, başlığa ve kullanıcıya gösterilecek mesaja eşler; tanımadığı hata için <c>null</c>.</summary>
+    // Eşleme tablosu: hata türü → (HTTP kodu, başlık, mesaj). Yeni hata türü eklemek = buraya bir satır eklemek.
     private static (int Status, string Title, string Detail)? Describe(Exception exception) => exception switch
     {
         NotFoundException e => (StatusCodes.Status404NotFound, "Bulunamadı", e.Message),
@@ -74,9 +80,11 @@ public sealed class GlobalExceptionHandler(
         InvalidCredentialsException e => (StatusCodes.Status401Unauthorized, "Giriş başarısız", e.Message),
         AccountLockedException e => (StatusCodes.Status423Locked, "Hesap geçici olarak kilitlendi", e.Message),
         ForbiddenException e => (StatusCodes.Status403Forbidden, "Erişim engellendi", e.Message),
+        // Tanımadığımız hata: null döner, yukarıda 500 yoluna düşer.
         _ => null
     };
 
+    // ProblemDetails'i JSON olarak cevaba yazar (traceId otomatik eklenir).
     private async ValueTask<bool> Write(HttpContext httpContext, Exception exception, ProblemDetails problem) =>
         await problemDetailsService.TryWriteAsync(new ProblemDetailsContext
         {

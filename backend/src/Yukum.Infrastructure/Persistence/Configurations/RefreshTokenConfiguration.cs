@@ -17,9 +17,12 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(t => t.TokenHash).IsRequired().HasMaxLength(64);
         builder.Property(t => t.DeviceId).IsRequired().HasMaxLength(100);
 
+        // Hash benzersiz ve hızlı aranır (yenileme isteğinde jeton hash'iyle bulunur).
         builder.HasIndex(t => t.TokenHash).IsUnique();
+        // Bir kullanıcının jetonlarını (çıkışta hepsini iptal için) hızlı bulmak için.
         builder.HasIndex(t => t.UserId);
 
+        // Kullanıcı silinince jetonları da silinir (Cascade).
         builder.HasOne<AppUser>().WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }

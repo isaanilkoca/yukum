@@ -19,12 +19,15 @@ public class CarrierProfileConfiguration : IEntityTypeConfiguration<CarrierProfi
         builder.HasKey(p => p.UserId);
 
         builder.Property(p => p.About).HasMaxLength(1000);
+        // decimal(3,2): puan için ondalıklı sayı; float kullanılmaz (yuvarlama hatası olmasın).
         builder.Property(p => p.AverageRating).HasPrecision(3, 2);
 
         builder.HasOne<AppUser>().WithOne().HasForeignKey<CarrierProfile>(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne<City>().WithMany().HasForeignKey(p => p.HomeCityId).OnDelete(DeleteBehavior.Restrict);
 
+        // Araçlar profille birlikte silinir (Cascade).
         builder.HasMany(p => p.Vehicles).WithOne().HasForeignKey(v => v.CarrierId).OnDelete(DeleteBehavior.Cascade);
+        // Çalışma illeri de profille birlikte silinir.
         builder.HasMany(p => p.ServiceCities).WithOne().HasForeignKey(c => c.CarrierId).OnDelete(DeleteBehavior.Cascade);
     }
 }
