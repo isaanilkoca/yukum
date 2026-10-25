@@ -4,8 +4,11 @@ using System.Text.Json.Serialization;
 
 namespace Yukum.Api.Json;
 
-// Tarih sözleşmesi: yazarken daima UTC "2026-10-20T10:15:00Z" (kesirli saniye YOK; Swift .iso8601 kesirli saniyeyi okuyamaz).
-// Okurken ofsetli her ISO 8601 girdisi kabul edilir ve UTC'ye çevrilir; ofseti olmayan girdi UTC sayılır.
+/// <summary>
+/// Tarih sözleşmesinin ortak kuralı. Yazarken daima UTC <c>2026-10-20T10:15:00Z</c> (kesirli saniye YOK, çünkü
+/// Swift'in <c>.iso8601</c> çözücüsü kesirli saniyeyi okuyamaz). Okurken ofsetli her ISO 8601 girdisi kabul edilir ve
+/// UTC'ye çevrilir; ofseti olmayan girdi UTC sayılır; anlamsız girdi hata verir (API'de 400).
+/// </summary>
 internal static class UtcFormat
 {
     private const string Pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -23,6 +26,7 @@ internal static class UtcFormat
     }
 }
 
+/// <summary><see cref="DateTimeOffset"/> alanları için UTC ISO 8601 dönüştürücüsü.</summary>
 public sealed class UtcDateTimeOffsetConverter : JsonConverter<DateTimeOffset>
 {
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
@@ -32,6 +36,7 @@ public sealed class UtcDateTimeOffsetConverter : JsonConverter<DateTimeOffset>
         writer.WriteStringValue(UtcFormat.Write(value.UtcDateTime));
 }
 
+/// <summary><see cref="DateTime"/> alanları için UTC ISO 8601 dönüştürücüsü.</summary>
 public sealed class UtcDateTimeConverter : JsonConverter<DateTime>
 {
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>

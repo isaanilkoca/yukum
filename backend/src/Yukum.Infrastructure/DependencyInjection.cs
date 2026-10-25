@@ -6,8 +6,13 @@ using Yukum.Infrastructure.Persistence;
 
 namespace Yukum.Infrastructure;
 
+/// <summary>Infrastructure katmanının (veritabanı, repository) servislerini uygulamaya kaydeder.</summary>
 public static class DependencyInjection
 {
+    /// <summary>
+    /// Veritabanı bağlantısını (SQL Server), saat servisini ve repository'leri kaydeder. <c>Program.cs</c> bunu çağırır.
+    /// Bağlantı dizesi <c>ConnectionStrings:DefaultConnection</c> anahtarından okunur (user-secrets / ortam değişkeni).
+    /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
@@ -26,7 +31,10 @@ public static class DependencyInjection
         return services.AddRepositories();
     }
 
-    // Ayrı metot: testler kendi DbContext'iyle aynı kayıtları kullanabilsin.
+    /// <summary>
+    /// Yalnız <see cref="IRepository{T}"/> ve <see cref="IUnitOfWork"/> kayıtları. Ayrı metot olmasının sebebi:
+    /// testler kendi DbContext'iyle aynı kayıtları kullanabilsin.
+    /// </summary>
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

@@ -37,4 +37,9 @@ Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
    (araç `backend` klasöründe kurulu; komutları `backend/` içinde çalıştır)
 6. Testler: `dotnet test backend/Yukum.slnx` (veritabanı testleri Docker'da kendi geçici SQL Server'ını açar)
 
-İlerleme: `docs/Ilerleme_Gunlugu.md`
+## Dokümantasyon
+- `docs/Ilerleme_Gunlugu.md` — günlük ilerleme, adım adım
+- `docs/Backend_Rehberi.md` — hangi araç/paket/dosya ne işe yarar, komutlar
+- `docs/Karar_Kayitlari.md` — alınan kararların gerekçeleri
+- `docs/veri/` — il/ilçe verisi ve kaynakları
+- Kodun içinde: her sınıf ve metotta `/// <summary>` açıklaması (VS Code'da üzerine gelince görünür)

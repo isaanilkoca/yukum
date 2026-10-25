@@ -56,6 +56,21 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 | C1a | **Veri seti hazırlandı ve doğrulandı** (kod yok, yalnız veri): 81 il, 973 ilçe, plaka kodları, il ve ilçe merkezi koordinatları. 5 kaynak çapraz kontrol edildi (Vikipedi iki tablo, GeoNames, Wikidata, 2 GitHub seti). "922 mi 973 mü?" tuzağı çözüldü: 922 belediye sayısı, 973 idari ilçe; "Merkez" ilçesi sayısı tam 51. **Bulunan hatalar:** Wikidata'da Konya ve Uşak plakası yanlış; Vikipedi'de 9 ilçe koordinatı yanlış (5'i başka ilçenin koordinatının kopyası). Hepsi düzeltildi. | `docs/veri/il-ilce.json`, `docs/veri/Veri_Kaynaklari.md`, K-013; değişmez kontrolleri geçti |
 <!--C1-->
 
+### Gün 1 kapanış özeti (25 Ekim 2026)
+**Bugün biten:** Aşama A (hazırlık) ve Aşama B (backend temeli) tamamen; Aşama C'nin veri hazırlığı (C1a).
+**Elde olan:** çalışan Web API iskeleti (/health, Scalar, /api/v1, hata formatı, loglama, JSON kuralları), veritabanı katmanı (AppDbContext, yumuşak silme, RowVersion, migration), Repository + Unit of Work + CQRS-lite handler yapısı, doğrulanmış 81 il / 973 ilçe verisi.
+**Sayılar:** 40 otomatik test yeşil (8 birim + 32 entegrasyon), 0 uyarı, 0 hata, bilinen güvenlik açığı yok; GitHub'da 18 commit.
+**Henüz yok (bilerek):** gerçek tablolar/controller'lar, iOS projesi, Docker Compose + CI (B5), kimlik (Aşama D).
+
+**Dokümantasyon düzeni (her adımda güncellenir):**
+- Kodun içinde: her sınıf ve herkese açık metotta `/// <summary>` açıklaması (VS Code'da hover ile görünür, Swift'teki `///` gibi).
+- `docs/Ilerleme_Gunlugu.md` — ne yaptık, adım adım (bu dosya).
+- `docs/Karar_Kayitlari.md` — neden öyle karar verdik (K-001…K-013).
+- `docs/Backend_Rehberi.md` — hangi araç/paket/dosya/kavram ne işe yarar, komutlar, Swift karşılıkları.
+- `docs/veri/Veri_Kaynaklari.md` — il/ilçe verisinin kaynakları ve doğrulama yöntemi.
+
+**Yeni oturumu başlatırken:** bu dosyayı ve `Backend_Rehberi.md`'yi oku; `git log --oneline | head`; Docker açık mı, `yukum-sql` çalışıyor mu (`docker ps`); `dotnet test backend/Yukum.slnx` yeşil mi. Sonra aşağıdaki "Sıradaki"den devam.
+
 ### Öğrenilenler / dürüst notlar
 - Bir test beklentimi tahminle yazmıştım (olmayan sürüm için 400); gerçek davranış 404 çıktı, testi gerçek gereksinime göre düzelttik.
 - `.csproj` satır sonları karışıktı, `user-secrets init` tek biçime getirdi (tek seferlik gürültü).
@@ -71,5 +86,5 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 - HTTPS yönlendirme uyarısı (http profili) → C3'te iOS bağlantısıyla netleşecek.
 - Apple Developer hesabı ücretsiz: push (Aşama I), TestFlight (F6) ve App Store (K) öncesi ücretli hesap gerekir.
 
-### Sıradaki
+### Sıradaki (yarın buradan devam)
 **C1b** (Cities/Districts entity'leri + EF yapılandırması + migration + seed; veri testleri), sonra C2 (`GET /cities`, `GET /cities/{id}/districts`, 404 için ilk hata eşlemesi), sonra iOS tarafına geçiş (C3–C5, kullanıcı yazar). Aşama B tamamlandı (B5 Docker Compose + CI "ilk çalışır hâlden sonra" olarak ertelendi).

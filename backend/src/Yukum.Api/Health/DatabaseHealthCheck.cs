@@ -3,9 +3,14 @@ using Yukum.Infrastructure.Persistence;
 
 namespace Yukum.Api.Health;
 
-// Veritabanına bağlanabiliyor mu? Ayar eksik/bozuk dahil her hata "Unhealthy" (503) olur; ayrıntı yalnız loga gider.
+/// <summary>
+/// <c>GET /health</c> için veritabanı kontrolü: SQL Server'a bağlanabiliyor muyuz?
+/// Bağlanıyorsa "Healthy" (200); bağlanamıyorsa ya da bağlantı ayarı eksik/bozuksa "Unhealthy" (503).
+/// Hata ayrıntısı cevaba yazılmaz, yalnız loga gider. İzleme sistemleri bu adresi düzenli yoklar.
+/// </summary>
 public sealed class DatabaseHealthCheck(IServiceScopeFactory scopes, ILogger<DatabaseHealthCheck> logger) : IHealthCheck
 {
+    /// <summary>Veritabanı bağlantısını dener.</summary>
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try

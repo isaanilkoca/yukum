@@ -3,11 +3,17 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Yukum.Api.Middleware;
 
-// Yakalanmamış her hatayı 500 + ProblemDetails'e çevirir; iç detayı istemciye sızdırmaz.
+/// <summary>
+/// Kodun herhangi bir yerinde yakalanmamış bir hata çıkarsa devreye girer.
+/// İstemciye sade bir 500 cevabı (ProblemDetails + traceId) döner. Asıl hata ayrıntısı (tablo adı, kod satırı vb.)
+/// yalnızca sunucu loguna yazılır, istemciye SIZMAZ (güvenlik).
+/// </summary>
 public sealed class GlobalExceptionHandler(
     IProblemDetailsService problemDetailsService,
     ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
+    /// <summary>Hatayı loglar ve istemciye 500 ProblemDetails yazar.</summary>
+    /// <returns><c>true</c>: hata işlendi, başka işleyiciye gerek yok.</returns>
     public async ValueTask<bool> TryHandleAsync(
         HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {

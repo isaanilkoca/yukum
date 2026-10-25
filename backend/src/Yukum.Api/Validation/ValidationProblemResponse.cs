@@ -4,10 +4,14 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace Yukum.Api.Validation;
 
-// Model doğrulama hatasını (400) ProblemDetails'e çevirir; alan adlarını JSON ile aynı biçime (camelCase) getirir:
-// "Email" -> "email", "Address.City" -> "address.city". iOS formda doğrudan eşleştirebilsin diye.
+/// <summary>
+/// Gelen veri geçersizse (örn. e-posta biçimi bozuk) 400 cevabını ProblemDetails olarak üretir.
+/// Hatalı alan adlarını JSON ile aynı biçime (camelCase) çevirir: <c>"Email"</c> → <c>"email"</c>, <c>"Address.City"</c> → <c>"address.city"</c>.
+/// Böylece iOS, hata mesajını formdaki doğru kutunun altında doğrudan gösterebilir.
+/// </summary>
 public static class ValidationProblemResponse
 {
+    /// <summary>Geçersiz model durumundan 400 ProblemDetails cevabı üretir.</summary>
     public static IActionResult Create(ActionContext context)
     {
         var factory = context.HttpContext.RequestServices.GetRequiredService<ProblemDetailsFactory>();
