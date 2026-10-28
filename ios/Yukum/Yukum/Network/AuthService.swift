@@ -9,6 +9,7 @@ import Foundation // Swift'in hazır ağ araçları bu kütüphanede
 
 // API ile konuştuğumuz tek yer. [BİZİM] = adı biz koyduk | [SWIFT] = Swift'in hazır kodu
 
+// KULLANIM: post fonksiyonu hata bulunca "throw AuthError(message:)" ile fırlatır; ekranlar (RegisterView, CarrierRegisterView) catch ile yakalayıp message'ı kırmızı yazar.
 struct AuthError: Error { // Error [SWIFT]: fırlatılabilir hata
     let message: String // ekranda göstereceğimiz yazı
 }
@@ -18,10 +19,14 @@ struct AuthService {
     private let baseURL = "http://localhost:5054" // sunucunun ana adresi | localhost: simülatörde Mac'imiz | 5054: API'nin portu
 
     // register: [BİZİM] ad | _ body: dolu form kağıdı | async: cevabı bekler, ekran donmaz | throws: hata fırlatabilir | -> RegisterResponse: başarılıysa bu döner
+    // ÇAĞIRAN: View/RegisterView.swift (Yük Veren ekranı) → AuthService().register(body)
+    // body'nin kalıbı: Network/RegisterRequest.swift → struct RegisterRequest
     func register(_ body: RegisterRequest) async throws -> RegisterResponse {
         try await post("/api/v1/auth/register/shipper", body: body) // "/api/..." = path: sunucudaki oda (Yük Veren kaydı)
     }
 
+    // ÇAĞIRAN: View/CarrierRegisterView.swift (Taşımacı ekranı) → AuthService().registerCarrier(body)
+    // body'nin kalıbı: Network/RegisterRequest.swift → struct RegisterCarrierRequest (içinde VehicleRequest listesi var)
     func registerCarrier(_ body: RegisterCarrierRequest) async throws -> RegisterResponse {
         try await post("/api/v1/auth/register/carrier", body: body) // aynısı, Taşımacı odası
     }

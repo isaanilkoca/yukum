@@ -19,6 +19,7 @@ import Foundation
 
 // Gönderdiğimiz paket (form kağıdı).
 // Encodable = Swift'in hazır sözü: "bu struct JSON'a çevrilebilir" (JSONEncoder bunu kullanır).
+// KULLANAN: View/RegisterView.swift paketi doldurur → AuthService.register gönderir.
 struct RegisterRequest: Encodable {
 
     let fullName : String      // ad soyad
@@ -32,6 +33,7 @@ struct RegisterRequest: Encodable {
 
 // API'den dönen başarılı cevap (201). Şifre ve hash asla dönmez.
 // Decodable = Swift'in hazır sözü: "gelen JSON'dan bu struct üretilebilir" (JSONDecoder bunu kullanır).
+// KULLANAN: AuthService.post, API'nin 201 cevabını bu pakete çevirir ve geri döner (iki kayıt ekranı için de aynı).
 struct RegisterResponse : Decodable {
 
     let id : String        // yeni hesabın numarası
@@ -41,6 +43,7 @@ struct RegisterResponse : Decodable {
 }
 
 // API hata verince (400, 409...) gelen cevabın kalıbı; ekranda göstereceğimiz mesajı buradan okuruz.
+// KULLANAN: AuthService.post, hata cevabını buna çevirip mesajı AuthError içine koyar; ekran o mesajı gösterir.
 struct APIErrorResponse : Decodable {
 
     let detail : String?              // genel Türkçe mesaj (örn. "Bu e-posta zaten kayıtlı")
@@ -55,6 +58,7 @@ struct APIErrorResponse : Decodable {
 // MARK: - Taşımacı kaydı (POST /api/v1/auth/register/carrier)
 
 // Tek araç bilgisi; API'nin "vehicles" listesindeki her eleman böyle görünür.
+// KULLANAN: View/CarrierRegisterView.swift içinde "vehicle" değişkenine atanır, sonra RegisterCarrierRequest.vehicles listesine konur.
 struct VehicleRequest: Encodable {
     let type: String          // "Truck", "Lorry"... (Picker'daki tag değeri; yazımı API ile aynı olmalı)
     let plateNumber: String?  // plaka, isteğe bağlı; nil ise JSON'a yazılmaz
@@ -63,6 +67,7 @@ struct VehicleRequest: Encodable {
 
 // Taşımacı kayıt paketi.
 // Not: Swift, struct oluştururken alanları BURADAKİ SIRAYLA ister; çağırırken aynı sırayı kullan.
+// KULLANAN: View/CarrierRegisterView.swift içinde "body" değişkenine atanır, AuthService.registerCarrier(body) ile API'ye gönderilir.
 struct RegisterCarrierRequest: Encodable {
     let fullName: String
     let email: String

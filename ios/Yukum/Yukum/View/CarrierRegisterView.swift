@@ -100,6 +100,8 @@ struct CarrierRegisterView: View {
                         //   vehicle = VehicleRequest(type: "Truck", plateNumber: "34 ABC 123", capacityKg: 24000)
                         //   body    = RegisterCarrierRequest(fullName: "Ali", ..., vehicles: [vehicle], ...)
                         // body artık "gönderilecek dolu form kağıdı"; henüz internete çıkmadı, sadece hazır.
+                        // BAĞLANTI: VehicleRequest, Network/RegisterRequest.swift dosyasında tanımlı (struct VehicleRequest).
+                        // Burada onun dolu bir örneğini üretip "vehicle" değişkenine atıyoruz. İçine ne konacağını orası belirler: type, plateNumber, capacityKg.
                         let vehicle = VehicleRequest( // tek araç paketi
                             type: vehicleType,
                             plateNumber: plateNumber.isEmpty ? nil : plateNumber, // boşsa nil: JSON'a hiç yazılmaz (a ? b : c = a doğruysa b, değilse c)
@@ -109,6 +111,8 @@ struct CarrierRegisterView: View {
                         // .trimmingCharacters(in: .whitespaces) [SWIFT]: baş ve sondaki boşlukları siler (yanlışlıkla boşluk bırakılırsa API reddetmesin)
                         // homeCityId: 34 → şimdilik sabit İstanbul | vehicles: [vehicle] → tek elemanlı liste
                         // DİKKAT: parametre sırası RegisterCarrierRequest'teki alan sırasıyla aynı olmalı
+                        // BAĞLANTI: RegisterCarrierRequest de Network/RegisterRequest.swift'te tanımlı (struct RegisterCarrierRequest).
+                        // Yukarıdaki "vehicle" burada vehicles: [vehicle] ile bu paketin İÇİNE konuyor. Sonuç "body" değişkenine atanıyor.
                         let body = RegisterCarrierRequest(fullName: fullName.trimmingCharacters(in: .whitespaces), email: email.trimmingCharacters(in: .whitespaces), password: password, phone: phone.trimmingCharacters(in: .whitespaces), homeCityId: 34, vehicles: [vehicle], kvkkAccepted: kvkkAccepted)
 
                         // ---- 3) API'YE GÖNDER ----
@@ -124,8 +128,12 @@ struct CarrierRegisterView: View {
                             do{ // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                                 // AuthService().registerCarrier(body): API ile bağlantıyı kuran kod (Network/AuthService.swift)
                                 // try await: hata çıkabilir + cevabı bekle | _ =: dönen cevabı şimdilik kullanmıyoruz
+                                // BAĞLANTI: AuthService, Network/AuthService.swift'te tanımlı. AuthService() onun bir örneğini oluşturur,
+                                // .registerCarrier(body) o dosyadaki func registerCarrier fonksiyonunu çağırır ve yukarıda hazırladığımız body'yi ona VERİR.
+                                // Fonksiyon API'den cevap alırsa RegisterResponse döner (şimdilik kullanmıyoruz: _ =), hata olursa AuthError fırlatır.
                                 _ = try await AuthService().registerCarrier(body)
                                 isSuccess = true // başarılı → yeşil mesaj çıkar
+                            // BAĞLANTI: AuthError, Network/AuthService.swift'te tanımlı; orada "throw AuthError(message: ...)" ile fırlatılır, burada yakalanır.
                             }catch let error as AuthError{ // API "hayır" dedi (400, 409...)
                                 errorMessage = error.message // API'nin Türkçe mesajı kırmızı yazılır
                             }catch{ // başka her hata: API kapalı, internet yok
