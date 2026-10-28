@@ -93,7 +93,13 @@ struct CarrierRegisterView: View {
                             return
                         }
 
-                        // ---- 2) PAKETİ HAZIRLA: ekrandaki bilgiler API'nin form kağıdına yazılır (RegisterRequest.swift) ----
+                        // ---- 2) PAKETİ HAZIRLA ----
+                        // Fikir: API'ye "ekranı" göndermeyiz, sadece bilgileri göndeririz. Bilgiler API'nin istediği FORM KAĞIDINA yazılır.
+                        // Form kağıtlarının kalıbı Network/RegisterRequest.swift'te: VehicleRequest (araç) ve RegisterCarrierRequest (tüm kayıt).
+                        // Örnek: kullanıcı "Truck", "24000", "34 ABC 123" girdi →
+                        //   vehicle = VehicleRequest(type: "Truck", plateNumber: "34 ABC 123", capacityKg: 24000)
+                        //   body    = RegisterCarrierRequest(fullName: "Ali", ..., vehicles: [vehicle], ...)
+                        // body artık "gönderilecek dolu form kağıdı"; henüz internete çıkmadı, sadece hazır.
                         let vehicle = VehicleRequest( // tek araç paketi
                             type: vehicleType,
                             plateNumber: plateNumber.isEmpty ? nil : plateNumber, // boşsa nil: JSON'a hiç yazılmaz (a ? b : c = a doğruysa b, değilse c)
@@ -106,6 +112,12 @@ struct CarrierRegisterView: View {
                         let body = RegisterCarrierRequest(fullName: fullName.trimmingCharacters(in: .whitespaces), email: email.trimmingCharacters(in: .whitespaces), password: password, phone: phone.trimmingCharacters(in: .whitespaces), homeCityId: 34, vehicles: [vehicle], kvkkAccepted: kvkkAccepted)
 
                         // ---- 3) API'YE GÖNDER ----
+                        // Ekran sadece "AuthService, bunu yolla" der; internet işini AuthService yapar (Network/AuthService.swift):
+                        //   registerCarrier(body) → post("/api/v1/auth/register/carrier", body) →
+                        //   body JSON'a çevrilir → URLSession ile http://localhost:5054/api/v1/auth/register/carrier adresine POST edilir →
+                        //   API cevap verir (201 oldu / 400 hatalı / 409 zaten kayıtlı) → AuthService cevabı döndürür ya da hata fırlatır.
+                        // Bekleme süresince ekran donmasın diye Task + await kullanıyoruz.
+                        // Sonuç:  başarılı → isSuccess = true (yeşil yazı) | AuthError → errorMessage (API'nin Türkçe mesajı) | diğer → "Sunucuya ulaşılamadı"
                         Task{ // Task [SWIFT]: düğme içinde await (bekleme) kullanabilmemizi sağlar
                             isLoading = true // düğme kilitlenir
                             errorMessage = nil // eski hatayı temizle
