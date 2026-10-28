@@ -185,3 +185,35 @@ Testler `backend/tests` altında; **kodu anlamanın en hızlı yolu** testleri o
 | Yeni bir uç (endpoint) | `Application` komutu/handler + `Api/Controllers` metodu (+ önce test, + `docs/api` sözleşmesi) |
 | JSON kuralları (tarih, enum) | `Api/Json/` |
 | Araç tipi eklemek | `Domain/Accounts/VehicleType.cs` (**mevcut sayılar değişmez**, yenisi sona eklenir) |
+
+---
+
+## 8. Aşama aşama: iOS ↔ API ↔ Veritabanı (güncel tutulur)
+
+Her aşamada "ne yapıldı, hangi kodla bağlandı" burada kısaca yazılır.
+
+### Aşama 1: Kayıt (Yük Veren), ÇALIŞIYOR ✅
+Akış: `RegisterView` → `AuthService` → API → SQL Server → geri.
+
+| # | Ne oldu | Hangi kod |
+|---|---|---|
+| 1 | Kullanıcı formu doldurup "Kayıt Ol"a basar; alanlar boş mu, KVKK onaylı mı bakılır. | `ios/.../View/RegisterView.swift` (düğmenin içi) |
+| 2 | Form bilgisi bir pakete konur. Alan adları API'dekiyle aynı. | `ios/.../Network/RegisterRequest.swift` → `RegisterRequest` |
+| 3 | `JSONEncoder` paketi JSON'a çevirir. | `ios/.../Network/AuthService.swift` → `register` |
+| 4 | `URLSession`, JSON'u `POST http://localhost:5054/api/v1/auth/register/shipper` adresine gönderir (API ile bağlantıyı kuran sınıf). | `AuthService.swift` → `register` |
+| 5 | iOS'un yerel `http`ye izin vermesi gerekir (yoksa istek engellenir). | `ios/Yukum/Yukum/Info.plist` → `NSAllowsLocalNetworking` |
+| 6 | API adresi dinler, gelen JSON'u nesneye çevirir. | `backend/.../Controllers/AuthController.cs` → `RegisterShipper` |
+| 7 | Alanlar kontrol edilir; hata varsa 400 + Türkçe mesaj. | `backend/.../Accounts/RegisterValidators.cs` |
+| 8 | Şifre hash'lenir, kullanıcı + profil tek işlemde yazılır. | `backend/.../Identity/AccountService.cs` |
+| 9 | SQL Server'a yazılır. Bağlantı adresi/parolası `user-secrets`'ta. | `backend/.../DependencyInjection.cs` (`UseSqlServer`), `AppDbContext.cs` |
+| 10 | API `201 Created` döner. | `AuthController.cs` |
+| 11 | iOS cevabı `RegisterResponse` paketine çevirir; hata varsa `APIErrorResponse` içindeki Türkçe mesajı alır. | `RegisterRequest.swift`, `AuthService.swift` |
+| 12 | Ekranda yeşil "Kayıt başarılı" ya da kırmızı hata yazısı çıkar. | `RegisterView.swift` (`isSuccess`, `errorMessage`) |
+
+Kontrol: VS Code mssql ile `Users` tablosunda kayıt görülür; API tarayıcıdan `http://localhost:5054/scalar` ile denenir.
+
+### Sıradaki aşamalar (sırayla)
+2. Rol seçim ekranı (Yük Veren / Taşımacı) → `RoleSelectionView`
+3. Taşımacı kaydı → `CarrierRegisterView` + `AuthService.registerCarrier` (API ucu hazır: `register/carrier`)
+4. Giriş → `LoginRequest/LoginResponse`, `AuthService.login`, `LoginView` düğmesi (API ucu hazır: `login`)
+5. Anasayfa, ilan verme ve detaylar
