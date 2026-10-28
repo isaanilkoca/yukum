@@ -5,55 +5,50 @@
 //  Created by İsa Anıl Koca on 25.10.2026.
 //
 
-import Foundation // URL, URLSession, JSONEncoder gibi ağ araçları bu kütüphanede
+import Foundation // Swift'in hazır ağ araçları bu kütüphanede
 
-struct AuthError: Error { // Error olunca fırlatılabilir (throw) bir hata olur
-    
-    let message: String  // ekranda göstereceğimiz hata mesajını taşır
+// API ile konuştuğumuz tek yer. [BİZİM] = adı biz koyduk | [SWIFT] = Swift'in hazır kodu
+
+struct AuthError: Error { // Error [SWIFT]: fırlatılabilir hata
+    let message: String // ekranda göstereceğimiz yazı
 }
 
-struct AuthService {  // kayıt/giriş API çağrılarını toplayan sınıf; ekranlar ağ kodu yazmaz
-    
-    private let baseURL = "http://localhost:5054" // API adresi  simülatörde Mac'imiz
-    
-    func register (_ body: RegisterRequest) async throws -> RegisterResponse {
-        // _ body: çağırırken ismi yazmadan register(istek) dersin
-               // async: ağ cevabını bekler, ekran donmaz | throws: hata fırlatabilir
-               // -> RegisterResponse: başarılı olursa bu paketi döner
-        
-        // adres + istek hazırlığı
-        
-        let url = URL(string: baseURL + "/api/v1/auth/register/shipper")!  // tam adres; ! = "boş olamaz" (adresi biz yazdık)
-        
-        var request = URLRequest(url : url) // gönderilecek mektubun zarfı; içini dolduracağımız için var
-        
-        request.httpMethod = "POST" // veri gönderiyoruz // POST = "veri gönderiyorum" (GET = "veri istiyorum")
-        
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type") // "JSON yolluyorum" etiketi  // zarfa "içinde JSON var" etiketi; yoksa API anlamaz
-        
-        request.httpBody = try JSONEncoder().encode(body) // struct → JSON // mektubun içi: struct → JSON (Encoder = struct'tan JSON üretir)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)   // zarfı postaya ver, cevabı bekle
-              // data: cevabın içeriği (JSON) | response: durum bilgisi
-        
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0   // durum kodu (201, 400, 409...); okunamazsa 0
-              // as?: HTTP cevabıysa o türe çevir, değilse boş bırak | ?? 0: boşsa 0 kullan
-        
-        if status == 201 { // 201 hesap olusturuldu
-            
-            return try JSONDecoder().decode(RegisterResponse.self, from: data) // Decoder = JSON → struct
-            
-        }
-        
-        // buraya geldiysek kayıt başarısız; API'nin Türkçe mesajını bulalım
-        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // try? = çevrilemezse hata fırlatma, boş ver
-        
-        let firstFieldError = apiError?.errors?.values.first?.first   // ilk alanın ilk hata mesajı (örn. "Şifre en az 8 karakter olmalı")
-        
-        throw AuthError(message: firstFieldError ?? apiError?.detail ?? "Bir hata oluştu.")
-            // ?? zinciri: önce alan hatası, yoksa genel mesaj, o da yoksa sabit yazı
+struct AuthService {
+
+    private let baseURL = "http://localhost:5054" // sunucunun ana adresi | localhost: simülatörde Mac'imiz | 5054: API'nin portu
+
+    // register: [BİZİM] ad | _ body: dolu form kağıdı | async: cevabı bekler, ekran donmaz | throws: hata fırlatabilir | -> RegisterResponse: başarılıysa bu döner
+    func register(_ body: RegisterRequest) async throws -> RegisterResponse {
+        try await post("/api/v1/auth/register/shipper", body: body) // "/api/..." = path: sunucudaki oda (Yük Veren kaydı)
     }
-    
-    
-}
 
+    func registerCarrier(_ body: RegisterCarrierRequest) async throws -> RegisterResponse {
+        try await post("/api/v1/auth/register/carrier", body: body) // aynısı, Taşımacı odası
+    }
+
+    // <Body: Encodable>: Body = herhangi bir paket türü | Encodable [SWIFT]: JSON'a çevrilebilir olmalı | path: oda adresi
+    private func post<Body: Encodable>(_ path: String, body: Body) async throws -> RegisterResponse {
+
+        let url = URL(string: baseURL + path)! // URL(string:) [SWIFT]: yazıyı adrese çevirir | baseURL + path: ana adres + oda | !: boş çıkmaz
+
+        var request = URLRequest(url: url) // URLRequest [SWIFT]: adrese gidecek zarf | request: [BİZİM] zarfın adı
+
+        request.httpMethod = "POST" // request: zarf | .httpMethod: gönderim türü | "POST": veri gönderiyorum (büyük yaz) | "GET" olsaydı veri isterdik
+
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type") // .setValue: zarfa etiket yapıştırır | "Content-Type": etiketin adı (içerik türü) | "application/json": değeri (içinde JSON var) | başka etiket: "Authorization" = giriş jetonu
+
+        request.httpBody = try JSONEncoder().encode(body) // .httpBody: zarfın içi | JSONEncoder() [SWIFT]: struct'ı JSON'a çevirir | .encode(body): "bu paketi çevir" | try: hata çıkabilir
+
+        let (data, response) = try await URLSession.shared.data(for: request) // URLSession [SWIFT]: postacı | .shared: hazır ortak postacı | .data(for:): zarfı gönder, cevabı getir | await: cevap gelene kadar bekle | (data, response): dönen iki şeye verdiğimiz adlar, (veri, cevap) da olabilirdi | data: cevabın içeriği (JSON) | response: durum bilgisi
+
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // as? HTTPURLResponse: HTTP cevabı olarak oku | .statusCode [SWIFT]: sunucunun notu (201 oluştu, 400 alan hatalı, 409 zaten kayıtlı, 401 yetkisiz) | ?? 0: okunamazsa 0
+
+        if status == 201 { // 201 = hesap oluştu
+            return try JSONDecoder().decode(RegisterResponse.self, from: data) // JSONDecoder() [SWIFT]: JSON'u struct'a çevirir | .decode(...): "data'yı RegisterResponse'a çevir" | .self: türün kendisi
+        }
+
+        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // try?: çevrilemezse hata verme, boş ver
+        let firstFieldError = apiError?.errors?.values.first?.first // ?.: boş değilse devam et | errors'daki ilk alanın ilk mesajı
+        throw AuthError(message: firstFieldError ?? apiError?.detail ?? "Bir hata oluştu.") // throw: hatayı fırlat | ??: soldaki boşsa sağdakine geç (alan hatası → genel mesaj → sabit yazı)
+    }
+}
