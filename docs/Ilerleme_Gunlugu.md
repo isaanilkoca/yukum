@@ -117,3 +117,4 @@ Aşama C (il/ilçe) **bitti**. Aşama D'de **D1 (tablolar), D2 (kayıt) ve D3 (g
 - Otomasyon: `.claude/hooks/swift-build-check.sh` (iOS .swift değişince sessiz derleme, hata varsa bildirir; kayıt `.claude/settings.local.json`'da, git dışı).
 - Açık: başarılı giriş sonrası yönlendirme (role'e göre anasayfa) yok; simülatörde giriş denemesi kullanıcıda.
 - Karar: Swift merkezli dilim döngüsü (Yük Veren anasayfası → ilan ucu/DB → Taşımacı anasayfası → teklif ucu). Backend yalnız ekranın ihtiyacı kadar.
+- (29 Ekim, akşam) Giriş uçtan uca denendi (simülatör, çalışıyor). `HomeView(user:)` eklendi; giriş başarılıysa `fullScreenCover(item:)` ile role göre anasayfa yazısı açılıyor, "Çıkış yap" dismiss ile döner. Sıradaki: Yük Veren "İlan ver" formu (Swift), sonra ilan ucu/DB.

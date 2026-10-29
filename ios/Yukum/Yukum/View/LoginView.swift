@@ -32,6 +32,8 @@ struct LoginView: View {
                 SecureField("Şifre", text: $password).textFieldStyle(.roundedBorder)
                 
                 if let errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+
+            
                 
                 HStack(spacing: 50){
                
@@ -51,10 +53,13 @@ struct LoginView: View {
                             do {
                                 let response = try await AuthService().login(body) // bu sefer cevabı kullanıyoruz (kayıtta _ = idi)
                                 loggedInUser = response.user // dolunca "Hoş geldin" görünecek
+                                print("GİRİŞ BAŞARILI: \(response.user.displayName) (\(response.user.role)) jeton uzunluğu: \(response.accessToken.count)") // geçici: Xcode alt konsoluna yazar (jetonun kendisini yazmıyoruz)
                             } catch let error as AuthError {
                                 errorMessage = error.message // "E-posta veya şifre hatalı." gibi
+                                print("GİRİŞ HATASI (API): \(error.message)") // geçici konsol çıktısı
                             } catch {
                                 errorMessage = "Sunucuya ulaşılamadı."
+                                print("GİRİŞ HATASI (bağlantı/okuma): \(error)") // geçici: asıl hata nedeni konsolda
                             }
                             isLoading = false
                         }
@@ -70,6 +75,11 @@ struct LoginView: View {
                 
             }.padding()
             
+        }
+        
+        .fullScreenCover(item: $loggedInUser) { user in  // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ
+            
+            HomeView(user: user) // dolan kullanıcıyı HomeViewa veriyoruz
         }
           
         }

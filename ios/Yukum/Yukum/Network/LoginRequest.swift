@@ -26,7 +26,7 @@ struct LoginRequest: Encodable { // LoginRequest [BİZİM]: paketin adı
 // Cevaptaki "user" kutusu: giriş yapan kişinin kısa bilgisi.
 // Decodable [SWIFT]: "gelen JSON'dan bu struct üretilebilir"
 // KULLANAN: LoginResponse içinde aşağıda | role'e göre anasayfa seçilecek (Yük Veren / Taşımacı).
-struct LoginUser: Decodable {
+struct LoginUser: Decodable,Identifiable { // Bu, ekranı "kullanıcı dolunca aç" diye açabilmek için lazım. identifiable
 
     let id: String // kullanıcı numarası
     let displayName: String // ekranda göstereceğimiz ad ("Hoş geldin Ali")
