@@ -51,6 +51,9 @@ struct LoginView: View {
                             isLoading = true
                             errorMessage = nil
                             do {
+                                // BAĞLANTI: AuthService, Network/AuthService.swift'te tanımlı. .login(body) oradaki func login'i çağırır, yukarıda hazırladığımız body'yi ona VERİR.
+                                // login → post("/api/v1/auth/login") → API'ye POST → cevap LoginResponse'a çevrilir (kalıbı: Network/LoginRequest.swift) → buraya döner.
+                                // Hata olursa AuthError fırlatılır (AuthService.swift'te tanımlı) → aşağıdaki catch yakalar.
                                 let response = try await AuthService().login(body) // bu sefer cevabı kullanıyoruz (kayıtta _ = idi)
                                 loggedInUser = response.user // dolunca "Hoş geldin" görünecek
                                 print("GİRİŞ BAŞARILI: \(response.user.displayName) (\(response.user.role)) jeton uzunluğu: \(response.accessToken.count)") // geçici: Xcode alt konsoluna yazar (jetonun kendisini yazmıyoruz)
@@ -77,6 +80,9 @@ struct LoginView: View {
             
         }
         
+        // BAĞLANTI: loggedInUser, yukarıda giriş başarılı olunca (response.user) doluyor → dolunca bu satır HomeView'ı tam ekran açar.
+        // HomeView'daki "Çıkış Yap" dismiss() ile bu ekranı kapatır → loggedInUser tekrar nil olur → giriş ekranına dönülür.
+        // item: Identifiable ister, LoginUser'a bu yüzden Identifiable eklendi (Network/LoginRequest.swift).
         .fullScreenCover(item: $loggedInUser) { user in  // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ
             
             HomeView(user: user) // dolan kullanıcıyı HomeViewa veriyoruz
