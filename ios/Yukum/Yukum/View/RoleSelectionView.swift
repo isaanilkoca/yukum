@@ -11,7 +11,7 @@ struct RoleSelectionView: View {
     
     var body: some View {
         
-        NavigationStack{ // ekranlar arası gecis yönetir dönme okunu kendi koyar
+         // ekranlar arası gecis yönetir dönme okunu kendi koyar
             
             VStack(spacing: 24){
                 Text("Nasıl Kayıt Olmak İstersiniz ?").font(.title2).bold()
@@ -32,7 +32,7 @@ struct RoleSelectionView: View {
                 
             }.padding()
             
-        }
+        
         
         
     }

@@ -13,11 +13,13 @@ struct LoginView: View {
     @State private var emailOrPhone = ""
     @State private var password = ""
     @State private var errorMessage : String?
+    @State private var isLoading = false // istek sürerken true → düğme kilitlenir
+    @State private var loggedInUser: LoginUser? // giriş başarılıysa dolar | ? = boş olabilir (nil: henüz girmedi)
 
     
     var body: some View {
         
-            
+        NavigationStack{
             VStack(spacing: 40){
                 
                 //Baslık
@@ -29,19 +31,47 @@ struct LoginView: View {
                 //Şifre için
                 SecureField("Şifre", text: $password).textFieldStyle(.roundedBorder)
                 
+                if let errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+                
                 HStack(spacing: 50){
                
                     Button("Giriş yap"){
                         
-                    }
-                    Button("Kayıt ol"){
+                        // 1) Kontrol: boşsa API'ye gitme
+                        if emailOrPhone.isEmpty || password.isEmpty {
+                            errorMessage = "E-posta/telefon ve şifre gerekli."
+                            return
+                        }
+                        // 2) Paketi hazırla (sıra LoginRequest'teki alan sırasıyla aynı)
+                        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, deviceId: UUID().uuidString)
+                        // 3) API'ye gönder
+                        Task {
+                            isLoading = true
+                            errorMessage = nil
+                            do {
+                                let response = try await AuthService().login(body) // bu sefer cevabı kullanıyoruz (kayıtta _ = idi)
+                                loggedInUser = response.user // dolunca "Hoş geldin" görünecek
+                            } catch let error as AuthError {
+                                errorMessage = error.message // "E-posta veya şifre hatalı." gibi
+                            } catch {
+                                errorMessage = "Sunucuya ulaşılamadı."
+                            }
+                            isLoading = false
+                        }
                         
-                    
+                    }.disabled(isLoading)// isLoading true iken basılamaz (çift tıklama olmasın)
+
+                    NavigationLink("Kayıt ol"){ // NavigationLink [SWIFT]: kendisi düğme, basınca süslü parantez içindeki ekrana geçer (Button içine konmaz)
+                        RoleSelectionView() // rol seçimi ekranı: Yük Veren / Taşımacı
                     }
+
                 }.padding()
                
                 
             }.padding()
+            
+        }
+          
         }
       
     

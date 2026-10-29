@@ -110,3 +110,10 @@ Bağlayıcı sıra: `Yukum_Adim_Adim_Uygulama_Plani.pdf`. Kararlar: `Karar_Kayit
 
 ### Sıradaki (yarın buradan devam)
 Aşama C (il/ilçe) **bitti**. Aşama D'de **D1 (tablolar), D2 (kayıt) ve D3 (giriş) bitti**. Sıradaki: **D4** yenileme jetonu (girişte `refreshToken` döner, her yenilemede rotasyon, çalıntı jeton tekrar kullanılırsa cihazın tüm jeton ailesi iptal, `/auth/refresh`, `/auth/logout`), sonra **D5** (yetki politikaları ShipperOnly/CarrierOnly/AdminOnly, giriş/kayıt için hız sınırı, `GET /me`, yetki matrisi testi). **D5 bitince iOS'a geçiş zamanı**: C3–C5 (Xcode projesi, API istemcisi, il/ilçe ekranı) ve D6–D8 (Keychain/token, giriş-kayıt ekranları, otomatik giriş) kullanıcıya aittir; sözleşmeler `docs/api/Cities.md` ve `docs/api/Auth.md`. B5 (Docker Compose + CI) "ilk çalışır hâlden sonra" ertelendi.
+
+### 29 Ekim 2026 — iOS giriş aşaması (Swift merkezli döngü)
+- `Network/LoginRequest.swift` (LoginRequest, LoginUser, LoginResponse), `AuthService.login` eklendi; `post` genelleştirildi (`Body: Encodable, Response: Decodable`, 200...299 başarı). Derleme geçti.
+- `LoginView`: "Giriş yap" bağlandı (kontrol, isLoading, hata yazısı), "Kayıt ol" → `RoleSelectionView` (NavigationLink; iç içe NavigationStack kaldırıldı). `ContentView` ilk ekranı `LoginView`.
+- Otomasyon: `.claude/hooks/swift-build-check.sh` (iOS .swift değişince sessiz derleme, hata varsa bildirir; kayıt `.claude/settings.local.json`'da, git dışı).
+- Açık: başarılı giriş sonrası yönlendirme (role'e göre anasayfa) yok; simülatörde giriş denemesi kullanıcıda.
+- Karar: Swift merkezli dilim döngüsü (Yük Veren anasayfası → ilan ucu/DB → Taşımacı anasayfası → teklif ucu). Backend yalnız ekranın ihtiyacı kadar.
