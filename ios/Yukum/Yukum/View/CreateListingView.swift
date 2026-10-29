@@ -72,13 +72,16 @@ struct CreateListingView: View {
                     
                     
                 }.pickerStyle(.menu)
-                    .onChange(of: fromCityId) { _, newId in
-                        fromDistrictId = 0
-                        fromDistricts = []
-                        if newId == 0 {return}
+                    // .onChange: "fromCityId değişince bu bloğu bir kez çalıştır" (ayrıntılı anlatım aşağıdaki Varış bloğunda, mantık birebir aynı)
+                    // BAĞLANTI: fromCityId'yi yukarıdaki "Kalkış İli" Picker'ı değiştirir → burası çalışır → sonuç fromDistricts'e yazılır → "Kalkış İlçesi" Picker'ı gösterir
+                    .onChange(of: fromCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = seçilen ilin yeni numarası, adı bizim
+                        fromDistrictId = 0 // eski ilçe seçimini sıfırla (başka ile ait kalmasın)
+                        fromDistricts = [] // eski ilçe listesini boşalt
+                        if newId == 0 {return} // "Seçiniz"e dönüldüyse çekme, bloktan çık
                         Task { // Task: burada await kullanabilmek için
 
                                     // BAĞLANTI: CityService().districts(cityId:) → Network/CityService.swift'teki func districts → API'ye GET → [District] döner
+                                    // try? = hata olursa nil ver | await = cevabı bekle | ?? [] = nil ise boş liste | sonuç @State'e yazılınca ilçe Picker'ı kendini yeniler
                                     fromDistricts = (try? await CityService().districts(cityId: newId)) ?? []
                         }
                     }
@@ -100,12 +103,25 @@ struct CreateListingView: View {
                     }
                 }
                 .pickerStyle(.menu)
-                .onChange(of: toCityId) { _, newId in // varış ili değişince çalışır
-                    toDistrictId = 0 // eski ilçe seçimi geçersiz
-                    toDistricts = []
-                    if newId == 0 { return }
-                    Task {
-                        // BAĞLANTI: CityService().districts(cityId:) → Network/CityService.swift → API'ye GET → [District] → toDistricts'e yazılır
+                // ---- .onChange NEDİR? [SWIFT: SwiftUI'nin hazır özelliği] ----
+                // "Bir değişkeni izle. Değişince süslü parantezdeki kodu BİR KEZ çalıştır." Düğme gerekmez, değişim yeter.
+                // Neden lazım: kullanıcı il seçerken düğmeye basmaz, Picker sadece toCityId'yi değiştirir. İlçeleri çekeceğimiz anı bu yakalar.
+                // BAĞLANTI: toCityId'yi yukarıdaki "Varış İli" Picker'ı değiştirir (selection: $toCityId) → değişince burası çalışır
+                //           → sonuç toDistricts'e yazılır → aşağıdaki "Varış İlçesi" Picker'ı o listeyi gösterir.
+                .onChange(of: toCityId) { _, newId in // of: izlenen değişken (varış ili numarası) | { eski, yeni in ... }: değişince Swift bize iki değer verir
+                    // _  = ESKİ değer. Bize lazım değil, alt çizgi "yok say" demek.
+                    // newId = YENİ değer. Adını biz koyduk [BİZİM]. Seçilen ilin numarası (örn. 34). `in` = solda isimler, sağda yapılacak iş.
+
+                    toDistrictId = 0 // ilçe seçimini "seçilmedi"ye döndür | neden: eski ilin ilçesi yeni ile ait değil, kalırsa yanlış ilan gider
+                    toDistricts = [] // eski ilçe listesini boşalt | [] = boş liste | ekran listeyi hemen temizler, yenisi gelene kadar eski görünmez
+
+                    if newId == 0 { return } // kullanıcı "Seçiniz"e döndüyse (0) çekecek il yok | return = bu bloktan çık, aşağıdaki satırlar çalışmaz
+
+                    Task { // Task [SWIFT]: arka planda iş başlatır | neden: .onChange bekleyemez, internet isteği ise bekletir (await); await yalnız Task içinde yazılır
+                        // CityService() = Network/CityService.swift'teki struct'ın bir örneği (() ile üretilir)
+                        // .districts(cityId: newId) = onun fonksiyonu; il numarasını alır, API'ye GET /api/v1/cities/34/districts atar, [District] döner
+                        // await = cevap gelene kadar bekle (ekran donmaz) | try? = hata olursa (internet yok) çökme, nil ver | ?? [] = nil ise boş liste kullan
+                        // sonuç toDistricts'e yazılır. toDistricts @State olduğu için değişince ekran yenilenir, ilçe Picker'ı dolar.
                         toDistricts = (try? await CityService().districts(cityId: newId)) ?? []
                     }
                 }
