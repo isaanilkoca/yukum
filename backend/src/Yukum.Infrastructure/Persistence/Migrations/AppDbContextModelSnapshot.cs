@@ -8759,6 +8759,82 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Yukum.Domain.Listings.Listing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("Budget")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("FromCityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FromDistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("PickupDate")
+                        .HasColumnType("date");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("ShipperId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("ToCityId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ToDistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("VehicleType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("WeightKg")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromCityId");
+
+                    b.HasIndex("FromDistrictId");
+
+                    b.HasIndex("ShipperId");
+
+                    b.HasIndex("ToCityId");
+
+                    b.HasIndex("ToDistrictId");
+
+                    b.ToTable("Listings", (string)null);
+                });
+
             modelBuilder.Entity("Yukum.Infrastructure.Identity.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8981,6 +9057,33 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
+                });
+
+            modelBuilder.Entity("Yukum.Domain.Listings.Listing", b =>
+                {
+                    b.HasOne("Yukum.Domain.Geography.City", null)
+                        .WithMany()
+                        .HasForeignKey("FromCityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Yukum.Domain.Geography.District", null)
+                        .WithMany()
+                        .HasForeignKey("FromDistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Yukum.Domain.Geography.City", null)
+                        .WithMany()
+                        .HasForeignKey("ToCityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Yukum.Domain.Geography.District", null)
+                        .WithMany()
+                        .HasForeignKey("ToDistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Yukum.Domain.Accounts.CarrierProfile", b =>

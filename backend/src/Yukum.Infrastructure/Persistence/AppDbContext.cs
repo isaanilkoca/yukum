@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Yukum.Domain.Accounts;
 using Yukum.Domain.Common;
 using Yukum.Domain.Geography;
+using Yukum.Domain.Listings;
 using Yukum.Infrastructure.Identity;
 
 namespace Yukum.Infrastructure.Persistence;
@@ -42,6 +43,9 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
 
     /// <summary>Türkiye'nin 973 ilçesi (sabit referans verisi).</summary>
     public DbSet<District> Districts => Set<District>();
+
+    /// <summary>Yük Veren ilanları.</summary>
+    public DbSet<Listing> Listings => Set<Listing>();
 
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.
