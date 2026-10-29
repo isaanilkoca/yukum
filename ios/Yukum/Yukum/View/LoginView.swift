@@ -14,6 +14,8 @@ struct LoginView: View {
     @State private var password = ""
     @State private var errorMessage : String?
     @State private var isLoading = false // istek sürerken true → düğme kilitlenir
+    
+    
     @State private var loggedInUser: LoginUser? // giriş başarılıysa dolar | ? = boş olabilir (nil: henüz girmedi)
 
     
@@ -55,6 +57,7 @@ struct LoginView: View {
                                 // login → post("/api/v1/auth/login") → API'ye POST → cevap LoginResponse'a çevrilir (kalıbı: Network/LoginRequest.swift) → buraya döner.
                                 // Hata olursa AuthError fırlatılır (AuthService.swift'te tanımlı) → aşağıdaki catch yakalar.
                                 let response = try await AuthService().login(body) // bu sefer cevabı kullanıyoruz (kayıtta _ = idi)
+                                Session.accessToken = response.accessToken // BAĞLANTI: Network/Session.swift'e yazar; sonraki servisler buradan okuyacak
                                 loggedInUser = response.user // dolunca "Hoş geldin" görünecek
                                 print("GİRİŞ BAŞARILI: \(response.user.displayName) (\(response.user.role)) jeton uzunluğu: \(response.accessToken.count)") // geçici: Xcode alt konsoluna yazar (jetonun kendisini yazmıyoruz)
                             } catch let error as AuthError {
