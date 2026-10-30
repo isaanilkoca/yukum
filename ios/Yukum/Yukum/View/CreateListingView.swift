@@ -206,7 +206,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
                             dismiss() // ekranı kapat homeview a dön
                             
                         } catch let error as AuthError { // API "hayır" dedi (400, 401, 403) | AuthError: Network/AuthService.swift'te tanımlı
-                            errorMessage = errorMessage  // API'nin Türkçe mesajı kırmızı yazılır
+                            errorMessage = error.message  // error: catch'in yakaladığı AuthError | .message: içindeki Türkçe yazı | API'nin Türkçe mesajı kırmızı yazılır
                             
                         } catch{ // başka her hata: API kapalı, internet yok
                             errorMessage = "Sunucuya Ulaşılamadı"

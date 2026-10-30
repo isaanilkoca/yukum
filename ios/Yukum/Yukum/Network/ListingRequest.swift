@@ -33,3 +33,17 @@ struct ListingResponse: Decodable { // Decodable [SWIFT]: gelen JSON'dan üretil
     let id: String // ilan numarası (GUID yazı olarak gelir)
     let title: String
 }
+
+
+
+// API'den gelen tek ilan (GET /api/v1/listings/mine listesindeki her eleman). Yalnız listede göstereceklerimizi aldık.
+// BAĞLANTI: Network/ListingService.swift myListings() bu struct'ın listesini döner → View/HomeView.swift'te liste olarak gösterilir
+struct MyListing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, ForEach'te id: yazmak gerekmez
+    let id: String // ilan numarası (GUID yazı olarak gelir) | Identifiable bunu kullanır
+    let title: String // başlık
+    let weightKg: Int // ağırlık
+    let fromCityName: String // kalkış ili adı (backend ekledi)
+    let toCityName: String // varış ili adı
+    let pickupDate: String // "2026-10-31" yazısı olarak gelir, ekranda olduğu gibi göstereceğiz
+    let budget: Double? // Double: ondalıklı sayı (API 50000.0 gönderir) | ?: isteğe bağlı, yoksa nil
+}

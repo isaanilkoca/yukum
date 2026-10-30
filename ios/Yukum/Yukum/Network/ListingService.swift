@@ -44,4 +44,34 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         let firstFieldError = apiError?.errors?.values.first?.first // ?.: boş değilse devam et | errors'daki ilk alanın ilk mesajı (örn. "Başlık boş olamaz.")
         throw AuthError(message: firstFieldError ?? apiError?.detail ?? "İlan açılamadı.") // ??: soldaki boşsa sağdakine geç (alan hatası → genel mesaj → sabit yazı)
     }
+    
+    // myListings: giriş yapan Yük Veren'in kendi ilanlarını getirir | -> [MyListing]: ilan listesi döner (kalıbı: Network/ListingRequest.swift)
+    // ÇAĞIRAN: View/HomeView.swift (ekran açılınca, sonraki adım) | API: GET /api/v1/listings/mine
+    
+    func myListings() async throws -> [MyListing] {
+        
+        guard let token = Session.accessToken else {
+            throw AuthError(message: "Oturum bulunmadı , tekrar giriş yapın.") // jeton yoksa giriş yok (create ile aynı kontrol)
+        }
+        var request = URLRequest(url: URL(string: baseURL +  "/api/v1/listings/mine")!) // /mine = "benim ilanlarım" odası
+        
+        // httpMethod yazmıyoruz: URLRequest'in varsayılanı GET (veri iste), create'te POST yazmıştık (veri gönder)
+        
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // "ben girişliyim" kanıtı | GET'te gövde ve Content-Type yok, gönderecek paket yok
+        
+        let (data,response) = try await URLSession.shared.data(for: request)// zarfı gönder, cevabı bekle
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // sunucunun notu: 200 tamam, 401 jeton yok/süresi bitti, 403 rol uygun değil
+        
+        if status == 401 || status == 403 {
+            throw AuthError(message: "Oturum süresi doldu,tekrar giriş yapın.")
+        }
+        if status != 200 { // başka bir sorun
+            throw AuthError(message: "İlanlar yüklenemedi.")
+        }
+        return try JSONDecoder().decode([MyListing].self, from: data) // [MyListing].self: "MyListing'lerden oluşan liste" olarak çevir
+        
+        
+        // create ile farkı: create veri gönderiyordu (POST, gövde, Content-Type). Bu sadece veri istiyor (GET), gönderecek paket yok. İkisinde de jeton başlığı aynı.
+    }
+    
 }
