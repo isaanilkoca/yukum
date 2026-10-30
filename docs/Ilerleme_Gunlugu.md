@@ -125,3 +125,4 @@ Aşama C (il/ilçe) **bitti**. Aşama D'de **D1 (tablolar), D2 (kayıt) ve D3 (g
 - (30 Ekim, gece) Tüm Swift dosyalarına satır başı mülakat düzeyi yorum eklendi/düzeltildi (YukumApp, ContentView, RoleSelectionView, HomeView, RegisterView, LoginView, CreateListingView, ListingService). Kod değişmedi, derleme geçti.
 - (30 Ekim, gece) 'İlanı Yayınla' düğmesi ListingService.create'e bağlandı (DateFormatter yyyy-MM-dd, isLoading, dismiss). Uçtan uca denendi: ilan Listings tablosuna düştü (SQL ile doğrulandı). Sıradaki: Yük Veren anasayfası İlanlarım listesi (GET /listings/mine).
 - (30 Ekim) Backend: ListingDto'ya fromCityName/toCityName eklendi (iOS listede il adı gösterebilsin).
+- (30 Ekim) Otomasyon: /baslat ve /bitir skill'leri + .claude/scripts/baslat.sh, bitir.sh eklendi; graphify güncellendi (1250 düğüm).
