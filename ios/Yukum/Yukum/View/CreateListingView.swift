@@ -34,6 +34,16 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
     // il seçilince API'den çekilen ilçe listeleri | doldurulduğu yer: aşağıdaki .onChange (CityService().districts → Network/CityService.swift)
     @State private var fromDistricts: [District] = []
     @State private var toDistricts: [District] = []
+    
+    
+    
+    @State private var isLoading = false // @State [SWIFT]: ekranın hafızası | istek sürerken true → düğmeyi kilitlemekte kullanılır (çift tıklama olmasın) | Bool: true/false
+    
+    @Environment(\.dismiss) private var dismiss  // @Environment [SWIFT]: sistemin hazır değerini al | dismiss: "bu ekranı kapat" komutu | ilan açılınca HomeView'a dönmek için; HomeView'daki dismiss ile aynı mantık
+
+    
+    
+    
 
     // (API'ye giden değer, ekranda görünen ad) çiftleri | kayıttaki liste ile aynı (View/CarrierRegisterView.swift)
     private let vehicleTypes = [ // let [SWIFT]: değişmeyen değer | [ ] = liste, her eleman bir çift ( , )
@@ -163,9 +173,50 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
                     }
 
                     errorMessage = nil // her şey tamam → eski hatayı temizle
-                    print("İLAN HAZIR : \(title) \(weight) kg \(vehicleType), \(pickupDate), kalkış \(fromCityId)/\(fromDistrictId) varış \(toCityId)/\(toDistrictId)") // geçici: API bağlanana kadar konsola yazar | \( ) = yazının içine değişken koyar
+                    
+                    // 1) Tarihi API'nin istediği yazıya çevir: Date → "2026-11-05"
+                    
+                    let formatter = DateFormatter() // DateFormatter [SWIFT]: tarih ↔ yazı çevirici | formatter [BİZİM] ad
+                    formatter.dateFormat = "yyyy-MM-dd"  // API'nin beklediği biçim (yıl-ay-gün, saat yok)
+                    formatter.locale = Locale(identifier: "en_US_POSIX") // telefonun diline göre rakamlar/ay adları bozulmasın
+                    
+                    // 2) Paketi doldur | BAĞLANTI: CreateListingRequest, Network/ListingRequest.swift'te tanımlı (form kağıdı) | sıra oradaki alan sırasıyla aynı olmalı
+                    
+                    // request [BİZİM] ad: gönderilecek dolu paket, henüz internete çıkmadı
+                    let request = CreateListingRequest(title: title.trimmingCharacters(in: .whitespaces) // trimmingCharacters [SWIFT]: baş/son boşlukları siler
+                                                       , description: details.isEmpty ? nil : details // a ? b : c = a doğruysa b, değilse c | boşsa nil: JSON'a hiç yazılmaz (isteğe bağlı alan)
+                                                       , weightKg: weight, // yukarıdaki guard let'te Int'e çevrilmişti
+                                                       vehicleType: vehicleType  // "Truck", "Lorry"... (Picker'ın tag değeri)
+                                                       , fromCityId: fromCityId  // Picker'lardan gelen numaralar
+                                                       , fromDistrictId: fromDistrictId
+                                                       , toCityId: toCityId
+                                                       , toDistrictId: toDistrictId
+                                                       , pickupDate: formatter.string(from: pickupDate) // Date → yazı; .string(from:) formatter'ın çevirme fonksiyonu
+                                                       , budget: Int(budget)) // yazı → Int? | boşsa ya da harfse nil gider (isteğe bağlı alan)
+                    // 3) API'ye gönder
+                    Task {  // Task [SWIFT]: düğme içinde await (bekleme) kullanmamızı sağlar; ekran donmaz
+                        isLoading = true // düğme kilitlenir
+                        
+                        do {// do dene demek | hata çıkarsa catchlerden biri çalışır
+                            // BAĞLANTI: ListingService, Network/ListingService.swift'te tanımlı. .create(request) oradaki func create'i çağırır, request'i ona VERİR.
+                            // create → jetonla POST /api/v1/listings → cevap ListingResponse'a çevrilir (kalıbı: Network/ListingRequest.swift) → buraya döner.
+                            // try await: try = hata çıkabilir, await = cevabı bekle
+                            let created = try await ListingService().create(request)
+                            print("İlan Açıldı : \(created.id)")  // geçici test çıktısı (Xcode konsolu)
+                            dismiss() // ekranı kapat homeview a dön
+                            
+                        } catch let error as AuthError { // API "hayır" dedi (400, 401, 403) | AuthError: Network/AuthService.swift'te tanımlı
+                            errorMessage = errorMessage  // API'nin Türkçe mesajı kırmızı yazılır
+                            
+                        } catch{ // başka her hata: API kapalı, internet yok
+                            errorMessage = "Sunucuya Ulaşılamadı"
+                        }
+                        isLoading = false // düğme tekrar acılır
+                        
+                    }
+                    
 
-                }.buttonStyle(.borderedProminent) // dolgulu düğme görünümü
+                }.buttonStyle(.borderedProminent).disabled(isLoading) // dolgulu düğme görünümü
 
             }.padding() // formun kenarlarına boşluk
 
