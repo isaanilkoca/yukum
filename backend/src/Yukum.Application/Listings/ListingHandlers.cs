@@ -35,17 +35,29 @@ public sealed class CreateListingHandler(
 
         listings.Add(listing);
         await unitOfWork.SaveChangesAsync(cancellationToken);
-        return ToDto(listing, await CityNamesAsync(geography, cancellationToken));
+        return ToDto(listing, await CityNamesAsync(geography, cancellationToken), await DistrictNamesAsync(geography, [listing], cancellationToken));
     }
 
     /// <summary>İl numarası → il adı sözlüğü (il listesi önbellekli olduğu için ucuzdur).</summary>
     internal static async Task<Dictionary<int, string>> CityNamesAsync(IGeographyRepository geography, CancellationToken ct) =>
         (await geography.ListCitiesAsync(ct)).ToDictionary(c => c.Id, c => c.Name);
 
-    /// <summary>İlanı istemciye giden modele çevirir; il adlarını sözlükten alır.</summary>
-    internal static ListingDto ToDto(Listing l, IReadOnlyDictionary<int, string> cityNames) => new(l.Id, l.Title, l.Description,
-        l.WeightKg, l.VehicleType, l.FromCityId, cityNames[l.FromCityId], l.FromDistrictId, l.ToCityId, cityNames[l.ToCityId],
-        l.ToDistrictId, l.PickupDate, l.Budget, l.CreatedAt);
+    /// <summary>İlanlardaki illerin ilçelerini okuyup ilçe numarası → ilçe adı sözlüğü yapar (ilçe listeleri il başına önbellekli).</summary>
+    internal static async Task<Dictionary<int, string>> DistrictNamesAsync(IGeographyRepository geography, IEnumerable<Listing> items, CancellationToken ct)
+    {
+        var result = new Dictionary<int, string>();
+        // Yalnız ilanlarda geçen illerin ilçeleri okunur (en fazla birkaç il).
+        var cityIds = items.SelectMany(l => new[] { l.FromCityId, l.ToCityId }).Distinct();
+        foreach (var cityId in cityIds)
+            foreach (var d in await geography.ListDistrictsAsync(cityId, ct))
+                result[d.Id] = d.Name;
+        return result;
+    }
+
+    /// <summary>İlanı istemciye giden modele çevirir; il ve ilçe adlarını sözlüklerden alır.</summary>
+    internal static ListingDto ToDto(Listing l, IReadOnlyDictionary<int, string> cityNames, IReadOnlyDictionary<int, string> districtNames) => new(l.Id, l.Title, l.Description,
+        l.WeightKg, l.VehicleType, l.FromCityId, cityNames[l.FromCityId], l.FromDistrictId, districtNames[l.FromDistrictId],
+        l.ToCityId, cityNames[l.ToCityId], l.ToDistrictId, districtNames[l.ToDistrictId], l.PickupDate, l.Budget, l.CreatedAt);
 }
 
 /// <summary>Yük Veren'in kendi ilanlarını yeniden eskiye sıralı getirir.</summary>
@@ -57,12 +69,13 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
     {
         var mine = await listings.ListAsync(l => l.ShipperId == query.ShipperId, asNoTracking: true, cancellationToken);
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
-        return mine.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names)).ToList();
+        var districts = await CreateListingHandler.DistrictNamesAsync(geography, mine, cancellationToken);
+        return mine.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names, districts)).ToList();
     }
 }
 
 /// <summary>Taşımacı için açık ilanları yeniden eskiye sıralı getirir.</summary>
-public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IGeographyRepository geography)
+public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IRepository<Offer> offers, IGeographyRepository geography)
     : IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>>
 {
     /// <summary>Yalnız durumu Open olan ilanlar döner.</summary>
@@ -70,6 +83,12 @@ public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IGeogr
     {
         var open = await listings.ListAsync(l => l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken);
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
-        return open.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names)).ToList();
+        var districts = await CreateListingHandler.DistrictNamesAsync(geography, open, cancellationToken);
+        // Bu taşımacının verdiği teklifler: ilan numarası → tutar (listede "Teklif verildi" göstermek için).
+        var myOffers = (await offers.ListAsync(o => o.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken))
+            .ToDictionary(o => o.ListingId, o => o.Amount);
+        return open.OrderByDescending(l => l.CreatedAt)
+            .Select(l => CreateListingHandler.ToDto(l, names, districts) with { MyOfferAmount = myOffers.TryGetValue(l.Id, out var amount) ? amount : (decimal?)null })
+            .ToList();
     }
 }

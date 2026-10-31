@@ -39,15 +39,18 @@ public sealed record ListingDto(
     int FromCityId,
     string FromCityName,
     int FromDistrictId,
+    string FromDistrictName,
     int ToCityId,
     string ToCityName,
     int ToDistrictId,
+    string ToDistrictName,
     DateOnly PickupDate,
     decimal? Budget,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    decimal? MyOfferAmount = null); // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);
 
 /// <summary>Sorgu: tüm açık ilanlar (Taşımacı'nın göreceği liste).</summary>
-public sealed record GetOpenListingsQuery;
+public sealed record GetOpenListingsQuery(Guid CarrierId);

@@ -56,10 +56,14 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     if listings.isEmpty { // liste boş mu
                         Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
                     }else {
+                        
                         Text("Açık İlanlar").font(.title3).bold() // liste başlığı
                         List(listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste tüm açık ilanlar (openListings)
-                         ListingRow(listing: listing) // aynı satır parcası
-                            
+                            NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
+                                ListingDetailView(listing: listing) // View/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
+                            } label: { // label: satırın görünen kısmı
+                                ListingRow(listing: listing) // eski satır aynen kalır
+                            }
                         }.listStyle(.plain)
                     }
                     

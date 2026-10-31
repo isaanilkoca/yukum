@@ -46,7 +46,7 @@ public class ListingsController(
     [Authorize(Roles = RoleNames.Carrier)]
     [ProducesResponseType<IReadOnlyList<ListingDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Open(CancellationToken cancellationToken) =>
-        Ok(await getOpenListings.HandleAsync(new GetOpenListingsQuery(), cancellationToken));
+        Ok(await getOpenListings.HandleAsync(new GetOpenListingsQuery(CurrentUserId), cancellationToken));
 
     // Jetondaki 'sub' (kullanıcı numarası). MapInboundClaims kapalı olduğu için adı 'sub'dır.
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);
