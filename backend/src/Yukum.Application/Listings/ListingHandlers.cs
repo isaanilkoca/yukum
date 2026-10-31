@@ -85,10 +85,15 @@ public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IRepos
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, open, cancellationToken);
         // Bu taşımacının verdiği teklifler: ilan numarası → tutar (listede "Teklif verildi" göstermek için).
-        var myOffers = (await offers.ListAsync(o => o.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken))
-            .ToDictionary(o => o.ListingId, o => o.Amount);
+        // Geçmişinden sildiği teklifler listede de görünmez (HiddenByCarrier).
+        var myOffers = (await offers.ListAsync(o => o.CarrierId == query.CarrierId && !o.HiddenByCarrier, asNoTracking: true, cancellationToken))
+            .ToDictionary(o => o.ListingId);
         return open.OrderByDescending(l => l.CreatedAt)
-            .Select(l => CreateListingHandler.ToDto(l, names, districts) with { MyOfferAmount = myOffers.TryGetValue(l.Id, out var amount) ? amount : (decimal?)null })
+            .Select(l => CreateListingHandler.ToDto(l, names, districts) with
+            {
+                MyOfferAmount = myOffers.TryGetValue(l.Id, out var mine) ? mine.Amount : null,
+                MyOfferStatus = myOffers.TryGetValue(l.Id, out var mine2) ? mine2.Status : null
+            })
             .ToList();
     }
 }

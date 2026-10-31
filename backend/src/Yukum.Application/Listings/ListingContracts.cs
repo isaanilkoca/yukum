@@ -1,4 +1,5 @@
 using Yukum.Domain.Accounts;
+using Yukum.Domain.Listings;
 
 namespace Yukum.Application.Listings;
 
@@ -47,7 +48,8 @@ public sealed record ListingDto(
     DateOnly PickupDate,
     decimal? Budget,
     DateTime CreatedAt,
-    decimal? MyOfferAmount = null); // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
+    decimal? MyOfferAmount = null, // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
+    OfferStatus? MyOfferStatus = null); // aynı yerde o teklifin durumu (Pending/Rejected), yoksa null
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);

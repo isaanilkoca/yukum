@@ -19,4 +19,16 @@ public class Offer : BaseEntity
 
     /// <summary>Teklif durumu.</summary>
     public OfferStatus Status { get; set; } = OfferStatus.Pending;
+
+    /// <summary>Yük Veren'in karar verdiği an (UTC); bekleyen teklifte boştur.</summary>
+    public DateTime? DecidedAt { get; set; }
+
+    /// <summary>Taşımacı karar bildirimini gördü mü? Karar verilince false olur ("Yeni" rozeti), taşımacı geçmişi açınca true olur.</summary>
+    public bool CarrierSeen { get; set; }
+
+    /// <summary>Taşımacı bu teklifi geçmişinden sildi mi? (kayıt durur, yalnız onun listesinden gizlenir)</summary>
+    public bool HiddenByCarrier { get; set; }
+
+    /// <summary>Yük Veren bu teklifi geçmişinden sildi mi? (kayıt durur, yalnız onun listesinden gizlenir)</summary>
+    public bool HiddenByShipper { get; set; }
 }

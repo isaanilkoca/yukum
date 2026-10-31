@@ -66,4 +66,36 @@ struct OfferService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Offer
         let firstFieldError = apiError?.errors?.values.first?.first // ?. zinciri: biri nil ise hepsi nil | errors: alan→mesaj listesi | ilk alanın ilk mesajı (örn. "Teklif tutarı sıfırdan büyük olmalı.")
         throw AuthError(message: firstFieldError ?? apiError?.detail ?? "Teklif gönderilemedi.") // ?? zinciri: alan mesajı yoksa genel mesaj (detail: örn. "Bu ilan artık teklif almıyor."), o da yoksa sabit yazı
     }
+    
+    func listingOffers(listingId : String) async throws -> [ListingOffer] {
+        guard let token = Session.accessToken else { //jeton yoksa giriş yok
+            throw AuthError(message: "Oturum bulunamadı , tekrar giriş yapın.")
+        }
+        var request = URLRequest(url: URL(string: baseURL +  "/api/v1/listings/\(listingId)/offers")!) // get te yöntem yazilmaz varsayılan get
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // kimlik kartı | GET'te gövde yok, Content-Type gerekmez
+        let (data,response) = try await URLSession.shared.data(for: request) // gönder cevabı bekle
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // durum kodu
+        if(200...299).contains(status){ return try JSONDecoder().decode([ListingOffer].self, from: data)} // [ListingOffer].self: "liste olarak çevir"
+        if status == 401  || status == 403 { throw AuthError(message: "Oturum süresi doldu, tekrar giriş yapın.") }
+        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // hata cevabını cevir
+        throw AuthError(message: apiError?.detail ?? "Teklifler Alınamadı") // 404 "İlan bulunamadı." gibi mesaj
+    }
+    // decide: teklifi kabul eder ya da reddeder | accept true → /accept, false → /reject | gövde yok, yalnız POST
+    // ÇAĞIRAN: View/ListingOffersView.swift Kabul Et / Reddet düğmeleri
+    func decide(offerId : String , accept : Bool) async  throws {
+        guard let token = Session.accessToken else {
+            throw AuthError(message: "Oturum bulunamadı,tekrar giriş yapın")
+        }
+        let action = accept ? "accept" : "reject" // ?: kısa if | true ise "accept", değilse "reject" | adresin son parçası
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/\(offerId)/\(action)")!)
+        request.httpMethod = "POST" // karar vermek veri değiştirir, POST şart | yazılmazsa GET gider ve API 405 döner
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data,response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if (200...299).contains(status) {return } // başarıda geri verecek bir şey yok (void) | return : sadece bitir
+        if status == 401 || status == 403 {throw AuthError(message: "Oturum süresi doldu ,tekrar giriş yapın")}
+        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data)
+        throw AuthError(message: apiError?.detail ?? "İşlem yapılamadı.") // 409 " bu teklif icin karar zaten verilmiş gibi
+    }
+    
 }

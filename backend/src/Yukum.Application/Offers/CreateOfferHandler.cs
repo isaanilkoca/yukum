@@ -39,6 +39,10 @@ public sealed class CreateOfferHandler(
         {
             existing.Amount = command.Amount;
             existing.Note = note;
+            existing.Status = OfferStatus.Pending; // reddedilmiş teklifi güncelleyen taşımacı yeniden beklemeye girer
+            existing.DecidedAt = null;
+            existing.HiddenByCarrier = false; // sildiği teklife yeniden teklif verirse geri görünür
+            existing.HiddenByShipper = false;
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

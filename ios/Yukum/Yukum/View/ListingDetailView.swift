@@ -59,7 +59,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
 
                 // 3) API'ye gönder
                 Task { // Task [SWIFT]: düğme içinde await kullanmamızı sağlar; ekran donmaz
-                    isLo    ading = true // düğme kilitlenir
+                    isLoading = true // düğme kilitlenir
                     errorMessage = nil // eski hatayı temizle
                     do { // do: dene | hata çıkarsa catch'lerden biri çalışır
                         // BAĞLANTI: Network/OfferService.swift → create → POST /api/v1/listings/{id}/offers

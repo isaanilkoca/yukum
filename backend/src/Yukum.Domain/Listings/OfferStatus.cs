@@ -4,5 +4,11 @@ namespace Yukum.Domain.Listings;
 public enum OfferStatus
 {
     /// <summary>Beklemede: Yük Veren henüz karar vermedi.</summary>
-    Pending = 1
+    Pending = 1,
+
+    /// <summary>Kabul edildi: Yük Veren bu teklifi seçti.</summary>
+    Accepted = 2,
+
+    /// <summary>Reddedildi: Yük Veren reddetti ya da başka teklif kabul edildi.</summary>
+    Rejected = 3
 }

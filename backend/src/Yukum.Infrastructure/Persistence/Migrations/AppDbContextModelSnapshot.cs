@@ -8848,8 +8848,20 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("CarrierId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("CarrierSeen")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("HiddenByCarrier")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HiddenByShipper")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

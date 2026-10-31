@@ -4,5 +4,8 @@ namespace Yukum.Domain.Listings;
 public enum ListingStatus
 {
     /// <summary>Açık: taşımacılar görebilir (şimdilik tek durum; kapanma/iptal teklif aşamasında eklenecek).</summary>
-    Open = 1
+    Open = 1,
+
+    /// <summary>Atandı: bir teklif kabul edildi, ilan açık listeden düştü.</summary>
+    Assigned = 2
 }

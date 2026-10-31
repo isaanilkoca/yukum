@@ -25,3 +25,15 @@ struct CreatOfferRequest : Encodable {
 struct offerResponse : Decodable {
     let amount : Double // API tutarı 1200.0 gibi ondalıklı gönderir, Int değil Double okunur
 }
+
+
+// Yük Veren'in gördüğü tek teklif satırı (GET /api/v1/listings/{id}/offers listesindeki her eleman).
+// BAĞLANTI: OfferService.listingOffers bu struct'ın listesini döner → View/ListingOffersView.swift'te liste olarak gösterilir
+struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez
+    let id: String // teklif numarası (GUID yazı gelir) | kabul/reddet uçlarına bu gider
+    let carrierName: String // teklifi veren taşımacının adı
+    let amount: Double // tutar | API 48000.0 gönderir
+    let note: String? // isteğe bağlı not, yoksa nil
+    let status: String // "Pending" / "Accepted" / "Rejected" (API durumu yazı olarak gönderir)
+}
+

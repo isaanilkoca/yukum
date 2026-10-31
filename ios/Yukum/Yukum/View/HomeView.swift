@@ -46,7 +46,11 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         }
                         
                         List(listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listing: o anki ilan
-                            ListingRow(listing: listing) // BAĞLANTI: View/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
+                            NavigationLink { // satıra basınca süslü parantezdeki ekrana geçer
+                                ListingOffersView(listing: listing) // View/ListingOffersView.swift → bu ilanın gelen teklifleri | basılan ilanı VERİYORUZ
+                            } label: { // label: satırın görünen kısmı
+                                ListingRow(listing: listing) // BAĞLANTI: View/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
+                            }
                         }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi
                     }
                     
