@@ -60,3 +60,16 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
         return mine.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names)).ToList();
     }
 }
+
+/// <summary>Taşımacı için açık ilanları yeniden eskiye sıralı getirir.</summary>
+public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IGeographyRepository geography)
+    : IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>>
+{
+    /// <summary>Yalnız durumu Open olan ilanlar döner.</summary>
+    public async Task<IReadOnlyList<ListingDto>> HandleAsync(GetOpenListingsQuery query, CancellationToken cancellationToken = default)
+    {
+        var open = await listings.ListAsync(l => l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken);
+        var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
+        return open.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names)).ToList();
+    }
+}

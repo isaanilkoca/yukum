@@ -48,3 +48,6 @@ public sealed record ListingDto(
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);
+
+/// <summary>Sorgu: tüm açık ilanlar (Taşımacı'nın göreceği liste).</summary>
+public sealed record GetOpenListingsQuery;
