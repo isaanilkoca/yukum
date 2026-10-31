@@ -17,7 +17,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
     
-    @State private var listings: [MyListing] = [] // @State [SWIFT]: ekranın hafızası | [MyListing] = ilan listesi, başta boş | kalıbı: Network/ListingRequest.swift | doldurulduğu yer: aşağıdaki .task
+    @State private var listings: [Listing] = [] // @State [SWIFT]: ekranın hafızası | [Listing] = ilan listesi, başta boş | kalıbı: Network/ListingRequest.swift | doldurulduğu yer: aşağıdaki .task
     @State private var listError: String? // liste yüklenemezse kırmızı yazılacak mesaj | nil: hata yok
 
     var body: some View { // ekranın içeriği
@@ -44,16 +44,25 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             Text("->")
                             Image(systemName: "truck.box.fill")
                         }
-                        List(listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listings: her eleman için bir satır, Identifiable olduğu için id: yazmak gerekmez | listing: o anki ilan (adı bizim)
-                            VStack(alignment: .leading, spacing: 6) { // alt alta, sola hizalı | spacing: satırlar arası boşluk 4 → 6
-                                Text(listing.title).font(.headline) // başlık: kalın ve büyük
-                                Text("\(listing.fromCityName) → \(listing.toCityName)").font(.subheadline) // "Mersin → İstanbul" | .subheadline: orta boy yazı | -> yerine → (ok işareti)
-                                Text("\(listing.weightKg) kg · \(listing.pickupDate)").font(.caption).foregroundColor(.secondary) // küçük, gri yazı | · = araya nokta ayracı (. yerine)
-                            }.padding(.vertical, 4) // padding(.vertical, 4): satırın üstüne ve altına 4 nokta boşluk | satırlar birbirine yapışmaz
-                        }.listStyle(.plain) // .listStyle [SWIFT]: listenin görünüm stili | .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin üzerinde yuvarlak kutular çizer, o yüzden gri görünüyordu
+                        
+                        List(listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listing: o anki ilan
+                            ListingRow(listing: listing) // BAĞLANTI: View/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
+                        }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi
                     }
+                    
                 } else { // Shipper değilse (Carrier)
-                    Text("Taşımacı AnaSayfası") // sonra açık ilanlar listesi gelecek
+                    if let listError {Text(listError).foregroundColor(.red)} // hata varsa kırmızı yaz (Yük Veren ile aynı değişken)
+        
+                    if listings.isEmpty { // liste boş mu
+                        Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
+                    }else {
+                        Text("Açık İlanlar").font(.title3).bold() // liste başlığı
+                        List(listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste tüm açık ilanlar (openListings)
+                         ListingRow(listing: listing) // aynı satır parcası
+                            
+                        }.listStyle(.plain)
+                    }
+                    
                 }
 
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
@@ -74,17 +83,19 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 }
             }
             .task { // .task [SWIFT]: ekran açılınca bir kez çalışır | içinde await kullanılabilir
-                if user.role == "Shipper"{ // VERİ kararı: hangi isteğin atılacağı | ilanlarım ucu yalnız Yük Veren'e açık; Taşımacı için atılırsa API 403 döner ve ekrana boşuna hata çıkar | yukarıdaki if yalnız çizim yapar, .task ise çizimden bağımsız, ekran açılınca kendi başına çalışır
-                    do {
-                        // BAĞLANTI: ListingService().myListings() → Network/ListingService.swift'teki func myListings → jetonla GET /api/v1/listings/mine → [MyListing] döner
+                do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
+                    if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
+                        // BAĞLANTI: Network/ListingService.swift → myListings → GET /api/v1/listings/mine (yalnız kendi ilanlarım)
                         listings = try await ListingService().myListings() // dönen liste @State'e yazılır, ekran yenilenir
-                    }catch let error as AuthError {  // HATA YOLU: API hata verirse ListingService.myListings "throw AuthError(...)" yapar, burada yakalanır | AuthError: Network/AuthService.swift'te tanımlı
-                        listError = error.message // mesajı listError'a yaz | @State olduğu için ekran yenilenir, yukarıdaki "if let listError" kırmızı yazıyı çizer
-                    } catch {
-                        listError = "Sunucuya ulaşılamadı" // başka her hata: API kapalı, internet yok (sabit mesaj)
+                    } else {
+                        // BAĞLANTI: Network/ListingService.swift → openListings → GET /api/v1/listings (tüm açık ilanlar, yalnız Carrier)
+                        listings = try await ListingService().openListings()
                     }
+                } catch let error as AuthError { // HATA YOLU: API hata verirse ListingService "throw AuthError(...)" yapar, burada yakalanır | AuthError: Network/AuthService.swift'te tanımlı
+                    listError = error.message // mesajı listError'a yaz | @State olduğu için ekran yenilenir, "if let listError" kırmızı yazıyı çizer
+                } catch { // başka her hata: API kapalı, internet yok
+                    listError = "Sunucuya ulaşılamadı." // sabit mesaj
                 }
-                
             }
         }
     }

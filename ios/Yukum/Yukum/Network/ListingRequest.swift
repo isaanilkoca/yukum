@@ -11,6 +11,10 @@ import Foundation
 // KURAL: alan adları API'nin JSON alan adlarıyla BİREBİR aynı olmalı.
 // BAĞLANTI: View/CreateListingView.swift paketi doldurur → Network/ListingService.swift gönderir. API tarafı: backend ListingsController
 
+// API'den gelen tek ilan (hem GET /listings/mine hem GET /listings listelerindeki her eleman). Yalnız listede göstereceklerimizi aldık.
+// BAĞLANTI: Network/ListingService.swift myListings() ve openListings() bu struct'ın listesini döner → View/HomeView.swift'te liste olarak gösterilir
+
+
 struct CreateListingRequest: Encodable { // Encodable [SWIFT]: JSON'a çevrilebilir
     let title: String
     let description: String? // String?: boş bırakılabilir (nil gider)
@@ -38,7 +42,7 @@ struct ListingResponse: Decodable { // Decodable [SWIFT]: gelen JSON'dan üretil
 
 // API'den gelen tek ilan (GET /api/v1/listings/mine listesindeki her eleman). Yalnız listede göstereceklerimizi aldık.
 // BAĞLANTI: Network/ListingService.swift myListings() bu struct'ın listesini döner → View/HomeView.swift'te liste olarak gösterilir
-struct MyListing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, ForEach'te id: yazmak gerekmez
+struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, ForEach'te id: yazmak gerekmez
     let id: String // ilan numarası (GUID yazı olarak gelir) | Identifiable bunu kullanır
     let title: String // başlık
     let weightKg: Int // ağırlık
