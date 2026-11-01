@@ -1,0 +1,58 @@
+using FluentValidation;
+using Yukum.Application.Abstractions.Messaging;
+using Yukum.Application.Abstractions.Persistence;
+using Yukum.Application.Common;
+using Yukum.Domain.Listings;
+
+namespace Yukum.Application.Messages;
+
+/// <summary>Sohbete katılma yetkisi: yalnız teklifi veren taşımacı ve ilanın sahibi. Başkasına 404 (sohbetin varlığı sızdırılmaz).</summary>
+internal static class ChatAccess
+{
+    /// <summary>Teklifi getirir; kullanıcı taraf değilse NotFoundException fırlatır.</summary>
+    public static async Task<Offer> RequireParticipantAsync(
+        IRepository<Offer> offers, IRepository<Listing> listings, Guid offerId, Guid userId, CancellationToken ct)
+    {
+        var offer = await offers.GetByIdAsync(offerId, asNoTracking: true, ct) ?? throw new NotFoundException("Sohbet bulunamadı.");
+        if (offer.CarrierId == userId) return offer;
+        var listing = await listings.GetByIdAsync(offer.ListingId, asNoTracking: true, ct);
+        if (listing is not null && listing.ShipperId == userId) return offer;
+        throw new NotFoundException("Sohbet bulunamadı.");
+    }
+}
+
+/// <summary>Bir teklifin mesajlarını eskiden yeniye getirir.</summary>
+public sealed class GetMessagesHandler(IRepository<Offer> offers, IRepository<Listing> listings, IRepository<Message> messages)
+    : IQueryHandler<GetMessagesQuery, IReadOnlyList<MessageDto>>
+{
+    /// <summary>Taraf olmayana 404. Reddedilmiş tekliflerin eski mesajları okunabilir.</summary>
+    public async Task<IReadOnlyList<MessageDto>> HandleAsync(GetMessagesQuery query, CancellationToken cancellationToken = default)
+    {
+        await ChatAccess.RequireParticipantAsync(offers, listings, query.OfferId, query.UserId, cancellationToken);
+        var list = await messages.ListAsync(m => m.OfferId == query.OfferId, asNoTracking: true, cancellationToken);
+        return list.OrderBy(m => m.CreatedAt).Select(m => new MessageDto(m.Id, m.Text, m.CreatedAt, m.SenderId == query.UserId)).ToList();
+    }
+}
+
+/// <summary>Sohbete mesaj ekler. Reddedilmiş teklifte yazılamaz.</summary>
+public sealed class SendMessageHandler(
+    IValidator<SendMessageCommand> validator,
+    IRepository<Offer> offers,
+    IRepository<Listing> listings,
+    IRepository<Message> messages,
+    IUnitOfWork unitOfWork) : ICommandHandler<SendMessageCommand, MessageDto>
+{
+    /// <summary>Doğrulama hatası 400, taraf değilse 404, teklif reddedilmişse 409.</summary>
+    public async Task<MessageDto> HandleAsync(SendMessageCommand command, CancellationToken cancellationToken = default)
+    {
+        await validator.ValidateAndThrowAsync(command, cancellationToken);
+        var offer = await ChatAccess.RequireParticipantAsync(offers, listings, command.OfferId, command.UserId, cancellationToken);
+        if (offer.Status == OfferStatus.Rejected)
+            throw new ConflictException("Reddedilen teklifte sohbet kapalı.");
+
+        var message = new Message { OfferId = offer.Id, SenderId = command.UserId, Text = command.Text!.Trim() };
+        messages.Add(message);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return new MessageDto(message.Id, message.Text, message.CreatedAt, IsMine: true);
+    }
+}

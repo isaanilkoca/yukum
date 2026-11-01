@@ -50,6 +50,9 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     /// <summary>Taşımacıların ilanlara verdiği teklifler.</summary>
     public DbSet<Offer> Offers => Set<Offer>();
 
+    /// <summary>Teklif sohbetlerindeki mesajlar.</summary>
+    public DbSet<Message> Messages => Set<Message>();
+
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.
     protected TimeProvider Time { get; }

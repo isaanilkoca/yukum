@@ -26,3 +26,11 @@ SELECT u.FullName AS Tasimaci, COUNT(*) AS GorulmemisKarar
 FROM Offers o JOIN Users u ON u.Id = o.CarrierId
 WHERE o.Status <> 1 AND o.CarrierSeen = 0 AND o.HiddenByCarrier = 0
 GROUP BY u.FullName;
+
+-- 4) Sohbet mesajları: hangi ilan/teklif, kim yazdı, ne yazdı
+SELECT l.Title AS Ilan, u.FullName AS Yazan, m.Text AS Mesaj, m.CreatedAt AS Zaman
+FROM Messages m
+JOIN Offers o ON o.Id = m.OfferId
+JOIN Listings l ON l.Id = o.ListingId
+JOIN Users u ON u.Id = m.SenderId
+ORDER BY m.CreatedAt;

@@ -8835,6 +8835,45 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.ToTable("Listings", (string)null);
                 });
 
+            modelBuilder.Entity("Yukum.Domain.Listings.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("OfferId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OfferId", "CreatedAt");
+
+                    b.ToTable("Messages", (string)null);
+                });
+
             modelBuilder.Entity("Yukum.Domain.Listings.Offer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -9140,6 +9179,15 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.HasOne("Yukum.Domain.Geography.District", null)
                         .WithMany()
                         .HasForeignKey("ToDistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Yukum.Domain.Listings.Message", b =>
+                {
+                    b.HasOne("Yukum.Domain.Listings.Offer", null)
+                        .WithMany()
+                        .HasForeignKey("OfferId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

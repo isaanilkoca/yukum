@@ -121,7 +121,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     }
                 }
             }
-            .task { // .task [SWIFT]: ekran açılınca bir kez çalışır | içinde await kullanılabilir
+            .task { // .task [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) | bu yüzden teklif verip/karar verip dönünce liste ve rozet kendiliğinden yenilenir | içinde await kullanılabilir
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                     if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
                         // BAĞLANTI: Network/ListingService.swift → myListings → GET /api/v1/listings/mine (yalnız kendi ilanlarım)
