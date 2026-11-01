@@ -7,7 +7,7 @@ using Yukum.Domain.Listings;
 namespace Yukum.Application.Offers;
 
 /// <summary>Taşımacı'nın tüm teklifleri (bekleyen, kabul, red), yeniden eskiye. Karar bildirimi "IsNew" ile işaretlenir.</summary>
-public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Listing> listings, IGeographyRepository geography)
+public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Listing> listings, IGeographyRepository geography, IUserDirectory users)
     : IQueryHandler<GetMyOffersQuery, IReadOnlyList<CarrierOfferDto>>
 {
     /// <summary>Yalnız jetondaki taşımacının, kendi geçmişinden silmediği teklifler döner.</summary>
@@ -17,20 +17,25 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
         var ids = mine.Select(o => o.ListingId).Distinct().ToList();
         var listingMap = (await listings.ListAsync(l => ids.Contains(l.Id), asNoTracking: true, cancellationToken)).ToDictionary(l => l.Id);
         var cities = (await geography.ListCitiesAsync(cancellationToken)).ToDictionary(c => c.Id, c => c.Name);
+        // İlçe adları ve ilanı açan Yük Veren'in adı (ilan sahibi = ilanı veren firma/kişi).
+        var districts = await Listings.CreateListingHandler.DistrictNamesAsync(geography, listingMap.Values, cancellationToken);
+        var shippers = await users.GetFullNamesAsync(listingMap.Values.Select(l => l.ShipperId), cancellationToken);
 
         return mine.OrderByDescending(o => o.DecidedAt ?? o.CreatedAt)
             .Where(o => listingMap.ContainsKey(o.ListingId))
             .Select(o =>
             {
                 var l = listingMap[o.ListingId];
-                return new CarrierOfferDto(o.Id, l.Id, l.Title, cities[l.FromCityId], cities[l.ToCityId], o.Amount, o.Note,
+                return new CarrierOfferDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
+                    cities[l.ToCityId], districts[l.ToDistrictId], shippers.GetValueOrDefault(l.ShipperId, "Yük Veren"),
+                    l.WeightKg, l.PickupDate, o.Amount, o.Note,
                     o.Status, IsNew: o.Status != OfferStatus.Pending && !o.CarrierSeen, o.CreatedAt, o.DecidedAt);
             }).ToList();
     }
 }
 
 /// <summary>Yük Veren'in karara bağladığı (kabul/red) teklifler: "eski teklifler" bölümü.</summary>
-public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRepository<Listing> listings, IUserDirectory users)
+public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRepository<Listing> listings, IUserDirectory users, IGeographyRepository geography)
     : IQueryHandler<GetShipperOfferHistoryQuery, IReadOnlyList<ShipperOfferHistoryDto>>
 {
     /// <summary>Yalnız jetondaki yük verenin ilanlarına gelen, karar verilmiş ve silinmemiş teklifler.</summary>
@@ -42,11 +47,17 @@ public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRe
             o => listingIds.Contains(o.ListingId) && o.Status != OfferStatus.Pending && !o.HiddenByShipper,
             asNoTracking: true, cancellationToken);
         var names = await users.GetFullNamesAsync(decided.Select(o => o.CarrierId), cancellationToken);
+        var cities = (await geography.ListCitiesAsync(cancellationToken)).ToDictionary(c => c.Id, c => c.Name);
+        var districts = await Listings.CreateListingHandler.DistrictNamesAsync(geography, myListings.Values, cancellationToken);
 
         return decided.OrderByDescending(o => o.DecidedAt)
-            .Select(o => new ShipperOfferHistoryDto(o.Id, o.ListingId, myListings[o.ListingId].Title,
-                names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt))
-            .ToList();
+            .Select(o =>
+            {
+                var l = myListings[o.ListingId];
+                return new ShipperOfferHistoryDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
+                    cities[l.ToCityId], districts[l.ToDistrictId], l.WeightKg, l.PickupDate,
+                    names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt);
+            }).ToList();
     }
 }
 

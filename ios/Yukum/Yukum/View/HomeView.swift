@@ -19,6 +19,10 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     
     @State private var listings: [Listing] = [] // @State [SWIFT]: ekranın hafızası | [Listing] = ilan listesi, başta boş | kalıbı: Network/ListingRequest.swift | doldurulduğu yer: aşağıdaki .task
     @State private var listError: String? // liste yüklenemezse kırmızı yazılacak mesaj | nil: hata yok
+    // unseenCount: Taşımacı'nın henüz görmediği karar (kabul/red) sayısı
+    // NE İŞE YARAR: sağ üstteki kutu ikonunda kırmızı rozet olarak gösterilir (push bildirim yerine uygulama içi bildirim) | 0 ise rozet çizilmez
+    // NEREDE DOLAR: aşağıdaki .task, Taşımacı kolu → OfferService().unseenCount() | NEREDE KULLANILIR: toolbar'daki Image("tray.full").overlay
+    @State private var unseenCount = 0 // @State: değişince ekran yenilenir | başta 0
 
     var body: some View { // ekranın içeriği
 
@@ -89,6 +93,33 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         }
                     }
                 }
+                
+                if user.role == "Shipper" { // GÖRÜNÜM kararı: "Eski teklifler" yalnız Yük Veren'de çıkar
+                                 ToolbarItem(placement: .topBarLeading) { // .topBarLeading [SWIFT]: sol üst köşe (sağ üstte + var)
+                                     NavigationLink { // basınca süslü parantezdeki ekrana geçer
+                                         OldOffersView() // View/OldOffersView.swift → karara bağlanmış teklifler + silme
+                                     } label: {
+                                         Image(systemName: "clock.arrow.circlepath") // SF Symbols: geçmiş ikonu
+                                     }
+                                 }
+                             }
+
+                if user.role == "Carrier" { // GÖRÜNÜM kararı: "Tekliflerim" düğmesi yalnız Taşımacı'da çıkar (Yük Veren'in + düğmesiyle aynı yer, roller farklı olduğu için çakışmaz)
+                    ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
+                        NavigationLink { // basınca süslü parantezdeki ekrana geçer
+                            MyOffersView() // View/MyOffersView.swift → Taşımacı'nın tüm teklifleri (bekleyen/kabul/red) + silme
+                        } label: { // label: düğmenin görünen kısmı
+                            Image(systemName: "tray.full") // SF Symbols: gelen kutusu ikonu
+                                .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun ÜSTÜNE katman koyar | alignment: .topTrailing = sağ üst köşe
+                                    if unseenCount > 0 { // > büyüktür | görülmemiş karar varsa rozet çizilir, yoksa hiç çizilmez
+                                        Text("\(unseenCount)").font(.caption2).foregroundColor(.white) // rozetin içindeki sayı | \( ) = değişkeni yazıya koyar
+                                            .padding(4).background(Color.red).clipShape(Circle()) // .padding: etrafında boşluk | .background: kırmızı zemin | .clipShape(Circle()): yuvarlak yapar
+                                            .offset(x: 10, y: -10) // .offset [SWIFT]: rozeti ikonun biraz sağ-üstüne kaydırır | x: sağa, y: yukarı (eksi)
+                                    }
+                                }
+                        }
+                    }
+                }
             }
             .task { // .task [SWIFT]: ekran açılınca bir kez çalışır | içinde await kullanılabilir
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
@@ -98,6 +129,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     } else {
                         // BAĞLANTI: Network/ListingService.swift → openListings → GET /api/v1/listings (tüm açık ilanlar, yalnız Carrier)
                         listings = try await ListingService().openListings()
+                        unseenCount = try await OfferService().unseenCount() // BAĞLANTI: Network/OfferService.swift → GET /api/v1/offers/mine/unseen-count | dönen sayı @State'e yazılır, rozet güncellenir
                     }
                 } catch let error as AuthError { // HATA YOLU: API hata verirse ListingService "throw AuthError(...)" yapar, burada yakalanır | AuthError: Network/AuthService.swift'te tanımlı
                     listError = error.message // mesajı listError'a yaz | @State olduğu için ekran yenilenir, "if let listError" kırmızı yazıyı çizer

@@ -98,4 +98,76 @@ struct OfferService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Offer
         throw AuthError(message: apiError?.detail ?? "İşlem yapılamadı.") // 409 " bu teklif icin karar zaten verilmiş gibi
     }
     
+    
+    // ───────── Taşımacı: "Tekliflerim" ekranının servis fonksiyonları (4 tane) ─────────
+    // Hepsi aynı kalıp: jeton al → zarf hazırla → gönder → durum koduna bak → sonucu çevir ya da hata fırlat (create ile aynı mantık)
+
+    // myOffers: giriş yapan Taşımacı'nın verdiği TÜM teklifleri getirir (bekleyen + kabul + red)
+    // NE İŞE YARAR: "Tekliflerim" listesinin verisini sağlar | GET /api/v1/offers/mine | backend: OffersController.MyOffers
+    // NEREDE KULLANILIR: View/MyOffersView.swift → loadOffers() | döndürdüğü liste ekrandaki @State offers'a yazılır
+    func myOffers() async throws -> [CarrierOffer] { // -> [CarrierOffer]: teklif listesi döner | kalıbı: Network/OfferRequest.swift
+        guard let token = Session.accessToken else { throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.") } // jeton yoksa giriş yok, istek atmadan dur
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/mine")!) // adres | GET'te httpMethod yazılmaz, varsayılan GET (veri iste)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // kimlik kartı | token YAZILMAZSA API kim olduğumuzu bilemez, 401 döner
+        let (data, response) = try await URLSession.shared.data(for: request) // gönder, cevabı bekle | data: içerik (JSON), response: durum bilgisi
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // durum kodu: 200 tamam, 401 jeton yok/bitti, 403 rol uygun değil
+        if (200...299).contains(status) { return try JSONDecoder().decode([CarrierOffer].self, from: data) } // başarı: JSON'u [CarrierOffer] listesine çevir | [X].self: "X'lerin listesi olarak çevir"
+        if status == 401 || status == 403 { throw AuthError(message: "Oturum süresi doldu, tekrar giriş yapın.") } // 15 dk jeton ömrü doldu
+        throw AuthError(message: "Teklifler alınamadı.") // başka bir hata: sabit mesaj
+    }
+
+    // unseenCount: Taşımacı'nın henüz GÖRMEDİĞİ karar sayısını getirir (Yük Veren kabul/red verdi, Taşımacı bakmadı)
+    // NE İŞE YARAR: Taşımacı'ya "bildirim" yerine uygulama içi kırmızı rozet sayısı verir (push ücretli hesap ister) | GET /api/v1/offers/mine/unseen-count
+    // NEREDE KULLANILIR: View/HomeView.swift → .task (Taşımacı kolu) | dönen sayı @State unseenCount'a yazılır, kutu ikonundaki rozet çizilir
+    func unseenCount() async throws -> Int { // -> Int: yalnız bir sayı döner
+        guard let token = Session.accessToken else { throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.") }
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/mine/unseen-count")!)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if (200...299).contains(status) { return try JSONDecoder().decode(UnseenCount.self, from: data).count } // JSON {"count":3} → UnseenCount struct'ı | .count: struct'tan yalnız sayıyı al, Int olarak döner
+        throw AuthError(message: "Bildirim sayısı alınamadı.")
+    }
+
+    // markSeen: bekleyen karar bildirimlerini "görüldü" yapar
+    // NE İŞE YARAR: sunucuda Offer.CarrierSeen=true olur → sonraki açılışta "Yeni" rozeti ve anasayfadaki sayı çıkmaz | POST /api/v1/offers/mine/seen
+    // NEREDE KULLANILIR: View/MyOffersView.swift → .task, liste çizildikten SONRA (yoksa "Yeni" rozetleri hiç görünmezdi)
+    func markSeen() async throws { // -> bir şey dönmez (Void): API 204 verir, gövde yok
+        guard let token = Session.accessToken else { throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.") }
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/mine/seen")!)
+        request.httpMethod = "POST" // sunucudaki veriyi DEĞİŞTİRİYOR, bu yüzden POST (GET veri değiştirmez)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (_, response) = try await URLSession.shared.data(for: request) // _ = cevabın içeriğini kullanmayacağız, yalnız durum koduna bakacağız
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if !(200...299).contains(status) { throw AuthError(message: "İşlem yapılamadı.") } // ! = değil | başarı aralığında DEĞİLSE hata fırlat
+    }
+
+    // hide: teklifi KENDİ geçmişinden siler; karşı taraf görmeye devam eder (kayıt DB'den silinmez, bayrak işaretlenir)
+    // NE İŞE YARAR: eski teklifleri temizlemek | DELETE /api/v1/offers/{id} | bekleyen teklif silinemez (API 409 verir)
+    // NEREDE KULLANILIR: View/MyOffersView.swift → satırı kaydırıp "Sil" (Taşımacı) | ileride Yük Veren "Eski teklifler" ekranı da kullanacak
+    func hide(offerId: String) async throws { // offerId: silinecek teklifin numarası (CarrierOffer.id)
+        guard let token = Session.accessToken else { throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.") }
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/\(offerId)")!) // \(offerId): adrese teklif numarasını koyar
+        request.httpMethod = "DELETE" // DELETE: "bunu sil" isteği (HTTP yöntemlerinden biri)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if (200...299).contains(status) { return } // başarıda API 204 verir, döndürecek bir şey yok, fonksiyon biter
+        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // hata cevabını çevir | try?: çevrilemezse nil | APIErrorResponse: Network/RegisterRequest.swift
+        throw AuthError(message: apiError?.detail ?? "Silinemedi.") // detail: örn. "Bekleyen teklif silinemez; önce karar verilmeli."
+    }
+    
+    // shipperHistory: Yük Veren'in karara bağladığı (kabul/red) tüm teklifleri getirir, silmediklerini
+      // NE İŞE YARAR: "Eski teklifler" ekranının verisi | GET /api/v1/offers/history | backend: OffersController.ShipperHistory
+      // NEREDE KULLANILIR: View/OldOffersView.swift → loadOffers() | dönen liste ekrandaki @State'e yazılır
+      func shipperHistory() async throws -> [ShipperHistoryOffer] { // -> [ShipperHistoryOffer]: liste döner | kalıbı: Network/OfferRequest.swift
+          guard let token = Session.accessToken else { throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.") } // jeton yoksa giriş yok
+          var request = URLRequest(url: URL(string: baseURL + "/api/v1/offers/history")!) // adres | GET'te yöntem yazılmaz, varsayılan GET
+          request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // kimlik kartı | yazılmazsa API 401 verir
+          let (data, response) = try await URLSession.shared.data(for: request) // gönder, cevabı bekle
+          let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // durum kodu
+          if (200...299).contains(status) { return try JSONDecoder().decode([ShipperHistoryOffer].self, from: data) } // JSON → liste
+          if status == 401 || status == 403 { throw AuthError(message: "Oturum süresi doldu, tekrar giriş yapın.") } // jeton süresi doldu ya da rol uygun değil
+          throw AuthError(message: "Eski teklifler alınamadı.")
+      }
 }

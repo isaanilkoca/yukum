@@ -37,3 +37,49 @@ struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersi
     let status: String // "Pending" / "Accepted" / "Rejected" (API durumu yazı olarak gönderir)
 }
 
+
+// CarrierOffer: Taşımacı'nın "Tekliflerim" listesindeki TEK SATIRIN kalıbı.
+// NE İŞE YARAR: API'den gelen JSON'daki her teklif bu struct'a çevrilir (Decodable) | alan adları API'deki ile BİREBİR aynı olmalı, yoksa okuma hatası verir
+// NEREDE KULLANILIR: Network/OfferService.swift → myOffers() bu struct'ın listesini döner → View/MyOffersView.swift listeyi ekrana çizer
+struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, List'te "id:" yazmak gerekmez
+    let id: String // teklif numarası (GUID, yazı gelir) | Identifiable bunu kullanır | silme isteğine (hide) bu gider
+    let listingTitle: String // teklif verdiğimiz ilanın başlığı | satırın üst yazısı
+    let fromCityName: String // ilanın kalkış ili | rota yazısı için
+    let toCityName: String // ilanın varış ili | rota yazısı için
+    let amount: Double // verdiğimiz teklif tutarı | Double: API 48000.0 gibi ondalıklı gönderir | ekranda Int(amount) ile 48000 yazılır
+    let status: String // teklifin durumu: "Pending" (beklemede) / "Accepted" (kabul) / "Rejected" (red) | switch ile renkli yazıya çevrilir | yalnız karar verilmişler (Pending değil) silinebilir
+    let isNew: Bool // Bool: true/false | true = Yük Veren karar verdi (kabul/red) AMA Taşımacı henüz Tekliflerim ekranını açıp görmedi | backend: Offer.CarrierSeen=false ve karar verilmiş
+    //NE İŞE YARAR: push bildirim yerine uygulama içi "Yeni" rozeti | NEREDE: MyOffersView'da satırdaki kırmızı hap | ekran açılınca markSeen() false yapar
+    
+    let fromDistrictName: String // kalkış ilçesi | NE İŞE YARAR: rotada il yanında ilçeyi göstermek | NEREDE: MyOffersView rota satırı | API'deki "fromDistrictName" ile aynı ad
+    let toDistrictName: String // varış ilçesi | aynı amaçla
+    let shipperName: String // ilanı açan Yük Veren'in adı | NE İŞE YARAR: Taşımacı teklifin kimden geldiğini/kime verildiğini görsün | NEREDE: MyOffersView "Yük Veren:" satırı
+    let weightKg: Int // yükün ağırlığı (kg) | NE İŞE YARAR: teklif geçmişinde ilanı hatırlatan detay | NEREDE: MyOffersView detay satırı
+    let pickupDate: String // yükleme tarihi, "2026-11-05" yazısı gelir | NEREDE: MyOffersView detay satırı
+
+}
+
+// UnseenCount: "kaç tane görülmemiş karar var" cevabının kalıbı. API {"count": 3} gönderir.
+// NE İŞE YARAR: tek bir sayıyı struct içinde almak (API her zaman nesne döner, çıplak sayı değil)
+// NEREDE KULLANILIR: Network/OfferService.swift → unseenCount() bunu çevirip yalnız .count'u döner → HomeView'daki kutu ikonunun rozeti
+struct UnseenCount: Decodable { // Decodable: JSON → struct
+    let count: Int // görülmemiş karar sayısı | 0 ise rozet çizilmez
+}
+
+// ShipperHistoryOffer: Yük Veren'in "Eski teklifler" listesindeki TEK SATIRIN kalıbı (karara bağladığı bir teklif).
+// NE İŞE YARAR: GET /api/v1/offers/history'deki her eleman bu struct'a çevrilir | alan adları API ile BİREBİR aynı olmalı
+// NEREDE KULLANILIR: Network/OfferService.swift → shipperHistory() bu struct'ın listesini döner → View/OldOffersView.swift listeyi çizer
+struct ShipperHistoryOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan üretilir | Identifiable [SWIFT]: benzersiz id'si var
+    let id: String // teklif numarası | silme isteğine (hide) bu gider
+    let listingTitle: String // hangi ilana gelen teklif | satırın üst yazısı
+    let fromCityName: String // kalkış ili
+    let fromDistrictName: String // kalkış ilçesi
+    let toCityName: String // varış ili
+    let toDistrictName: String // varış ilçesi
+    let weightKg: Int // yükün ağırlığı (kg)
+    let pickupDate: String // yükleme tarihi "2026-11-05" yazısı
+    let carrierName: String // teklifi veren Taşımacı'nın adı | NE İŞE YARAR: kime kabul/red verdiğimi hatırlamak
+    let amount: Double // teklif tutarı (API 48000.0 gönderir)
+    let status: String // "Accepted" (kabul ettim) / "Rejected" (reddettim) | geçmişte "Pending" olmaz, yalnız karar verilmişler gelir
+}
+

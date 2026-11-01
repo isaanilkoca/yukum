@@ -19,7 +19,14 @@ struct ListingRow: View {
             Text(listing.title).font(.headline)  // başlık: kalın ve büyük
             Text("\(listing.fromCityName) -> \(listing.toCityName)").font(.subheadline) // "Mersin → İstanbul" | \( ) = yazının içine değişken koyar
             Text("\(listing.weightKg) kg . \(listing.pickupDate)").font(.caption).foregroundColor(.secondary) // küçük gri yazı
-        
+            
+            if let amount = listing.myOfferAmount { // if let: nil değilse içine gir | yalnız teklif verdiysek (Taşımacı listesinde) dolu gelir
+            // Text(...) + renk: durum yazısı | ?: kısa if | "Rejected" ise kırmızı, değilse turuncu (beklemede)
+            Text("Teklifin: \(Int(amount)) ₺ · \(listing.myOfferStatus == "Rejected" ? "Reddedildi" : "Beklemede")")
+            .font(.caption).foregroundColor(listing.myOfferStatus == "Rejected" ? .red : .orange) // küçük renkli yazı
+                
+        }
+
         }.padding(.vertical,4)  // satırın üstüne ve altına 4 nokta boşluk
 
     }

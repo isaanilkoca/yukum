@@ -53,5 +53,7 @@ struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan �
     let pickupDate: String // "2026-10-31" yazısı olarak gelir, ekranda olduğu gibi göstereceğiz
     let budget: Double? // Double: ondalıklı sayı (API 50000.0 gönderir) | ?: isteğe bağlı, yoksa nil
     let myOfferAmount: Double? // bu Taşımacı'nın bu ilana verdiği teklif | ?: vermediyse nil | yalnız Taşımacı listesinde dolu gelir
+    let myOfferStatus: String? // bu Taşımacı'nın teklifinin durumu: "Pending" / "Rejected" | ?: teklif vermediyse nil | API'deki "myOfferStatus" ile aynı ad
 }
+
 

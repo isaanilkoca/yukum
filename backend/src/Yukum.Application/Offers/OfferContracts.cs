@@ -24,15 +24,18 @@ public sealed record DecideOfferCommand(Guid OfferId, Guid ShipperId, bool Accep
 public sealed record GetMyOffersQuery(Guid CarrierId);
 
 /// <summary>Taşımacı geçmişindeki satır: teklif + ilanın özeti. IsNew: karar verildi ama taşımacı henüz görmedi.</summary>
-public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitle, string FromCityName, string ToCityName,
+public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitle,
+    string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName,
+    string ShipperName, int WeightKg, DateOnly PickupDate,
     decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt);
 
 /// <summary>Sorgu: Yük Veren'in karar verdiği (kabul/red) tekliflerin geçmişi (silinenler hariç).</summary>
 public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
 
 /// <summary>Yük Veren geçmişindeki satır: teklif + hangi ilan + hangi taşımacı.</summary>
-public sealed record ShipperOfferHistoryDto(Guid Id, Guid ListingId, string ListingTitle, string CarrierName,
-    decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt);
+public sealed record ShipperOfferHistoryDto(Guid Id, Guid ListingId, string ListingTitle,
+    string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName, int WeightKg, DateOnly PickupDate,
+    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt);
 
 /// <summary>Komut: kullanıcı karara bağlanmış bir teklifi kendi geçmişinden siler (karşı tarafta durur).</summary>
 public sealed record HideOfferCommand(Guid OfferId, Guid UserId, bool IsCarrier);
