@@ -1,6 +1,7 @@
 using FluentValidation;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
+using Yukum.Application.Common;
 using Yukum.Domain.Listings;
 
 namespace Yukum.Application.Listings;
@@ -54,6 +55,16 @@ public sealed class CreateListingHandler(
         return result;
     }
 
+    /// <summary>İlanlardaki kalkış illerinin ilçe koordinatları: ilçe numarası → (enlem, boylam). Mesafe hesabı için (ilçe listeleri il başına önbellekli).</summary>
+    internal static async Task<Dictionary<int, (double Lat, double Lon)>> DistrictPointsAsync(IGeographyRepository geography, IEnumerable<Listing> items, CancellationToken ct)
+    {
+        var result = new Dictionary<int, (double, double)>();
+        foreach (var cityId in items.Select(l => l.FromCityId).Distinct())
+            foreach (var d in await geography.ListDistrictsAsync(cityId, ct))
+                result[d.Id] = (d.Latitude, d.Longitude);
+        return result;
+    }
+
     /// <summary>İlanı istemciye giden modele çevirir; il ve ilçe adlarını sözlüklerden alır.</summary>
     internal static ListingDto ToDto(Listing l, IReadOnlyDictionary<int, string> cityNames, IReadOnlyDictionary<int, string> districtNames) => new(l.Id, l.Title, l.Description,
         l.WeightKg, l.VehicleType, l.FromCityId, cityNames[l.FromCityId], l.FromDistrictId, districtNames[l.FromDistrictId],
@@ -78,22 +89,41 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
 public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IRepository<Offer> offers, IGeographyRepository geography)
     : IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>>
 {
-    /// <summary>Yalnız durumu Open olan ilanlar döner.</summary>
+    /// <summary>Yalnız durumu Open olan ilanlar döner; kalkış ili/ilçesi verilmişse yalnız onlar (filtre).</summary>
     public async Task<IReadOnlyList<ListingDto>> HandleAsync(GetOpenListingsQuery query, CancellationToken cancellationToken = default)
     {
-        var open = await listings.ListAsync(l => l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken);
+        // Filtre SQL'de yapılır (WHERE): "filtre boşsa (null) o koşul geçerli sayılır, doluysa eşleşme aranır".
+        // Değişkenleri dışarıda alıyoruz ki EF Core bunları SQL parametresine çevirebilsin.
+        var cityId = query.FromCityId;
+        var districtId = query.FromDistrictId;
+        var open = await listings.ListAsync(
+            l => l.Status == ListingStatus.Open
+                 && (cityId == null || l.FromCityId == cityId)
+                 && (districtId == null || l.FromDistrictId == districtId),
+            asNoTracking: true, cancellationToken);
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, open, cancellationToken);
         // Bu taşımacının verdiği teklifler: ilan numarası → tutar (listede "Teklif verildi" göstermek için).
         // Geçmişinden sildiği teklifler listede de görünmez (HiddenByCarrier).
         var myOffers = (await offers.ListAsync(o => o.CarrierId == query.CarrierId && !o.HiddenByCarrier, asNoTracking: true, cancellationToken))
             .ToDictionary(o => o.ListingId);
-        return open.OrderByDescending(l => l.CreatedAt)
-            .Select(l => CreateListingHandler.ToDto(l, names, districts) with
-            {
-                MyOfferAmount = myOffers.TryGetValue(l.Id, out var mine) ? mine.Amount : null,
-                MyOfferStatus = myOffers.TryGetValue(l.Id, out var mine2) ? mine2.Status : null
-            })
+        // Konum verilmişse her ilanın kalkış ilçesine mesafe hesaplanır (kuş uçuşu, Haversine); verilmemişse null.
+        var hasLocation = query.Lat is not null && query.Lon is not null;
+        var points = hasLocation ? await CreateListingHandler.DistrictPointsAsync(geography, open, cancellationToken) : [];
+
+        var dtos = open.Select(l => CreateListingHandler.ToDto(l, names, districts) with
+        {
+            MyOfferAmount = myOffers.TryGetValue(l.Id, out var mine) ? mine.Amount : null,
+            MyOfferStatus = myOffers.TryGetValue(l.Id, out var mine2) ? mine2.Status : null,
+            DistanceKm = hasLocation && points.TryGetValue(l.FromDistrictId, out var p)
+                ? Math.Round(GeoMath.DistanceKm(query.Lat!.Value, query.Lon!.Value, p.Lat, p.Lon), 1)
+                : null
+        });
+
+        // Sıralama: konum varsa en yakın üstte (eşitlikte en yeni), yoksa en yeni üstte.
+        return (hasLocation
+                ? dtos.OrderBy(d => d.DistanceKm ?? double.MaxValue).ThenByDescending(d => d.CreatedAt)
+                : dtos.OrderByDescending(d => d.CreatedAt))
             .ToList();
     }
 }

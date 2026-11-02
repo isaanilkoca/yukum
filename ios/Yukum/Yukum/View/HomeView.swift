@@ -23,6 +23,15 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // NE İŞE YARAR: sağ üstteki kutu ikonunda kırmızı rozet olarak gösterilir (push bildirim yerine uygulama içi bildirim) | 0 ise rozet çizilmez
     // NEREDE DOLAR: aşağıdaki .task, Taşımacı kolu → OfferService().unseenCount() | NEREDE KULLANILIR: toolbar'daki Image("tray.full").overlay
     @State private var unseenCount = 0 // @State: değişince ekran yenilenir | başta 0
+    
+    // ─── Taşımacı ilan filtresi: kalkış ili / ilçesi ───
+     // cities: filtredeki il listesi | NE İŞE YARAR: il Picker'ı bundan çizilir | NEREDE DOLAR: aşağıdaki .task, ilk açılışta CityService().cities() ile | başta boş []
+     @State private var cities: [City] = [] // @State [SWIFT]: değişince ekran yenilenir | City kalıbı: Network/CityModels.swift
+     // filterDistricts: seçilen ilin ilçeleri | NE İŞE YARAR: ilçe Picker'ı bundan çizilir | NEREDE DOLAR: il Picker'ındaki .onChange, il seçilince
+     @State private var filterDistricts: [District] = []
+     // filterCityId / filterDistrictId: seçili il ve ilçe numarası | 0 = "Tümü" (filtre yok) | NE İŞE YARAR: hem Picker'ların seçimini tutar hem de API'ye gönderilecek filtredir | NEREDE KULLANILIR: aşağıdaki .task(id:) ve openListings çağrısı
+     @State private var filterCityId = 0
+     @State private var filterDistrictId = 0
 
     var body: some View { // ekranın içeriği
 
@@ -61,11 +70,47 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 } else { // Shipper değilse (Carrier)
                     if let listError {Text(listError).foregroundColor(.red)} // hata varsa kırmızı yaz (Yük Veren ile aynı değişken)
         
+                    Text("Açık İlanlar").font(.title3).bold() // liste başlığı | boş olsa da görünsün diye if listings.isEmpty'nin DIŞINA taşındı
+                    
+                    // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
+                    HStack{  // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
+                        Picker("İl",selection: $filterCityId){ // Picker [SWIFT]: açılır liste | selection: seçilen değer $filterCityId'ye yazılır ($ = iki yönlü bağ)
+                            Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok
+                            ForEach(cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: .task'ta dolan liste
+                                Text(city.name).tag(city.id) // city.name: ekranda görünen ad | tag(city.id): seçilince değişkene yazılacak numara
+                                
+                            }
+                            
+                        }
+                        .pickerStyle(.menu) // açılır menü görünümü
+                        // .onChange [SWIFT]: değişkeni izler, değişince BİR KEZ çalışır | il değişince ilçe seçimi sıfırlanır ve yeni ilin ilçeleri çekilir (CreateListingView'daki mantığın aynısı)
+                        .onChange(of: filterCityId){ _,newId in  // _ = eski değer (kullanmıyoruz) | newId = yeni değer
+                            filterDistrictId = 0 // eski ilin ilçesi yeni ile ait değil, sıfırla
+                            filterDistricts = [] // eski ilçe listesini boşalt
+                            if newId == 0 {return} // "Tüm İller"e dönüldüyse çekecek ilçe yok | return = bloktan çık
+                            Task { // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır
+                                // BAĞLANTI: Network/CityService.swift → districts → GET /api/v1/cities/{id}/districts | try? hata olursa nil | ?? [] nil ise boş liste
+                                filterDistricts = (try? await CityService().districts(cityId: newId)) ?? []
+                            }
+                            
+                        }
+                        if filterCityId != 0 { // il seçilmeden picker çizilmez
+                            Picker("İlçe",selection: $filterDistrictId){ // seçilen ilçe numarası $filterDistrictId'ye yazılır
+                                Text("Tüm İlçeler").tag(0) // 0 = ilçe filtresi yok
+                                ForEach(filterDistricts) { district in // il Picker'ındaki .onChange'in doldurduğu liste
+                                    Text(district.name).tag(district.id)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+                        
+                    }
+                    
+                    
                     if listings.isEmpty { // liste boş mu
                         Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
                     }else {
                         
-                        Text("Açık İlanlar").font(.title3).bold() // liste başlığı
                         List(listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste tüm açık ilanlar (openListings)
                             NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
                                 ListingDetailView(listing: listing) // View/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
@@ -121,14 +166,18 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     }
                 }
             }
-            .task { // .task [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) | bu yüzden teklif verip/karar verip dönünce liste ve rozet kendiliğinden yenilenir | içinde await kullanılabilir
+            // .task(id:) [SWIFT]: .task ile aynı (ekran HER göründüğünde çalışır: ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
+            // NE İŞE YARAR: il ya da ilçe Picker'ı değişince liste kendiliğinden yeniden çekilir, ayrı "Ara" düğmesi gerekmez | teklif verip/karar verip dönünce de liste ve rozet yenilenir
+            // id: filtre seçimlerini birleştiren yazı | "\( )" = değişkenleri yazıya koyar | örn. "33-0" | bu yazı değişince blok yeniden çalışır
+            .task(id: "\(filterCityId)-\(filterDistrictId)") { // içinde await kullanılabilir
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                     if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
                         // BAĞLANTI: Network/ListingService.swift → myListings → GET /api/v1/listings/mine (yalnız kendi ilanlarım)
                         listings = try await ListingService().myListings() // dönen liste @State'e yazılır, ekran yenilenir
                     } else {
-                        // BAĞLANTI: Network/ListingService.swift → openListings → GET /api/v1/listings (tüm açık ilanlar, yalnız Carrier)
-                        listings = try await ListingService().openListings()
+                        // BAĞLANTI: Network/ListingService.swift → openListings(fromCityId:fromDistrictId:) → GET /api/v1/listings?fromCityId=..&fromDistrictId=.. (açık ilanlar, yalnız Carrier) | 0 = filtre yok = tüm ilanlar
+                        listings = try await ListingService().openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId)
+                        if cities.isEmpty { cities = (try? await CityService().cities()) ?? [] } // il listesi yalnız bir kez yüklenir, her yenilemede tekrar çekilmez | isEmpty: liste boş mu | try?: hata olursa nil | ?? []: nil ise boş liste
                         unseenCount = try await OfferService().unseenCount() // BAĞLANTI: Network/OfferService.swift → GET /api/v1/offers/mine/unseen-count | dönen sayı @State'e yazılır, rozet güncellenir
                     }
                 } catch let error as AuthError { // HATA YOLU: API hata verirse ListingService "throw AuthError(...)" yapar, burada yakalanır | AuthError: Network/AuthService.swift'te tanımlı

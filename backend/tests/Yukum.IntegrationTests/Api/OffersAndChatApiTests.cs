@@ -58,13 +58,13 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
     }
 
     // Yük Veren bir ilan açar → ilan numarası.
-    private static async Task<string> NewListing(HttpClient c, string shipperToken)
+    private static async Task<string> NewListing(HttpClient c, string shipperToken, int fromCityId = 33)
     {
-        var from = (await Json(await c.GetAsync("/api/v1/cities/33/districts")))[0].GetProperty("id").GetInt32();
+        var from = (await Json(await c.GetAsync($"/api/v1/cities/{fromCityId}/districts")))[0].GetProperty("id").GetInt32();
         var to = (await Json(await c.GetAsync("/api/v1/cities/34/districts")))[0].GetProperty("id").GetInt32();
         var r = await Call(c, shipperToken, HttpMethod.Post, "/api/v1/listings", new
         {
-            title = "Test ilan", weightKg = 1000, vehicleType = "Truck", fromCityId = 33, fromDistrictId = from, toCityId = 34, toDistrictId = to,
+            title = "Test ilan", weightKg = 1000, vehicleType = "Truck", fromCityId, fromDistrictId = from, toCityId = 34, toDistrictId = to,
             pickupDate = DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"), budget = 5000
         });
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
@@ -76,6 +76,60 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var r = await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { amount, note = "not" });
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         return (await Json(r)).GetProperty("id").GetString()!;
+    }
+
+    // ---------- filtre ----------
+    [Fact]
+    public async Task Open_listings_can_be_filtered_by_departure_city_and_district()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        await NewListing(c, shipper, fromCityId: 33);   // Mersin çıkışlı
+        await NewListing(c, shipper, fromCityId: 1);    // Adana çıkışlı
+        var mersinDistricts = await Json(await c.GetAsync("/api/v1/cities/33/districts"));
+        var otherDistrict = mersinDistricts[1].GetProperty("id").GetInt32();   // ilanın ilçesi [0], bu başka bir ilçe
+
+        var all = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var adana = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?fromCityId=1"));
+        var wrongDistrict = await Json(await Call(c, carrier, HttpMethod.Get, $"/api/v1/listings?fromCityId=33&fromDistrictId={otherDistrict}"));
+
+        Assert.Equal(2, all.GetArrayLength());                                   // filtre yok: hepsi
+        Assert.Equal(1, adana.GetArrayLength());                                 // il filtresi
+        Assert.Equal("Adana", adana[0].GetProperty("fromCityName").GetString());
+        Assert.Equal(0, wrongDistrict.GetArrayLength());                         // il doğru, ilçe başka: boş
+    }
+
+    // ---------- konuma göre sıralama ----------
+    [Fact]
+    public async Task Open_listings_are_sorted_by_distance_when_a_location_is_given()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        await NewListing(c, shipper, fromCityId: 33);   // Mersin çıkışlı
+        await NewListing(c, shipper, fromCityId: 22);   // Edirne çıkışlı
+
+        var nearIstanbul = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=41.0&lon=29.0"));
+        var nearMersin = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=36.8&lon=34.6"));
+        var noLocation = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+
+        Assert.Equal("Edirne", nearIstanbul[0].GetProperty("fromCityName").GetString());   // İstanbul'a Edirne yakın
+        Assert.Equal("Mersin", nearMersin[0].GetProperty("fromCityName").GetString());     // Mersin'dekine Mersin yakın
+        Assert.True(nearIstanbul[0].GetProperty("distanceKm").GetDouble() < nearIstanbul[1].GetProperty("distanceKm").GetDouble());
+        Assert.Equal(JsonValueKind.Null, noLocation[0].GetProperty("distanceKm").ValueKind);   // konum yoksa mesafe de yok
+    }
+
+    [Theory]
+    [InlineData("lat=41.0")]                 // yalnız enlem
+    [InlineData("lat=95&lon=29")]            // enlem aralık dışı
+    [InlineData("lat=41&lon=200")]           // boylam aralık dışı
+    public async Task Invalid_location_returns_400(string query)
+    {
+        var c = await StartAsync();
+        var carrier = await NewUser(c, false);
+
+        var response = await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?" + query);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     // ---------- teklif verme ----------

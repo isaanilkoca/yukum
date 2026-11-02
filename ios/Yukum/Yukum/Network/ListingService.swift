@@ -75,14 +75,23 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     }
     
     // openListings: tüm açık ilanları getirir (Taşımacı anasayfası) | -> [Listing]: ilan listesi döner (kalıbı: Network/ListingRequest.swift)
-    // ÇAĞIRAN: View/HomeView.swift (Taşımacı için, ekran açılınca, sonraki adım) | API: GET /api/v1/listings (backend yalnız Carrier rolüne açar)
+    // İSTEĞE BAĞLI FİLTRE: kalkış ili ve ilçesi | fromCityId / fromDistrictId: 0 = "Tümü", filtre uygulanmaz
+    // = 0: varsayılan değer, çağıran yazmazsa 0 sayılır (HomeView şimdilik parametresiz çağırıyor, bozulmaz)
+    // NE İŞE YARAR: süzme işini SUNUCU yapar (SQL WHERE) | telefon tüm ilanları çekip kendisi süzmez, çünkü ilan sayısı büyüyünce yavaşlar ve gereksiz veri taşır
+    // ÇAĞIRAN: View/HomeView.swift (Taşımacı için; il/ilçe Picker'ları değişince de çağrılacak) | API: GET /api/v1/listings?fromCityId=33&fromDistrictId=12 (backend yalnız Carrier rolüne açar)
     
-    func openListings() async throws -> [Listing] {
+    func openListings(fromCityId: Int = 0, fromDistrictId: Int = 0) async throws -> [Listing] {
         guard let token = Session.accessToken else { // jeton yoksa giriş yok (diğer fonksiyonlarla aynı kontrol)
             throw AuthError(message: "Oturumun bulunaadı , tekrar giriş yapın")
         }
         
-        var request = URLRequest(url: URL(string: baseURL + "/api/v1/listings")!) // /listings = tüm açık ilanlar odası (myListings'teki /mine yok)
+        // URLComponents [SWIFT]: adresi PARÇA PARÇA kurar | neden: ?fromCityId=1&fromDistrictId=2 gibi parçaları elle birleştirmek hata yapmaya açık (boşluk, Türkçe karakter kodlama)
+        var components = URLComponents(string: baseURL + "/api/v1/listings")! // ! = adres bozuk çıkmaz, eminim | components: adresin parçalara ayrılmış hâli | /listings = tüm açık ilanlar odası (myListings'teki /mine yok)
+        var items: [URLQueryItem] = [] // URLQueryItem [SWIFT]: adreste ?'ten sonraki bir "ad=değer" çifti (query string) | [ ] = liste, başta boş: filtre yoksa adrese hiçbir şey eklenmez
+        if fromCityId != 0 { items.append(URLQueryItem(name: "fromCityId", value: String(fromCityId))) } // il seçildiyse ekle | name: API'deki parametre adı, birebir aynı olmalı | String(): sayıyı yazıya çevirir, adres yazıdır
+        if fromDistrictId != 0 { items.append(URLQueryItem(name: "fromDistrictId", value: String(fromDistrictId))) } // ilçe seçildiyse ekle
+        if !items.isEmpty { components.queryItems = items } // liste doluysa adrese ?fromCityId=..&fromDistrictId=.. olarak ekler | boşsa adres eskisi gibi kalır
+        var request = URLRequest(url: components.url!) // components.url: parçaların birleşmiş hâli (URL?) | ! = boş çıkmaz
         
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")  // "ben girişliyim" kanıtı | API jetondaki rolün Carrier olduğunu kontrol eder
         
@@ -101,6 +110,7 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         //myListings ile tek fark: adres /api/v1/listings/mine yerine /api/v1/listings. Gerisi aynı. İstersen ileride ortak kısmı tek fonksiyona toplayıp tekrarı azaltırız.
         
     }
+    
     
     
 }

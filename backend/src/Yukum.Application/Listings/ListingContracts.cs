@@ -49,10 +49,11 @@ public sealed record ListingDto(
     decimal? Budget,
     DateTime CreatedAt,
     decimal? MyOfferAmount = null, // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
-    OfferStatus? MyOfferStatus = null); // aynı yerde o teklifin durumu (Pending/Rejected), yoksa null
+    OfferStatus? MyOfferStatus = null, // aynı yerde o teklifin durumu (Pending/Rejected), yoksa null
+    double? DistanceKm = null); // yalnız konum verilmişse dolar: Taşımacı'nın konumu ile ilanın kalkış noktası arası kuş uçuşu km
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);
 
 /// <summary>Sorgu: tüm açık ilanlar (Taşımacı'nın göreceği liste).</summary>
-public sealed record GetOpenListingsQuery(Guid CarrierId);
+public sealed record GetOpenListingsQuery(Guid CarrierId, int? FromCityId = null, int? FromDistrictId = null, double? Lat = null, double? Lon = null); // int? = boş olabilir: null ise o filtre uygulanmaz
