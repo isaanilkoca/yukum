@@ -29,7 +29,10 @@ struct offerResponse : Decodable {
 
 // Yük Veren'in gördüğü tek teklif satırı (GET /api/v1/listings/{id}/offers listesindeki her eleman).
 // BAĞLANTI: OfferService.listingOffers bu struct'ın listesini döner → View/ListingOffersView.swift'te liste olarak gösterilir
-struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez
+
+// Hashable [SWIFT]: "birbirinden ayırt edilebilir, karşılaştırılabilir" | .navigationDestination(item:) seçili öğeyi bununla takip eder | alanlar hazır tiplerden olduğu için kod yazmak gerekmez
+// Hashable [SWIFT]: "bu öğe tek başına ayırt edilebilir ve karşılaştırılabilir" demek | NEDEN: .navigationDestination(item:) seçili öğeyi (chatOffer) bununla takip eder | tüm alanlar hazır tipler (String, Double...) olduğu için ek kod yazmak gerekmez
+struct ListingOffer: Decodable, Identifiable , Hashable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez
     let id: String // teklif numarası (GUID yazı gelir) | kabul/reddet uçlarına bu gider
     let carrierName: String // teklifi veren taşımacının adı
     let amount: Double // tutar | API 48000.0 gönderir
@@ -41,7 +44,8 @@ struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersi
 // CarrierOffer: Taşımacı'nın "Tekliflerim" listesindeki TEK SATIRIN kalıbı.
 // NE İŞE YARAR: API'den gelen JSON'daki her teklif bu struct'a çevrilir (Decodable) | alan adları API'deki ile BİREBİR aynı olmalı, yoksa okuma hatası verir
 // NEREDE KULLANILIR: Network/OfferService.swift → myOffers() bu struct'ın listesini döner → View/MyOffersView.swift listeyi ekrana çizer
-struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, List'te "id:" yazmak gerekmez
+// Hashable: aynı sebep | MyOffersView'daki chatOffer + .navigationDestination(item:) için gerekli
+struct CarrierOffer: Decodable, Identifiable,Hashable { // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, List'te "id:" yazmak gerekmez
     let id: String // teklif numarası (GUID, yazı gelir) | Identifiable bunu kullanır | silme isteğine (hide) bu gider
     let listingTitle: String // teklif verdiğimiz ilanın başlığı | satırın üst yazısı
     let fromCityName: String // ilanın kalkış ili | rota yazısı için

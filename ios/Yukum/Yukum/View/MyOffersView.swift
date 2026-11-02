@@ -19,6 +19,10 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
     // NEREDE DOLAR: loadOffers() ve hide() içindeki catch blokları | yukarıdaki "if let errorMessage" doluysa çizer
     @State private var errorMessage: String? // String? = boş olabilir | nil: hata yok, dolu: kırmızı yazılır
 
+    // chatOffer: sohbeti açılacak teklif | NE İŞE YARAR: Sohbet düğmesi doldurur → aşağıdaki .navigationDestination ChatView'ı açar, nil olunca kapatır
+    // NEDEN ayrı değişken: düğme doğrudan sayfa açamaz (List satırında NavigationLink sorun çıkarır); "hangi teklifin sohbeti açık" bilgisini bu tutar | başta nil: sohbet açık değil
+    @State private var chatOffer: CarrierOffer? // ? = boş olabilir
+
     var body: some View { // ekranın içeriği
         VStack(spacing: 16) { // VStack [SWIFT]: elemanları alt alta dizer | spacing: aralarındaki boşluk
 
@@ -54,6 +58,10 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
                         case "Rejected": Text("Reddedildi").foregroundColor(.red) // Yük Veren reddetti
                         default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
                         }
+
+                        if offer.status != "Rejected" { // reddedilen teklifte sohbet yok | Pending ve Accepted'da düğme çıkar
+                            Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered) // chatOffer'ı doldurur → ChatView açılır | .bordered: List'te satırın her yeri düğme olmasın diye stil şart
+                        }
                     }
                     .padding(.vertical, 4) // satırın üst/alt boşluğu
 
@@ -72,6 +80,17 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         .task { // .task [SWIFT]: ekran açılınca bir kez çalışır | içinde await kullanılabilir
             await loadOffers() // ÖNCE listeyi çek: "Yeni" rozetleri bu sayede çizilir
             try? await OfferService().markSeen() // SONRA "görüldü" yap: sunucuda CarrierSeen=true olur, anasayfadaki rozet söner | BAĞLANTI: Network/OfferService.swift → POST /offers/mine/seen | try?: hata olursa sessiz geç, kritik değil
+        }
+        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil?
+        //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki Reddet/Kabul/Sohbet düğmeleri çalışmaz (hepsi sayfaya götürür).
+        //   Çözüm: düğme sayfa AÇMAZ, sadece chatOffer değişkenine teklifi YAZAR. Buradaki kural "chatOffer dolunca ChatView'a geç" der.
+        //   Akış: Sohbet düğmesi → chatOffer = offer → ekran bunu görür → ChatView açılır | geri okuna basınca SwiftUI chatOffer'ı tekrar nil yapar.
+        // item: $chatOffer → "bu değişkeni izle" ($ = bağ, SwiftUI değişkeni hem okur hem sıfırlar) | dolu = geç, nil = kapat
+        // Bu çalışsın diye CarrierOffer'ın Hashable olması gerekir (Network/OfferRequest.swift): SwiftUI hangi öğenin seçili olduğunu bununla takip eder.
+        // Çalışması için bu ekranın HomeView'daki NavigationStack'in içinde olması yeterli, buraya ayrıca NavigationStack KONMAZ.
+        .navigationDestination(item: $chatOffer) {   offer in // $ = bağ | offer: dolan teklif (adı bizim)
+            // BAĞLANTI: View/ChatView.swift | title: karşı tarafın adı (ilanı açan Yük Veren) | canWrite: reddedilmemişse yazılabilir
+            ChatView(offerId: offer.id, title: offer.shipperName, canWrite: offer.status != "Rejected")
         }
     }
 

@@ -1,9 +1,8 @@
 //
 //  ListingOffersView.swift
 //  Yukum
-//
 //  Created by İsa Anıl Koca on 31.10.2026.
-//
+
 
 import SwiftUI
 
@@ -16,6 +15,12 @@ struct ListingOffersView: View {
     let listing : Listing // dısarıdan verilir : hOMEVİWDAKİ SATIR | HANGİ İLAN OLDUGU
     @State private var offers : [ListingOffer] = []  // @State [SWIFT]: ekranın hafızası | gelen teklifler, başta boş
     @State private var errorMessage : String? // nil hata yok dolu : kırmızı yazılır
+    
+    // chatOffer: sohbeti açılacak teklif | NE İŞE YARAR: "Sohbet" düğmesi buraya teklifi yazar → aşağıdaki .navigationDestination dolunca ChatView'ı açar, nil olunca kapatır
+    // NEDEN ayrı değişken: düğme doğrudan sayfa açamaz (List satırında NavigationLink sorun çıkarır); "hangi teklifin sohbeti açık" bilgisini bu tutar, ChatView'a da buradan verilir
+    // NEREDE DOLAR: satırdaki Sohbet düğmeleri | başta nil: sohbet açık değil | ? = boş olabilir demek, nil ile "hiçbiri seçili değil" anlatılır
+    
+    @State private var chatOffer: ListingOffer? // ? = boş olabilir
 
     var body: some View {
 
@@ -37,20 +42,21 @@ struct ListingOffersView: View {
                         if let note = offer.note {
                             Text(note).font(.caption).foregroundColor(.secondary) // küçük gri not
                         }
-                        if offer.status == "Pending" {// API durumu yazı gönderir | bekleyen teklifte düğmeler çıkar
-                            HStack{
-                                // role: .destructive [SWIFT]: kırmızı, "tehlikeli işlem" görünümü
-                                // .bordered / .borderedProminent: ZORUNLU, yoksa List'te satırın her yeri düğme olur
-                                Button("Reddet"){ decide(offer,accept: false) }.buttonStyle(.borderedProminent).tint(.red) // .borderedProminent: içi dolu düğme | .tint(.red) [SWIFT]: dolgu rengi kırmızı
-                                Button("Kabul et"){ decide(offer,accept: true) }.buttonStyle(.borderedProminent).tint(.green) // içi dolu yeşil
+                        if offer.status == "Pending" { // bekleyen teklif: karar düğmeleri + sohbet | API durumu yazı gönderir
+                            HStack {
+                                // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
+                                Button("Reddet"){ decide(offer,accept: false) }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu
+                                Button("Kabul et"){ decide(offer,accept: true) }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu
+                                Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered) // chatOffer'ı doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
                             }
-                        }else { // karar verilmemişse durum yazisi
-                            
-                            Text(offer.status == "Accepted" ? "Kabul Edildi" : "Reddedildi") // kısa if
+                        } else { // karar verilmişse durum yazısı
+                            Text(offer.status == "Accepted" ? "Kabul Edildi" : "Reddedildi") // ?: kısa if
                                 .font(.subheadline).foregroundColor(offer.status == "Accepted" ? .green : .secondary)
+                            if offer.status == "Accepted" { // yalnız kabul edilende sohbet kalır, reddedilende yok
+                                Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered)
+                            }
                         }
-                        
-                    }
+                    } // VStack (bir teklifin satırı) burada biter
                     .padding(.vertical,4)
                 }.listStyle(.plain)
             }
@@ -60,6 +66,17 @@ struct ListingOffersView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await loadOffers() // .task [SWIFT]: ekran açılınca bir kez çalışır | teklifleri yükler
+        }
+        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil?
+        //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki Reddet/Kabul/Sohbet düğmeleri çalışmaz (hepsi sayfaya götürür).
+        //   Çözüm: düğme sayfa AÇMAZ, sadece chatOffer değişkenine teklifi YAZAR. Buradaki kural "chatOffer dolunca ChatView'a geç" der.
+        //   Akış: Sohbet düğmesi → chatOffer = offer → ekran bunu görür → ChatView açılır | geri okuna basınca SwiftUI chatOffer'ı tekrar nil yapar.
+        // item: $chatOffer → "bu değişkeni izle" ($ = bağ, SwiftUI değişkeni hem okur hem sıfırlar) | dolu = geç, nil = kapat
+        // Bu çalışsın diye ListingOffer'ın Hashable olması gerekir (Network/OfferRequest.swift): SwiftUI hangi öğenin seçili olduğunu bununla takip eder.
+        // Çalışması için bu ekranın HomeView'daki NavigationStack'in içinde olması yeterli, buraya ayrıca NavigationStack KONMAZ.
+        .navigationDestination(item: $chatOffer) { offer in // $ = bağ | offer: dolan teklif (adı bizim)
+            // BAĞLANTI: View/ChatView.swift | offerId: hangi sohbet | title: karşı tarafın adı (Taşımacı) | canWrite: reddedilmemişse yazılabilir
+            ChatView(offerId: offer.id, title: offer.carrierName, canWrite: offer.status != "Rejected")
         }
     } // body burada biter: aşağıdakiler ekranın yardımcı fonksiyonları
 
