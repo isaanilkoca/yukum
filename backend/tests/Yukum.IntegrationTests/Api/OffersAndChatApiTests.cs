@@ -273,6 +273,27 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.NotNull(a);
     }
 
+    [Fact]
+    public async Task Accepted_offer_is_an_active_job_and_cannot_be_deleted_by_either_side()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+
+        var byShipper = await Call(c, shipper, HttpMethod.Delete, $"/api/v1/offers/{offer}");
+        var byCarrier = await Call(c, carrier, HttpMethod.Delete, $"/api/v1/offers/{offer}");
+        var shipperSees = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
+        var carrierSees = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        var chat = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "Merhaba" });
+
+        Assert.Equal(HttpStatusCode.Conflict, byShipper.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, byCarrier.StatusCode);
+        Assert.Equal(1, shipperSees.GetArrayLength());   // iki taraf da hâlâ görüyor
+        Assert.Equal(1, carrierSees.GetArrayLength());
+        Assert.Equal(HttpStatusCode.Created, chat.StatusCode);   // sohbet iki tarafta açık
+    }
+
     // ---------- bildirim rozeti ----------
     [Fact]
     public async Task Decision_creates_an_unseen_badge_until_the_carrier_marks_it_seen()

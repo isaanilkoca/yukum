@@ -53,7 +53,9 @@ struct OldOffersView: View {
                     
                     .padding(.vertical, 4) // satırın üst/alt boşluğu
                                     .swipeActions { // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
-                                        Button("Sil", role: .destructive) { hide(offer) } // role: .destructive: kırmızı silme düğmesi | hepsi karar verilmiş, bekleyen yok → kontrol gerekmez
+                                        if offer.status == "Rejected" { // yalnız REDDEDİLEN teklif silinebilir (bitmiş iş) | kabul edilen AKTİF İŞ, silinemez (API de 409 verir) | Accepted satırda kaydırınca düğme çıkmaz
+                                            Button("Sil", role: .destructive) { hide(offer) } // role: .destructive: kırmızı silme düğmesi
+                                        }
                                     }
                                 }.listStyle(.plain) // düz beyaz zemin
                 }

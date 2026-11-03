@@ -67,7 +67,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
 
                     // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
                     .swipeActions {
-                        if offer.status != "Pending" { // != "eşit değil" | bekleyen teklif silinemez (API de 409 verir), yalnız karar verilmişler
+                        if offer.status == "Rejected" { // yalnız REDDEDİLEN teklif silinebilir (bitmiş iş) | bekleyen: karar yok | kabul edilen: AKTİF İŞ, iki taraf da görmeye ve sohbete devam etmeli (API de 409 verir)
                             Button("Sil", role: .destructive) { hide(offer) } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | basınca aşağıdaki hide fonksiyonu | offer: hangi satır
                         }
                     }
