@@ -6,6 +6,7 @@
 //
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
+import CoreLocation // [SWIFT] konum çerçevesi | burada yalnız izin durumunu (.denied) karşılaştırmak için gerekli
 
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
 // BAĞLANTI: View/LoginView.swift giriş başarılı olunca .fullScreenCover ile bu ekranı açar ve giriş yapan kullanıcıyı verir.
@@ -32,6 +33,15 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
      // filterCityId / filterDistrictId: seçili il ve ilçe numarası | 0 = "Tümü" (filtre yok) | NE İŞE YARAR: hem Picker'ların seçimini tutar hem de API'ye gönderilecek filtredir | NEREDE KULLANILIR: aşağıdaki .task(id:) ve openListings çağrısı
      @State private var filterCityId = 0
      @State private var filterDistrictId = 0
+    
+    
+    // locationManager: konum motorumuz | NE İŞE YARAR: izin ister, konumu bulur, coordinate/status/errorMessage değişince ekran yenilenir (@Observable)
+    // NEDEN @State: sınıfı (class) ekranın sahipliğinde TUTAR, ekran yenilense de aynı nesne yaşar, yeni konum motoru oluşmaz | BAĞLANTI: Location/LocationManager.swift
+    @State private var locationManager = LocationManager()
+    // nearMe: "Yakınımdakiler" anahtarı açık mı | true: konum istenir ve liste yakından uzağa sıralanır | NEREDE KULLANILIR: Toggle, .onChange, .task(id:)
+    @State private var nearMe = false
+    @Environment(\.openURL) private var openURL // @Environment [SWIFT]: sistemden hazır değer | openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır
+    
 
     var body: some View { // ekranın içeriği
 
@@ -106,6 +116,34 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         
                     }
                     
+                    //Anahtarı aç → nearMe = true → .onChange → request() → izin penceresi → konum bulunur → coordinate dolar
+                   // → .task(id:) bunu fark edip yeniden çalışır → openListings(lat:lon:) → sunucu sıralar → "12 km" görünür
+                    
+                    // ─── YAKINIMDAKİLER: telefonun konumuna göre en yakından uzağa sırala ───
+                    // Toggle [SWIFT]: aç/kapa anahtarı | isOn: $nearMe → açınca nearMe true olur ($ = iki yönlü bağ)
+                    
+                    Toggle("Yakınımdakiler",isOn: $nearMe)
+                        // .onChange: nearMe değişince BİR KEZ çalışır | on: yeni değer
+                        // açıldıysa konum motoruna "izin sor ve konumu bul" deriz (izin ya da konum gelene kadar liste eskisi gibi kalır, gelince .task(id:) listeyi yeniler)
+                        .onChange(of: nearMe){_, on in
+                            if on {
+                                locationManager.request()
+                            }
+                        } // NOT: ekrana bir şey ÇİZEN kod (Text, HStack) .onChange'in içine yazılmaz, çünkü orası "olunca çalışacak iş" bloğu, çizim bloğu değil | mesajlar aşağıda, dışarıda
+
+                    // izin/konum mesajları: locationManager.status ve errorMessage @Observable olduğu için değişince bu bloklar kendiliğinden yeniden değerlendirilir
+                    if nearMe && locationManager.status == .denied {// izin reddedilmişse (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
+                        HStack{
+                            Text("Konum izni kapalı").font(.caption).foregroundColor(.red)
+                            // Button: basınca iOS Ayarlar uygulamasında bu uygulamanın sayfasını açar | UIApplication.openSettingsURLString: Apple'ın hazır "ayarlar" adresi
+                            Button("Ayarları aç" ){ openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption)
+                        }
+                    }else if nearMe , let message = locationManager.errorMessage { // else if: ya da | konum alınamadıysa (GPS yok vb.) hata yazısı
+                        Text(message).font(.caption).foregroundColor(.red)
+                    }
+                    
+
+                    
                     
                     if listings.isEmpty { // liste boş mu
                         Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
@@ -169,14 +207,19 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .task(id:) [SWIFT]: .task ile aynı (ekran HER göründüğünde çalışır: ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
             // NE İŞE YARAR: il ya da ilçe Picker'ı değişince liste kendiliğinden yeniden çekilir, ayrı "Ara" düğmesi gerekmez | teklif verip/karar verip dönünce de liste ve rozet yenilenir
             // id: filtre seçimlerini birleştiren yazı | "\( )" = değişkenleri yazıya koyar | örn. "33-0" | bu yazı değişince blok yeniden çalışır
-            .task(id: "\(filterCityId)-\(filterDistrictId)") { // içinde await kullanılabilir
+            // id'ye nearMe ve konum eklendi: anahtar açılınca VE konum bulununca (coordinate dolunca) blok yeniden çalışır, liste sıralanıp yenilenir
+                       // locationManager.coordinate.map { ... } ?? "-": konum varsa "enlem,boylam" yazısı, yoksa "-" | .map: nil değilse içindeki dönüşümü uygula
+                       .task(id: "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(locationManager.coordinate.map { "\($0.latitude),\($0.longitude)" } ?? "-")") {
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                     if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
                         // BAĞLANTI: Network/ListingService.swift → myListings → GET /api/v1/listings/mine (yalnız kendi ilanlarım)
                         listings = try await ListingService().myListings() // dönen liste @State'e yazılır, ekran yenilenir
                     } else {
                         // BAĞLANTI: Network/ListingService.swift → openListings(fromCityId:fromDistrictId:) → GET /api/v1/listings?fromCityId=..&fromDistrictId=.. (açık ilanlar, yalnız Carrier) | 0 = filtre yok = tüm ilanlar
-                        listings = try await ListingService().openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId)
+                        // konum yalnız anahtar AÇIKSA ve konum BULUNMUŞSA gönderilir | nearMe ? A : B kısa if | coordinate nil ise (henüz bulunmadı) lat/lon nil kalır, liste eskisi gibi gelir
+                                               let lat = nearMe ? locationManager.coordinate?.latitude : nil // ?. nil olabilir
+                                               let lon = nearMe ? locationManager.coordinate?.longitude : nil
+                                               listings = try await ListingService().openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId, lat: lat, lon: lon)
                         if cities.isEmpty { cities = (try? await CityService().cities()) ?? [] } // il listesi yalnız bir kez yüklenir, her yenilemede tekrar çekilmez | isEmpty: liste boş mu | try?: hata olursa nil | ?? []: nil ise boş liste
                         unseenCount = try await OfferService().unseenCount() // BAĞLANTI: Network/OfferService.swift → GET /api/v1/offers/mine/unseen-count | dönen sayı @State'e yazılır, rozet güncellenir
                     }

@@ -74,13 +74,11 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         // create ile farkı: create veri gönderiyordu (POST, gövde, Content-Type). Bu sadece veri istiyor (GET), gönderecek paket yok. İkisinde de jeton başlığı aynı.
     }
     
-    // openListings: tüm açık ilanları getirir (Taşımacı anasayfası) | -> [Listing]: ilan listesi döner (kalıbı: Network/ListingRequest.swift)
-    // İSTEĞE BAĞLI FİLTRE: kalkış ili ve ilçesi | fromCityId / fromDistrictId: 0 = "Tümü", filtre uygulanmaz
-    // = 0: varsayılan değer, çağıran yazmazsa 0 sayılır (HomeView şimdilik parametresiz çağırıyor, bozulmaz)
-    // NE İŞE YARAR: süzme işini SUNUCU yapar (SQL WHERE) | telefon tüm ilanları çekip kendisi süzmez, çünkü ilan sayısı büyüyünce yavaşlar ve gereksiz veri taşır
-    // ÇAĞIRAN: View/HomeView.swift (Taşımacı için; il/ilçe Picker'ları değişince de çağrılacak) | API: GET /api/v1/listings?fromCityId=33&fromDistrictId=12 (backend yalnız Carrier rolüne açar)
+    // lat / lon: Taşımacı'nın konumu (enlem / boylam) | Double? = boş olabilir, nil ise konum gönderilmez ve liste eskisi gibi en yeni üstte gelir
+    // NE İŞE YARAR: konum verilince SUNUCU ilanları en yakından uzağa sıralar ve her ilana distanceKm ekler (mesafe hesabı sunucuda, Haversine) | konum sunucuda SAKLANMAZ, yalnız bu istekte kullanılır
+    // ÇAĞIRAN: View/HomeView.swift "Yakınımdakiler" açıkken | API: GET /api/v1/listings?lat=36.8&lon=34.6
     
-    func openListings(fromCityId: Int = 0, fromDistrictId: Int = 0) async throws -> [Listing] {
+    func openListings(fromCityId: Int = 0, fromDistrictId: Int = 0 , lat: Double? = nil, lon: Double? = nil) async throws -> [Listing] {
         guard let token = Session.accessToken else { // jeton yoksa giriş yok (diğer fonksiyonlarla aynı kontrol)
             throw AuthError(message: "Oturumun bulunaadı , tekrar giriş yapın")
         }
@@ -90,6 +88,11 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         var items: [URLQueryItem] = [] // URLQueryItem [SWIFT]: adreste ?'ten sonraki bir "ad=değer" çifti (query string) | [ ] = liste, başta boş: filtre yoksa adrese hiçbir şey eklenmez
         if fromCityId != 0 { items.append(URLQueryItem(name: "fromCityId", value: String(fromCityId))) } // il seçildiyse ekle | name: API'deki parametre adı, birebir aynı olmalı | String(): sayıyı yazıya çevirir, adres yazıdır
         if fromDistrictId != 0 { items.append(URLQueryItem(name: "fromDistrictId", value: String(fromDistrictId))) } // ilçe seçildiyse ekle
+        if let lat, let lon { // if let: ikisi de nil değilse devam | API ikisini BİRLİKTE ister (yalnız biri gönderilirse 400 döner)
+        items.append(URLQueryItem(name: "lat", value: String(lat))) // String(): sayıyı yazıya çevirir, adres yazıdır | örn. "36.8"
+        items.append(URLQueryItem(name: "lon", value: String(lon))) // enlem/boylam ondalıklı olduğu için nokta ile yazılır (Swift bunu kendisi doğru yapar)
+        }
+
         if !items.isEmpty { components.queryItems = items } // liste doluysa adrese ?fromCityId=..&fromDistrictId=.. olarak ekler | boşsa adres eskisi gibi kalır
         var request = URLRequest(url: components.url!) // components.url: parçaların birleşmiş hâli (URL?) | ! = boş çıkmaz
         

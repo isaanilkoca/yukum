@@ -99,6 +99,30 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(0, wrongDistrict.GetArrayLength());                         // il doğru, ilçe başka: boş
     }
 
+    // ---------- aşırı büyük değerler: 500 değil 400 ----------
+    [Fact]
+    public async Task Huge_budget_weight_or_offer_amount_returns_400_not_500()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var from = (await Json(await c.GetAsync("/api/v1/cities/33/districts")))[0].GetProperty("id").GetInt32();
+        var to = (await Json(await c.GetAsync("/api/v1/cities/34/districts")))[0].GetProperty("id").GetInt32();
+        object Body(long weight, long budget) => new
+        {
+            title = "x", weightKg = weight, vehicleType = "Truck", fromCityId = 33, fromDistrictId = from, toCityId = 34, toDistrictId = to,
+            pickupDate = DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-dd"), budget
+        };
+
+        var hugeBudget = await Call(c, shipper, HttpMethod.Post, "/api/v1/listings", Body(1000, 123123123122));
+        var hugeWeight = await Call(c, shipper, HttpMethod.Post, "/api/v1/listings", Body(5_000_000, 5000));
+        var hugeOffer = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 123123123122m });
+
+        Assert.Equal(HttpStatusCode.BadRequest, hugeBudget.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, hugeWeight.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, hugeOffer.StatusCode);
+    }
+
     // ---------- konuma göre sıralama ----------
     [Fact]
     public async Task Open_listings_are_sorted_by_distance_when_a_location_is_given()

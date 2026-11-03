@@ -16,11 +16,15 @@ public sealed class CreateListingValidator : AbstractValidator<CreateListingComm
         RuleFor(c => c.Description)
             .MaximumLength(2000).WithMessage("Açıklama en fazla 2000 karakter olabilir.");
 
-        RuleFor(c => c.WeightKg).GreaterThan(0).WithMessage("Ağırlık sıfırdan büyük olmalı.");
+        RuleFor(c => c.WeightKg).GreaterThan(0).WithMessage("Ağırlık sıfırdan büyük olmalı.")
+            // Üst sınır: gerçekçi olmayan değerler reddedilir (ve int taşması olmaz). Tır kapasitesinin çok üstü.
+            .LessThanOrEqualTo(1_000_000).WithMessage("Ağırlık en fazla 1.000.000 kg olabilir.");
 
         RuleFor(c => c.VehicleType).IsInEnum().WithMessage("Geçersiz araç türü.");
 
         RuleFor(c => c.Budget).GreaterThan(0).When(c => c.Budget.HasValue).WithMessage("Bütçe sıfırdan büyük olmalı.");
+        // Üst sınır: DB sütunu decimal(12,2) (en fazla 10 basamak); sığmayan sayı SQL hatası = 500 verirdi, burada 400 ile reddedilir.
+        RuleFor(c => c.Budget).LessThanOrEqualTo(100_000_000m).When(c => c.Budget.HasValue).WithMessage("Bütçe en fazla 100.000.000 ₺ olabilir.");
 
         // Geçmiş tarihe ilan açılmaz.
         RuleFor(c => c.PickupDate)
