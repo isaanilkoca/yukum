@@ -105,8 +105,12 @@ public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IRepos
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, open, cancellationToken);
         // Bu taşımacının verdiği teklifler: ilan numarası → tutar (listede "Teklif verildi" göstermek için).
         // Geçmişinden sildiği teklifler listede de görünmez (HiddenByCarrier).
-        var myOffers = (await offers.ListAsync(o => o.CarrierId == query.CarrierId && !o.HiddenByCarrier, asNoTracking: true, cancellationToken))
-            .ToDictionary(o => o.ListingId);
+        var allMine = await offers.ListAsync(o => o.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken);
+        var myOffers = allMine.Where(o => !o.HiddenByCarrier).ToDictionary(o => o.ListingId);
+        // Reddedilen ilanlar ana listeden KALKAR (yalnız "Tekliflerim"de durur). Geçmişinden silmiş olsa bile geri dönmez.
+        // Kabul edilen zaten Assigned olduğu için listede yok; bekleyen teklif ise listede kalır (tutarı güncellenebilir).
+        var rejectedListingIds = allMine.Where(o => o.Status == OfferStatus.Rejected).Select(o => o.ListingId).ToHashSet();
+        open = open.Where(l => !rejectedListingIds.Contains(l.Id)).ToList();
         // Konum verilmişse her ilanın kalkış ilçesine mesafe hesaplanır (kuş uçuşu, Haversine); verilmemişse null.
         var hasLocation = query.Lat is not null && query.Lon is not null;
         var points = hasLocation ? await CreateListingHandler.DistrictPointsAsync(geography, open, cancellationToken) : [];

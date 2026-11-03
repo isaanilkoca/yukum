@@ -210,6 +210,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // id'ye nearMe ve konum eklendi: anahtar açılınca VE konum bulununca (coordinate dolunca) blok yeniden çalışır, liste sıralanıp yenilenir
                        // locationManager.coordinate.map { ... } ?? "-": konum varsa "enlem,boylam" yazısı, yoksa "-" | .map: nil değilse içindeki dönüşümü uygula
                        .task(id: "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(locationManager.coordinate.map { "\($0.latitude),\($0.longitude)" } ?? "-")") {
+                listError = nil // eski hata yazısını temizle | NEDEN: .task her yenilemede yeniden çalışır; temizlemezsek bir kez çıkan hata (örn. API o an kapalıydı) sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                     if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
                         // BAĞLANTI: Network/ListingService.swift → myListings → GET /api/v1/listings/mine (yalnız kendi ilanlarım)

@@ -232,7 +232,28 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task Rejected_carrier_can_reoffer_and_goes_back_to_pending()
+    public async Task Rejected_listing_leaves_the_main_list_but_stays_in_my_offers_and_can_return_with_a_new_offer()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+        var pendingList = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));   // bekleyen: ana listede kalır
+
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/reject");
+        var afterReject = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var mine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        await Call(c, carrier, HttpMethod.Delete, $"/api/v1/offers/{offer}");                          // geçmişten silse bile geri dönmez
+        var afterHide = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+
+        Assert.Equal("Pending", pendingList[0].GetProperty("myOfferStatus").GetString());
+        Assert.Equal(0, afterReject.GetArrayLength());                                   // reddedilen ana listeden kalktı
+        Assert.Equal("Rejected", mine[0].GetProperty("status").GetString());            // Tekliflerim'de duruyor
+        Assert.Equal(0, afterHide.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Rejected_carrier_can_still_reoffer_through_the_api_and_goes_back_to_pending()
     {
         var c = await StartAsync();
         var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
@@ -240,12 +261,11 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var offer = await NewOffer(c, carrier, listing, 1000);
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/reject");
 
-        var afterReject = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings")))[0].GetProperty("myOfferStatus").GetString();
-        await NewOffer(c, carrier, listing, 800);
-        var afterReoffer = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings")))[0].GetProperty("myOfferStatus").GetString();
+        await NewOffer(c, carrier, listing, 800);   // yeniden teklif: aynı kayıt güncellenir, durum Beklemede'ye döner
+        var open = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
 
-        Assert.Equal("Rejected", afterReject);
-        Assert.Equal("Pending", afterReoffer);
+        Assert.Equal(1, open.GetArrayLength());                                          // bekleyen olduğu için ilan ana listeye döndü
+        Assert.Equal("Pending", open[0].GetProperty("myOfferStatus").GetString());
     }
 
     // ---------- bildirim rozeti ----------
