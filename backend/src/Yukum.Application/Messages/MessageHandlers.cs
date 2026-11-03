@@ -28,8 +28,12 @@ public sealed class GetMessagesHandler(IRepository<Offer> offers, IRepository<Li
     /// <summary>Taraf olmayana 404. Reddedilmiş tekliflerin eski mesajları okunabilir.</summary>
     public async Task<IReadOnlyList<MessageDto>> HandleAsync(GetMessagesQuery query, CancellationToken cancellationToken = default)
     {
-        await ChatAccess.RequireParticipantAsync(offers, listings, query.OfferId, query.UserId, cancellationToken);
-        var list = await messages.ListAsync(m => m.OfferId == query.OfferId, asNoTracking: true, cancellationToken);
+        var offer = await ChatAccess.RequireParticipantAsync(offers, listings, query.OfferId, query.UserId, cancellationToken);
+        // Kullanıcının kendi sildiği mesajlar görünmez (taşımacı ise HiddenByCarrier, yük veren ise HiddenByShipper bakılır).
+        var isCarrier = offer.CarrierId == query.UserId;
+        var list = await messages.ListAsync(
+            m => m.OfferId == query.OfferId && (isCarrier ? !m.HiddenByCarrier : !m.HiddenByShipper),
+            asNoTracking: true, cancellationToken);
         return list.OrderBy(m => m.CreatedAt).Select(m => new MessageDto(m.Id, m.Text, m.CreatedAt, m.SenderId == query.UserId)).ToList();
     }
 }
@@ -54,5 +58,27 @@ public sealed class SendMessageHandler(
         messages.Add(message);
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return new MessageDto(message.Id, message.Text, message.CreatedAt, IsMine: true);
+    }
+}
+
+/// <summary>Sohbeti kullanıcının KENDİ görünümünden siler: o ana kadarki mesajlar onun için gizlenir, karşı taraf görmeye devam eder.</summary>
+public sealed class ClearChatHandler(IRepository<Offer> offers, IRepository<Listing> listings, IRepository<Message> messages, IUnitOfWork unitOfWork)
+    : ICommandHandler<ClearChatCommand, bool>
+{
+    /// <summary>Taraf olmayana 404. Sonradan yazılan yeni mesajlar normal görünür.</summary>
+    public async Task<bool> HandleAsync(ClearChatCommand command, CancellationToken cancellationToken = default)
+    {
+        var offer = await ChatAccess.RequireParticipantAsync(offers, listings, command.OfferId, command.UserId, cancellationToken);
+        var isCarrier = offer.CarrierId == command.UserId;
+
+        // Değiştirilecek kayıtlar izlenerek alınır (asNoTracking: false): alanlar değişince SaveChanges kaydeder.
+        var mine = await messages.ListAsync(m => m.OfferId == command.OfferId, asNoTracking: false, cancellationToken);
+        foreach (var m in mine)
+        {
+            if (isCarrier) m.HiddenByCarrier = true; else m.HiddenByShipper = true;
+        }
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
     }
 }

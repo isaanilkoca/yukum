@@ -13,4 +13,10 @@ public class Message : BaseEntity
 
     /// <summary>Mesaj metni.</summary>
     public string Text { get; set; } = "";
+
+    /// <summary>Taşımacı sohbeti kendisi için sildi mi? (mesaj durur, yalnız onun görünümünden kalkar)</summary>
+    public bool HiddenByCarrier { get; set; }
+
+    /// <summary>Yük Veren sohbeti kendisi için sildi mi? (mesaj durur, yalnız onun görünümünden kalkar)</summary>
+    public bool HiddenByShipper { get; set; }
 }

@@ -220,8 +220,9 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var accept = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerA}/accept");
         var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerB}/accept");   // ilan artık atandı: 409
         var lateOffer = await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 500 }); // atanmış ilana teklif: 409
-        var offers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
+        var offers = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));   // kabul/red verilenler geçmişte
         var open = await Json(await Call(c, b, HttpMethod.Get, "/api/v1/listings"));
+        var pendingLeft = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
 
         Assert.Equal(HttpStatusCode.OK, accept.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
@@ -229,6 +230,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal("Accepted", offers.EnumerateArray().Single(o => o.GetProperty("id").GetString() == offerA).GetProperty("status").GetString());
         Assert.Equal("Rejected", offers.EnumerateArray().Single(o => o.GetProperty("id").GetString() == offerB).GetProperty("status").GetString());
         Assert.Equal(0, open.GetArrayLength());   // atanan ilan açık listeden düştü
+        Assert.Equal(0, pendingLeft.GetArrayLength());   // "Gelen teklifler" yalnız bekleyenleri gösterir; karar verilenler geçmişe gitti
     }
 
     [Fact]
@@ -292,6 +294,51 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(1, shipperSees.GetArrayLength());   // iki taraf da hâlâ görüyor
         Assert.Equal(1, carrierSees.GetArrayLength());
         Assert.Equal(HttpStatusCode.Created, chat.StatusCode);   // sohbet iki tarafta açık
+    }
+
+    // ---------- Yük Veren ana akışı: yalnız canlı iş ----------
+    [Fact]
+    public async Task Shipper_main_flow_shows_only_open_listings_and_pending_offers()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var live = await NewListing(c, shipper); var assigned = await NewListing(c, shipper);
+        var offerLive = await NewOffer(c, carrier, live, 500); var offerAssigned = await NewOffer(c, carrier, assigned, 700);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerAssigned}/accept");
+
+        var mine = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"));
+        var pending = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{live}/offers"));
+        var history = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
+
+        Assert.Equal(live, mine.EnumerateArray().Single().GetProperty("id").GetString());    // atanan ilan ana listeden kalktı
+        Assert.Equal(offerLive, pending.EnumerateArray().Single().GetProperty("id").GetString());
+        Assert.Equal(offerAssigned, history.EnumerateArray().Single().GetProperty("id").GetString());   // kabul edilen geçmişte
+    }
+
+    // ---------- sohbet silme: yalnız kendi tarafı ----------
+    [Fact]
+    public async Task Clearing_a_chat_hides_it_only_for_the_person_who_cleared_it()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+        var url = $"/api/v1/offers/{offer}/messages";
+        await Call(c, carrier, HttpMethod.Post, url, new { text = "Merhaba" });
+        await Call(c, shipper, HttpMethod.Post, url, new { text = "Selam" });
+
+        var clear = await Call(c, carrier, HttpMethod.Delete, url);                       // Taşımacı kendi sohbetini siler
+        var carrierView = await Json(await Call(c, carrier, HttpMethod.Get, url));
+        var shipperView = await Json(await Call(c, shipper, HttpMethod.Get, url));
+        await Call(c, shipper, HttpMethod.Post, url, new { text = "Yeni mesaj" });          // silmeden SONRA yazılan mesaj görünür
+        var carrierAfter = await Json(await Call(c, carrier, HttpMethod.Get, url));
+        var outsiderClear = await Call(c, await NewUser(c, false), HttpMethod.Delete, url);
+
+        Assert.Equal(HttpStatusCode.NoContent, clear.StatusCode);
+        Assert.Equal(0, carrierView.GetArrayLength());     // Taşımacı'da gitti
+        Assert.Equal(2, shipperView.GetArrayLength());     // Yük Veren'de durur
+        Assert.Equal(1, carrierAfter.GetArrayLength());    // yalnız yeni mesaj
+        Assert.Equal("Yeni mesaj", carrierAfter[0].GetProperty("text").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, outsiderClear.StatusCode);   // taraf olmayan silemez
     }
 
     // ---------- bildirim rozeti ----------

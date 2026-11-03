@@ -8844,6 +8844,12 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("HiddenByCarrier")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("HiddenByShipper")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 

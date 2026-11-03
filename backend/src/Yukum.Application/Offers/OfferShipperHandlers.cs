@@ -6,7 +6,7 @@ using Yukum.Domain.Listings;
 
 namespace Yukum.Application.Offers;
 
-/// <summary>Yük Veren'in kendi ilanına gelen teklifleri getirir (düşük tutar üstte).</summary>
+/// <summary>Yük Veren'in kendi ilanına gelen BEKLEYEN (karar bekleyen) teklifleri getirir (düşük tutar üstte). Kabul/red verilenler geçmişe (offers/history) gider.</summary>
 public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepository<Offer> offers, IUserDirectory users)
     : IQueryHandler<GetListingOffersQuery, IReadOnlyList<ListingOfferDto>>
 {
@@ -17,7 +17,7 @@ public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepo
         if (listing is null || listing.ShipperId != query.ShipperId)
             throw new NotFoundException("İlan bulunamadı.");
 
-        var list = await offers.ListAsync(o => o.ListingId == query.ListingId && !o.HiddenByShipper, asNoTracking: true, cancellationToken);
+        var list = await offers.ListAsync(o => o.ListingId == query.ListingId && o.Status == OfferStatus.Pending && !o.HiddenByShipper, asNoTracking: true, cancellationToken);
         var names = await users.GetFullNamesAsync(list.Select(o => o.CarrierId), cancellationToken);
 
         return list.OrderBy(o => o.Amount)

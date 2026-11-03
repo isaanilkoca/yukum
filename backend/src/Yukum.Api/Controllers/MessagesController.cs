@@ -14,7 +14,8 @@ namespace Yukum.Api.Controllers;
 [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")] // iki rol de girer; asıl yetki "bu teklifin tarafı mısın" kontrolüdür (handler)
 public class MessagesController(
     IQueryHandler<GetMessagesQuery, IReadOnlyList<MessageDto>> getMessages,
-    ICommandHandler<SendMessageCommand, MessageDto> sendMessage) : ControllerBase
+    ICommandHandler<SendMessageCommand, MessageDto> sendMessage,
+    ICommandHandler<ClearChatCommand, bool> clearChat) : ControllerBase
 {
     /// <summary>Sohbetin tüm mesajları (eskiden yeniye). iOS ekran açıkken kısa aralıkla tekrar çağırır.</summary>
     // GET /api/v1/offers/{offerId}/messages
@@ -31,6 +32,16 @@ public class MessagesController(
     public async Task<IActionResult> Send(Guid offerId, SendMessageRequest request, CancellationToken cancellationToken) =>
         StatusCode(StatusCodes.Status201Created,
             await sendMessage.HandleAsync(new SendMessageCommand(offerId, CurrentUserId, request.Text), cancellationToken));
+
+    /// <summary>Sohbeti YALNIZ KENDİ görünümünden siler (karşı taraf görmeye devam eder). Sonradan yazılan yeni mesajlar görünür.</summary>
+    // DELETE /api/v1/offers/{offerId}/messages
+    [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Clear(Guid offerId, CancellationToken cancellationToken)
+    {
+        await clearChat.HandleAsync(new ClearChatCommand(offerId, CurrentUserId), cancellationToken);
+        return NoContent();
+    }
 
     // Jetondaki 'sub' (kullanıcı numarası).
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);

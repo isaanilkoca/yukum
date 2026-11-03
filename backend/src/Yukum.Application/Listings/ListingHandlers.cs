@@ -75,10 +75,11 @@ public sealed class CreateListingHandler(
 public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeographyRepository geography)
     : IQueryHandler<GetMyListingsQuery, IReadOnlyList<ListingDto>>
 {
-    /// <summary>Yalnız jetondaki kullanıcının ilanları döner.</summary>
+    /// <summary>Yalnız jetondaki kullanıcının AÇIK ilanları döner.</summary>
     public async Task<IReadOnlyList<ListingDto>> HandleAsync(GetMyListingsQuery query, CancellationToken cancellationToken = default)
     {
-        var mine = await listings.ListAsync(l => l.ShipperId == query.ShipperId, asNoTracking: true, cancellationToken);
+        // Ana sayfada yalnız AÇIK (canlı) ilanlar: teklifi kabul edilen ilan atanmıştır, geçmişe (offers/history) gider.
+        var mine = await listings.ListAsync(l => l.ShipperId == query.ShipperId && l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken);
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, mine, cancellationToken);
         return mine.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names, districts)).ToList();
