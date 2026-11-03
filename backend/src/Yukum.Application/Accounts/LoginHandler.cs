@@ -6,7 +6,7 @@ using Yukum.Application.Common;
 namespace Yukum.Application.Accounts;
 
 /// <summary>Girişi işler: doğrular, kimliği (e-posta/telefon) çözer, şifreyi denetler, erişim jetonu üretir.</summary>
-public sealed class LoginHandler(IValidator<LoginCommand> validator, IAuthService auth, ITokenService tokens)
+public sealed class LoginHandler(IValidator<LoginCommand> validator, IAuthService auth, ITokenService tokens, IRefreshTokenService refreshTokens)
     : ICommandHandler<LoginCommand, LoginResponse>
 {
     /// <summary>
@@ -41,7 +41,10 @@ public sealed class LoginHandler(IValidator<LoginCommand> validator, IAuthServic
         // 4) Şifre doğruysa 15 dakikalık JWT erişim jetonu üret (Infrastructure/JwtTokenService.cs).
         var token = tokens.CreateAccessToken(user);
 
-        // 5) Jeton + bitiş zamanı + kullanıcı özeti istemciye döner.
-        return new LoginResponse(token.Value, token.ExpiresAt, user);
+        // 5) Uzun ömürlü yenileme jetonu: 15 dk dolunca kullanıcı şifre yazmadan yeni erişim jetonu alabilsin. DB'de yalnız özeti saklanır.
+        var refresh = await refreshTokens.IssueAsync(user.Id, command.DeviceId!.Trim(), cancellationToken);
+
+        // 6) İki jeton + bitiş zamanları + kullanıcı özeti istemciye döner.
+        return new LoginResponse(token.Value, token.ExpiresAt, refresh.Token, refresh.ExpiresAt, user);
     }
 }

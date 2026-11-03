@@ -98,6 +98,8 @@ public static class DependencyInjection
         services.AddScoped<IAccountService, AccountService>();
         // Giriş servisi (şifre denetimi, hatalı deneme sayacı, kilit).
         services.AddScoped<IAuthService, AuthService>();
+        // Yenileme jetonu: rotasyon + çalıntı tespiti.
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
         // Erişim jetonu (JWT): ayarlar "Jwt" bölümünden; eksik/zayıf anahtar uygulama açılırken hata verir (sessizce zayıf başlamaz).
         services.AddOptions<JwtOptions>()

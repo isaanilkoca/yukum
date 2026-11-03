@@ -77,4 +77,11 @@ public sealed record AuthUserDto(Guid Id, string DisplayName, string Role, strin
 /// <param name="AccessToken">Kısa ömürlü erişim jetonu (JWT).</param>
 /// <param name="AccessTokenExpiresAt">Erişim jetonunun bitiş zamanı (UTC).</param>
 /// <param name="User">Kullanıcı özeti.</param>
-public sealed record LoginResponse(string AccessToken, DateTime AccessTokenExpiresAt, AuthUserDto User);
+public sealed record LoginResponse(
+    string AccessToken, DateTime AccessTokenExpiresAt, string RefreshToken, DateTime RefreshTokenExpiresAt, AuthUserDto User);
+
+/// <summary>Komut: erişim jetonunu yenile. Yenileme jetonu tek kullanımlıktır; cevapta yeni bir çift gelir (rotasyon).</summary>
+public sealed record RefreshCommand(string? RefreshToken, string? DeviceId);
+
+/// <summary>Komut: çıkış. Verilen yenileme jetonunu (ve o cihazın tüm jetonlarını) iptal eder.</summary>
+public sealed record LogoutCommand(string? RefreshToken);

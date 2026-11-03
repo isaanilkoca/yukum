@@ -24,3 +24,6 @@ public sealed class AccountLockedException(TimeSpan retryAfter)
 /// </summary>
 /// <param name="message">Kullanıcıya gösterilebilecek kısa Türkçe açıklama.</param>
 public sealed class ForbiddenException(string message) : Exception(message);
+
+/// <summary>Yenileme jetonu geçersiz: bilinmiyor, süresi dolmuş, iptal edilmiş ya da başka cihaza ait. Cevap 401; istemci yeniden giriş ister.</summary>
+public sealed class InvalidRefreshTokenException() : Exception("Oturum süresi doldu, lütfen tekrar giriş yapın.");

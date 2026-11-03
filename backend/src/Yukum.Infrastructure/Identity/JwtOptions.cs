@@ -17,4 +17,7 @@ public sealed class JwtOptions
 
     /// <summary>Erişim jetonunun ömrü, dakika (rapor: 10–15).</summary>
     public int AccessTokenMinutes { get; set; } = 15;
+
+    /// <summary>Yenileme jetonunun ömrü (gün). Her yenilemede süre yeniden başlar (kayan oturum).</summary>
+    public int RefreshTokenDays { get; set; } = 30;
 }

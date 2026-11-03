@@ -78,6 +78,7 @@ public sealed class GlobalExceptionHandler(
         NotFoundException e => (StatusCodes.Status404NotFound, "Bulunamadı", e.Message),
         ConflictException e => (StatusCodes.Status409Conflict, "Çakışma", e.Message),
         InvalidCredentialsException e => (StatusCodes.Status401Unauthorized, "Giriş başarısız", e.Message),
+        InvalidRefreshTokenException e => (StatusCodes.Status401Unauthorized, "Oturum geçersiz", e.Message),
         AccountLockedException e => (StatusCodes.Status423Locked, "Hesap geçici olarak kilitlendi", e.Message),
         ForbiddenException e => (StatusCodes.Status403Forbidden, "Erişim engellendi", e.Message),
         // Tanımadığımız hata: null döner, yukarıda 500 yoluna düşer.

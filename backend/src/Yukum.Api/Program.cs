@@ -2,6 +2,9 @@ using System.Diagnostics;
 using System.Text;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
@@ -96,6 +99,30 @@ builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationSc
         };
     });
 
+// Hız sınırı (rate limiting): .NET'in hazır ara katmanı. "auth" politikası giriş/kayıt/yenileme uçlarına uygulanır:
+// aynı IP'den dakikada en fazla N istek (varsayılan 30, "RateLimiting:AuthPerMinute" ile değişir). Aşılırsa 429 + Retry-After.
+// Sabit pencere (fixed window): her dakikanın başında sayaç sıfırlanır. Basit ve anlaşılır; canlıda ters vekil arkasında IP için ForwardedHeaders gerekir.
+builder.Services.AddRateLimiter(limiter =>
+{
+    var perMinute = builder.Configuration.GetValue("RateLimiting:AuthPerMinute", 30);
+    limiter.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    limiter.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "bilinmiyor",
+        factory: _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    limiter.OnRejected = async (context, token) =>
+    {
+        // Cevap diğer hatalarla aynı biçimde (ProblemDetails) ve Türkçe; istemci ne kadar bekleyeceğini Retry-After başlığından okur.
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new ProblemDetails
+        {
+            Status = StatusCodes.Status429TooManyRequests,
+            Title = "Çok fazla istek",
+            Detail = "Çok fazla deneme yaptınız. Lütfen biraz bekleyip tekrar deneyin."
+        }, token);
+    };
+});
 builder.Services.AddApplication();     // handler'lar (iş kuralları), kendiliğinden bulunup kaydedilir
 builder.Services.AddInfrastructure();  // veritabanı (SQL Server), repository'ler, saat servisi
 
@@ -139,6 +166,7 @@ if (app.Environment.IsDevelopment())
 
 // HTTP isteğini HTTPS'e yönlendirir (geliştirmede http profilinde uyarı verir; bilinen konu, iOS bağlantısında netleşecek).
 app.UseHttpsRedirection();
+app.UseRateLimiter();      // hız sınırı: [EnableRateLimiting] olan uçlarda sayaç tutar
 app.UseAuthentication();   // jetondan kullanıcıyı çıkarır
 app.UseAuthorization();    // [Authorize] ve rol kurallarını uygular
 

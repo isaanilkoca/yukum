@@ -14,12 +14,15 @@ public class LoginHandlerTests
 
     private readonly IAuthService _auth = Substitute.For<IAuthService>();
     private readonly ITokenService _tokens = Substitute.For<ITokenService>();
+    private readonly IRefreshTokenService _refresh = Substitute.For<IRefreshTokenService>();
     private readonly LoginHandler _handler;
 
     public LoginHandlerTests()
     {
         _tokens.CreateAccessToken(Arg.Any<AuthUserDto>()).Returns(new AccessToken("jwt-degeri", Expires));
-        _handler = new LoginHandler(new LoginValidator(), _auth, _tokens);
+        _refresh.IssueAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new RefreshTokenIssue("yenileme-jetonu", Expires.AddDays(30)));
+        _handler = new LoginHandler(new LoginValidator(), _auth, _tokens, _refresh);
     }
 
     private static LoginCommand Command(string emailOrPhone, string password = "Abcdefg1") =>
@@ -35,7 +38,9 @@ public class LoginHandlerTests
         Assert.Equal("jwt-degeri", response.AccessToken);
         Assert.Equal(Expires, response.AccessTokenExpiresAt);
         Assert.Same(User, response.User);
+        Assert.Equal("yenileme-jetonu", response.RefreshToken);   // giriş yenileme jetonunu da verir
         _tokens.Received(1).CreateAccessToken(User);
+        await _refresh.Received(1).IssueAsync(User.Id, "device-1", Arg.Any<CancellationToken>());   // cihaz kimliğiyle
     }
 
     [Theory]

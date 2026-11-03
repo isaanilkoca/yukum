@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Accounts;
 
@@ -18,12 +19,16 @@ namespace Yukum.Api.Controllers;
 [Route("api/v{version:apiVersion}/auth")]
 // Giriş (jeton) gerekmez: kullanıcı henüz giriş yapmamıştır.
 [AllowAnonymous]
+// Hız sınırı: aynı adresten dakikada en fazla N istek (Program.cs'te "auth" politikası). Şifre denemelerini ve jeton denemelerini yavaşlatır (brute force).
+[EnableRateLimiting("auth")]
 // Bağımlılık enjeksiyonu: .NET, aşağıdaki üç handler'ı kendisi bulup verir (kayıtlar: Application/DependencyInjection.cs).
 // Controller 'ince' tutulur: iş kuralı burada değil handler'lardadır.
 public class AuthController(
     ICommandHandler<RegisterShipperCommand, RegisteredUserDto> registerShipper,
     ICommandHandler<RegisterCarrierCommand, RegisteredUserDto> registerCarrier,
-    ICommandHandler<LoginCommand, LoginResponse> login) : ControllerBase
+    ICommandHandler<LoginCommand, LoginResponse> login,
+    ICommandHandler<RefreshCommand, LoginResponse> refresh,
+    ICommandHandler<LogoutCommand, bool> logout) : ControllerBase
 {
     /// <summary>E-posta ya da telefon + şifre ile giriş yapar ve kısa ömürlü erişim jetonu (JWT) verir.</summary>
     /// <param name="command">Giriş bilgileri (cihaz kimliği zorunludur).</param>
@@ -49,6 +54,25 @@ public class AuthController(
     /// <param name="command">Kayıt bilgileri.</param>
     /// <param name="cancellationToken">İstemci isteği iptal ederse işlem de durur.</param>
     /// <returns>201 ve kullanıcı özeti. Geçersiz alan: 400. E-posta/telefon kayıtlı: 409. Giriş ayrı uçtan yapılır.</returns>
+    /// <summary>Erişim jetonunu yeniler. Yenileme jetonu tek kullanımlıktır: cevapta yeni bir çift gelir, eskisi iptal olur.</summary>
+    // POST /api/v1/auth/refresh
+    [HttpPost("refresh")]
+    [ProducesResponseType<LoginResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Refresh(RefreshCommand command, CancellationToken cancellationToken) =>
+        Ok(await refresh.HandleAsync(command, cancellationToken));
+
+    /// <summary>Çıkış: yenileme jetonunu (ve cihazın tüm jetonlarını) iptal eder. Her zaman 204 döner.</summary>
+    // POST /api/v1/auth/logout
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout(LogoutCommand command, CancellationToken cancellationToken)
+    {
+        await logout.HandleAsync(command, cancellationToken);
+        return NoContent();
+    }
+
     // POST /api/v1/auth/register/shipper (rol adresten gelir: Shipper)
     [HttpPost("register/shipper")]
     [ProducesResponseType<RegisteredUserDto>(StatusCodes.Status201Created)]

@@ -266,3 +266,25 @@ struct LoginResponse: Codable {
 - Sunucu, giriş denemelerini ve kilidi hesap bazında tutar; aynı hesaba farklı cihazlardan yapılan hatalı denemeler **toplanır**.
 - `Retry-After` değeri saniye cinsindendir; bir geri sayım göstermek isterseniz kullanın.
 - Hız sınırı (çok sık deneme, 429) D5'te eklenecek.
+
+---
+
+## D4: Yenileme jetonu (refresh token), çıkış, hız sınırı
+
+**Mantık:** İki jeton vardır. *Erişim jetonu* (JWT, 15 dk) her istekte `Authorization: Bearer` ile gider. *Yenileme jetonu* (30 gün) yalnız erişim jetonunu yenilemek için kullanılır. Yenileme jetonu **tek kullanımlıktır** (rotasyon): her yenilemede eskisi iptal edilir, yeni bir çift gelir.
+
+**Güvenlik tasarımı**
+- Jeton 256 bit kriptografik rastgele; DB'de **yalnız SHA-256 özeti** saklanır (DB sızsa jeton kullanılamaz).
+- **Çalıntı tespiti:** Rotasyonla yenilenmiş eski bir jeton tekrar gelirse o cihazın tüm jeton ailesi iptal edilir (kullanıcı yeniden giriş yapar). Çıkışla/yeniden girişle iptal edilmiş jeton yalnız reddedilir.
+- **Cihaza bağlı:** Jeton yalnız girişte verilen `deviceId` ile yenilenir. Cihaz başına tek oturum (yeni giriş eskisini iptal eder).
+- **Eşzamanlılık:** Aynı jetonla iki istek aynı anda gelirse `RowVersion` yalnız birini kabul eder.
+- Kilitli/pasif/engelli hesaba jeton yenilenmez.
+- **Hız sınırı:** giriş/kayıt/yenileme/çıkış uçlarında aynı IP'den dakikada en fazla 30 istek (`RateLimiting:AuthPerMinute`); aşılırsa `429` + `Retry-After`.
+
+**`POST /api/v1/auth/login`** cevabına iki alan eklendi: `refreshToken`, `refreshTokenExpiresAt`.
+
+**`POST /api/v1/auth/refresh`** — gövde: `{ "refreshToken": "...", "deviceId": "..." }` → `200` giriş cevabıyla aynı biçim (yeni `accessToken` + yeni `refreshToken`). Hatalar: `400` (boş alan), `401` (bilinmeyen/süresi dolmuş/iptal/başka cihaz; istemci oturumu kapatıp girişe döner), `429`.
+
+**`POST /api/v1/auth/logout`** — gövde: `{ "refreshToken": "..." }` → `204` (her zaman; bilinmeyen jeton bilgi sızdırmaz). Cihazın tüm aktif jetonlarını iptal eder.
+
+**iOS notu:** Yenileme jetonu **Keychain**'de, erişim jetonu bellekte saklanır. 401 gelince tek bir yenileme isteği yapılır (eşzamanlı istekler aynı yenilemeyi bekler), yenilenince istek tekrarlanır; yenileme 401 verirse oturum kapatılır. `deviceId` uygulama kurulumu başına sabit olmalıdır (her girişte yeni UUID üretilmemeli).

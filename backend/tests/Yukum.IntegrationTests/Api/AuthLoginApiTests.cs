@@ -70,7 +70,7 @@ public class AuthLoginApiTests(SqlServerFixture sql)
         Assert.Equal("Ali Veli", user.GetProperty("displayName").GetString());
         Assert.Equal("Shipper", user.GetProperty("role").GetString());
         Assert.True(Guid.TryParse(user.GetProperty("id").GetString(), out _));
-        Assert.Equal(["accessToken", "accessTokenExpiresAt", "user"], json.EnumerateObject().Select(p => p.Name).Order());
+        Assert.Equal(["accessToken", "accessTokenExpiresAt", "refreshToken", "refreshTokenExpiresAt", "user"], json.EnumerateObject().Select(p => p.Name).Order());
         Assert.DoesNotContain("passwordHash", await response.Content.ReadAsStringAsync(), StringComparison.OrdinalIgnoreCase);
     }
 
