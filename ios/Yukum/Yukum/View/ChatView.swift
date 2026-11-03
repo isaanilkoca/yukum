@@ -112,6 +112,7 @@ struct ChatView: View {
             errorMessage = error.message
             
         } catch { // başka her hata: API kapalı, internet yok
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled { return } // İPTAL ≠ HATA: SwiftUI ekran yenilenirken/çıkılırken çalışan .task'ı iptal eder, o işin internet isteği "cancelled" hatası fırlatır | bunu kullanıcıya "Sunucuya ulaşılamadı." diye göstermeyiz | Task.isCancelled: bu iş iptal edildi mi | (error as? URLError): hata internet hatası türüne çevrilebiliyorsa | .code == .cancelled: sebebi iptal | return: sessizce çık
             errorMessage = "Sunucuya Ulaşılamadı"
         }
     }

@@ -76,7 +76,8 @@ struct OldOffersView: View {
          } catch let error as AuthError { // API hayır dedi | AuthError: Network/AuthService.swift
              errorMessage = error.message
          } catch { // API kapalı, internet yok
-             errorMessage = "Sunucuya ulaşılamadı."
+             if Task.isCancelled || (error as? URLError)?.code == .cancelled { return } // İPTAL ≠ HATA: SwiftUI ekran yenilenirken/çıkılırken çalışan .task'ı iptal eder, o işin internet isteği "cancelled" hatası fırlatır | bunu kullanıcıya "Sunucuya ulaşılamadı." diye göstermeyiz | Task.isCancelled: bu iş iptal edildi mi | (error as? URLError): hata internet hatası türüne çevrilebiliyorsa | .code == .cancelled: sebebi iptal | return: sessizce çık
+            errorMessage = "Sunucuya ulaşılamadı."
          }
      }
     

@@ -103,6 +103,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         } catch let error as AuthError { // API hayır dedi (401 vb.) | AuthError: Network/AuthService.swift'te tanımlı
             errorMessage = error.message // mesajı yaz, if let kırmızı Text'i çizer
         } catch { // başka her hata: API kapalı, internet yok
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled { return } // İPTAL ≠ HATA: SwiftUI ekran yenilenirken/çıkılırken çalışan .task'ı iptal eder, o işin internet isteği "cancelled" hatası fırlatır | bunu kullanıcıya "Sunucuya ulaşılamadı." diye göstermeyiz | Task.isCancelled: bu iş iptal edildi mi | (error as? URLError): hata internet hatası türüne çevrilebiliyorsa | .code == .cancelled: sebebi iptal | return: sessizce çık
             errorMessage = "Sunucuya ulaşılamadı."
         }
     }
