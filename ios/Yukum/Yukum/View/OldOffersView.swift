@@ -58,6 +58,7 @@ struct OldOffersView: View {
                                         }
                                     }
                                 }.listStyle(.plain) // düz beyaz zemin
+                .refreshable { await loadOffers() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
                 }
             }
         

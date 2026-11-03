@@ -72,6 +72,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
                         }
                     }
                 }.listStyle(.plain) // .plain: düz beyaz zemin, ince çizgiler | varsayılan gri zemin olurdu
+                .refreshable { await loadOffers() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
             }
         }
         .padding() // ekranın kenarlarından boşluk

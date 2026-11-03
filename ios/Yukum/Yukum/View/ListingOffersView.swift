@@ -59,6 +59,7 @@ struct ListingOffersView: View {
                     } // VStack (bir teklifin satırı) burada biter
                     .padding(.vertical,4)
                 }.listStyle(.plain)
+                .refreshable { await loadOffers() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
             }
         }
         .padding()

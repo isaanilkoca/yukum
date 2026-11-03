@@ -75,6 +75,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 ListingRow(listing: listing) // BAĞLANTI: View/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
                             }
                         }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi
+                        .refreshable { await loadData() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
                     }
                     
                 } else { // Shipper değilse (Carrier)
@@ -156,6 +157,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 ListingRow(listing: listing) // eski satır aynen kalır
                             }
                         }.listStyle(.plain)
+                        .refreshable { await loadData() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
                     }
                     
                 }
@@ -210,6 +212,14 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // id'ye nearMe ve konum eklendi: anahtar açılınca VE konum bulununca (coordinate dolunca) blok yeniden çalışır, liste sıralanıp yenilenir
                        // locationManager.coordinate.map { ... } ?? "-": konum varsa "enlem,boylam" yazısı, yoksa "-" | .map: nil değilse içindeki dönüşümü uygula
                        .task(id: "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(locationManager.coordinate.map { "\($0.latitude),\($0.longitude)" } ?? "-")") {
+            await loadData() // asıl iş aşağıdaki loadData() fonksiyonunda | NEDEN ayrı fonksiyon: aynı işi hem .task (açılış/filtre değişimi) hem .refreshable (aşağı çekme) çağırıyor, kod tekrarlanmasın
+            }
+        }
+    }
+
+    // loadData: ana sayfanın verisini API'den çekip @State'lere yazar | private: yalnız bu ekran görür | async: içinde await var
+    // ÇAĞIRAN: .task(id:) (ekran açılınca/filtre değişince) ve List'lerdeki .refreshable (aşağı çekince)
+    private func loadData() async {
                 listError = nil // eski hata yazısını temizle | NEDEN: .task her yenilemede yeniden çalışır; temizlemezsek bir kez çıkan hata (örn. API o an kapalıydı) sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
                 do { // do: dene | hata çıkarsa aşağıdaki catch'lerden biri çalışır
                     if user.role == "Shipper" { // VERİ kararı: rol hangi ucu çağıracağımızı belirler (yukarıdaki if yalnız çizim yapar)
@@ -229,7 +239,5 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 } catch { // başka her hata: API kapalı, internet yok
                     listError = "Sunucuya ulaşılamadı." // sabit mesaj
                 }
-            }
-        }
     }
 }
