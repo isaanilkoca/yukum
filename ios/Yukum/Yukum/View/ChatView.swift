@@ -23,6 +23,8 @@ struct ChatView: View {
     
     let offerId: String // hangi teklifin sohbeti | NE İŞE YARAR: API adresine girer /offers/{offerId}/messages | NEREDE: dışarıdan verilir (düğmeyi çizen ekran)
     let title: String // üst çubukta görünecek başlık (ilan adı) | dışarıdan verilir
+    // canComplete: "İşi Bitir ve Sil" seçeneği gösterilsin mi | NE İŞE YARAR: yalnız KABUL EDİLMİŞ (aktif) tekliflerde true; bekleyen/reddedilen/tamamlanmışta menüde bu seçenek çıkmaz | dışarıdan verilir
+    let canComplete: Bool
     let canWrite: Bool // yazma açık mı (NEDEN dışarıdan veriliyor: ChatView teklifin durumunu bilmez, onu açan ekran bilir; bu yüzden hazır karar olarak alır) | NE İŞE YARAR: reddedilmiş tekliflerde false olur, yazma kutusu gizlenir, yalnız eski mesajlar okunur | API de 409 ile reddeder
     
     // messages: sohbetin mesaj listesi | NE İŞE YARAR: balonlar bundan çizilir; değişince ekran yenilenir (@State) | NEREDE DOLAR: loadMessages() API'den çekip yazar | başta boş []
@@ -33,6 +35,16 @@ struct ChatView: View {
 
        // errorMessage: kırmızı hata yazısı | NE İŞE YARAR: yükleme/gönderme başarısız olursa sebebi gösterir | NEREDE DOLAR: loadMessages() ve send() catch blokları
        @State private var errorMessage: String? // String? = boş olabilir | nil: hata yok
+
+    @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | iş bitirilince sohbetten geri dönmek için
+    // showClearConfirm: "Mesajları Temizle" onay penceresi açık mı | true olunca pencere çıkar, seçim yapılınca SwiftUI kendisi false yapar
+    // NEDEN onay penceresi: silme geri alınamaz, yanlışlıkla basılmasın
+    @State private var showClearConfirm = false
+    // showCompleteConfirm: "İşi Bitir ve Sil" onay penceresi açık mı | bu işlem daha ağır (iki tarafta durumu değiştirir), ayrı ve daha açıklayıcı bir pencereyle sorulur
+    @State private var showCompleteConfirm = false
+    // locked: sohbet bu ekran AÇIKKEN kilitlendi mi | NE İŞE YARAR: karşı taraf işi bitirirse (ya da teklif reddedilirse) biz yazmaya çalışınca sunucu "sohbet kapalı" der, o zaman bu true olur ve yazma kutusu kapanır
+    // NEDEN ayrı: canWrite ekran açılırken verilen sabit değer; durum açıkken değişirse onu yakalayan bu
+    @State private var locked = false
     
     
     var body: some View {
@@ -72,7 +84,7 @@ struct ChatView: View {
             }
             if let errorMessage {Text(errorMessage).foregroundColor(.red).font(.caption).padding(.horizontal)} // if let: doluysa kırmızı küçük yaz, nil ise çizilmez | gönderme/yükleme hatası burada çıkar
             
-            if canWrite {  // yazma açıksa alt çubuk çizilir (Pending ve Accepted teklifler)
+            if canWrite && !locked {  // yazma açıksa VE kilitlenmediyse alt çubuk çizilir (Pending ve Accepted teklifler)
                 HStack{  // yan yana: yazma kutusu + Gönder düğmesi
                     TextField("Mesaj Yaz", text: $draft) // TextField [SWIFT]: yazı kutusu | $ = iki yönlü bağ, yazılan her harf draft'a gider
                         .textFieldStyle(.roundedBorder) // çerçeveli kutu görünümü
@@ -83,12 +95,41 @@ struct ChatView: View {
                 }
                 .padding()
             }else {
-                Text("Bu teklif reddedildi, sohbet kapalı.").foregroundColor(.secondary).padding() // canWrite false: yazma kutusu yerine bilgi yazısı | eski mesajlar yine okunur
+                Text("Bu sohbet kapalı (teklif reddedildi ya da iş tamamlandı). Eski mesajlar okunabilir.").font(.caption).foregroundColor(.secondary).padding() // yazma kutusu yerine bilgi yazısı | iki taraf da aynı mesajı görür // canWrite false: yazma kutusu yerine bilgi yazısı | eski mesajlar yine okunur
             }
             
         }
         .navigationTitle(title) // üst çubuk başlığı | dışarıdan gelen ilan adı
         .navigationBarTitleDisplayMode(.inline) // küçük , ortada başlık
+
+        // ─── SAĞ ÜST MENÜ: iki ayrı işlem ───
+        // Menu [SWIFT]: basınca seçenek listesi açan düğme | label: menüyü açan görünen kısım (üç nokta ikonu)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
+                Menu {
+                    // 1) MESAJLARI TEMİZLE: yalnız mesajlar silinir, teklif ve iş yerinde kalır | yalnız KENDİ ekranımdan
+                    Button("Mesajları Temizle", systemImage: "trash") { showClearConfirm = true } // systemImage: SF Symbols ikonu | basınca onay penceresi açılır
+                    // 2) İŞİ BİTİR VE SİL: yalnız kabul edilmiş işte görünür | durum iki tarafta Tamamlandı olur, sohbet iki tarafta kilitlenir, benim tarafımdan teklif ve mesajlar silinir
+                    if canComplete && !locked { // && ve | kabul edilmiş aktif iş ve henüz kilitlenmemişse
+                        Button("İşi Bitir ve Sil", systemImage: "checkmark.seal", role: .destructive) { showCompleteConfirm = true } // role: .destructive: kırmızı
+                    }
+                } label: { Image(systemName: "ellipsis.circle") } // üç nokta ikonu
+            }
+        }
+        // 1. onay penceresi: mesajları temizle | .confirmationDialog [SWIFT]: ekranın altından açılan seçenek menüsü | isPresented: $showClearConfirm → true olunca açılır
+        .confirmationDialog("Mesajlar temizlensin mi?", isPresented: $showClearConfirm, titleVisibility: .visible) {
+            Button("Benden Sil", role: .destructive) { clearChat() } // seçilince aşağıdaki clearChat() çalışır
+            Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
+        } message: {
+            Text("Mesajlar yalnızca sizin ekranınızdan silinir. Karşı taraf görmeye devam eder, iş ve teklif yerinde kalır.")
+        }
+        // 2. onay penceresi: işi bitir | .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | daha önemli işlemler için (bitirmek iki tarafı etkiler)
+        .alert("İş bitsin mi?", isPresented: $showCompleteConfirm) {
+            Button("Bitir ve Sil", role: .destructive) { completeJob() } // seçilince aşağıdaki completeJob() çalışır
+            Button("Vazgeç", role: .cancel) { }
+        } message: {
+            Text("İş iki tarafta da Tamamlandı olur ve sohbet iki tarafta yazmaya kapanır. Teklif ve mesajlar sizin listenizden silinir; karşı taraf tamamlanmış işi kendi geçmişinde görür.")
+        }
         
         //YENİLEME DÖNGÜSÜ | .task [SWIFT]: ekran açılınca başlar, ekran kapanınca KENDİLİĞİNDEN iptal olur
         // while !Task.isCancelled: iptal edilene kadar tekrarla | Task.sleep: 3 sn bekle | canlı bağlantı (SignalR) yerine basit yöntem: kısa aralıkla yeniden sor
@@ -134,6 +175,7 @@ struct ChatView: View {
             }catch let error as AuthError{
                 errorMessage = error.message // örn. "Reddedilen teklifte sohbet kapalı."
                 draft = text // gönderilemedi, yazdığı metin kaybolmasın, kutuya geri koy
+                if error.message.contains("kapalı") { locked = true } // sunucu "sohbet kapalı" dediyse (karşı taraf işi bitirdi / teklif reddedildi) yazma kutusunu hemen kapat | .contains: yazının içinde geçiyor mu
             }catch{
                 errorMessage = "Sunucuya Ulaşılamadı"
                 draft = text
@@ -142,5 +184,36 @@ struct ChatView: View {
     }
     
     
-}
 
+    // clearChat: onay penceresinde "Benden Sil" seçilince çalışır | mesajları yalnız kendi görünümümden siler (karşı taraf etkilenmez)
+    // ÇAĞIRAN: yukarıdaki 1. onay penceresi
+    private func clearChat() {
+        Task { // Task [SWIFT]: normal fonksiyon içinde await kullanmamızı sağlar
+            errorMessage = nil // eski hatayı temizle
+            do {
+                try await ChatService().clear(offerId: offerId) // BAĞLANTI: Network/ChatService.swift → clear → DELETE /api/v1/offers/{id}/messages
+                await loadMessages() // silindi, listeyi hemen yeniden çek: sunucu bu kullanıcı için mesajları gizlediğinden liste boş gelir
+            } catch let error as AuthError {
+                errorMessage = error.message
+            } catch {
+                errorMessage = "Sunucuya ulaşılamadı."
+            }
+        }
+    }
+
+    // completeJob: 2. onay penceresinde "Bitir ve Sil" seçilince çalışır | işi tamamlar
+    // ÇAĞIRAN: yukarıdaki .alert | BAĞLANTI: Network/ChatService.swift → complete → POST /api/v1/offers/{id}/complete
+    private func completeJob() {
+        Task {
+            errorMessage = nil
+            do {
+                try await ChatService().complete(offerId: offerId) // sunucuda teklif iki tarafta Tamamlandı olur, bizim listemizden silinir
+                dismiss() // artık bu teklif listemizde yok, sohbetten geri dön | önceki ekran görününce .task ile listeyi kendisi yeniler
+            } catch let error as AuthError {
+                errorMessage = error.message // örn. "Yalnız kabul edilmiş iş tamamlanabilir."
+            } catch {
+                errorMessage = "Sunucuya ulaşılamadı."
+            }
+        }
+    }
+}

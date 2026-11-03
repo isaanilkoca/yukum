@@ -48,3 +48,6 @@ public sealed record UnseenCountDto(int Count);
 
 /// <summary>Komut: Taşımacı karar bildirimlerini görüldü işaretler.</summary>
 public sealed record MarkSeenCommand(Guid CarrierId);
+
+/// <summary>Komut: kabul edilmiş işi bitir ("İşi bitir ve sil"). İki taraftan biri yapabilir; teklif ve ilan Tamamlandı olur, bitirenin geçmişinden ve mesajlarından silinir.</summary>
+public sealed record CompleteOfferCommand(Guid OfferId, Guid UserId);

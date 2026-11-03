@@ -77,7 +77,7 @@ struct ListingOffersView: View {
         // Çalışması için bu ekranın HomeView'daki NavigationStack'in içinde olması yeterli, buraya ayrıca NavigationStack KONMAZ.
         .navigationDestination(item: $chatOffer) { offer in // $ = bağ | offer: dolan teklif (adı bizim)
             // BAĞLANTI: View/ChatView.swift | offerId: hangi sohbet | title: karşı tarafın adı (Taşımacı) | canWrite: reddedilmemişse yazılabilir
-            ChatView(offerId: offer.id, title: offer.carrierName, canWrite: offer.status != "Rejected")
+            ChatView(offerId: offer.id, title: offer.carrierName, canComplete: false, canWrite: true) // bu ekranda yalnız BEKLEYEN teklifler var: yazılabilir, henüz bitirilemez
         }
     } // body burada biter: aşağıdakiler ekranın yardımcı fonksiyonları
 

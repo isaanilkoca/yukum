@@ -73,7 +73,8 @@ struct UnseenCount: Decodable { // Decodable: JSON → struct
 // ShipperHistoryOffer: Yük Veren'in "Eski teklifler" listesindeki TEK SATIRIN kalıbı (karara bağladığı bir teklif).
 // NE İŞE YARAR: GET /api/v1/offers/history'deki her eleman bu struct'a çevrilir | alan adları API ile BİREBİR aynı olmalı
 // NEREDE KULLANILIR: Network/OfferService.swift → shipperHistory() bu struct'ın listesini döner → View/OldOffersView.swift listeyi çizer
-struct ShipperHistoryOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan üretilir | Identifiable [SWIFT]: benzersiz id'si var
+// Hashable: .navigationDestination(item:) seçili öğeyi (chatOffer) bununla takip eder | OldOffersView'daki Sohbet düğmesi için gerekli
+struct ShipperHistoryOffer: Decodable, Identifiable, Hashable { // Decodable [SWIFT]: JSON'dan üretilir | Identifiable [SWIFT]: benzersiz id'si var
     let id: String // teklif numarası | silme isteğine (hide) bu gider
     let listingTitle: String // hangi ilana gelen teklif | satırın üst yazısı
     let fromCityName: String // kalkış ili

@@ -19,7 +19,8 @@ public class OffersController(
     IQueryHandler<GetShipperOfferHistoryQuery, IReadOnlyList<ShipperOfferHistoryDto>> getShipperHistory,
     ICommandHandler<HideOfferCommand, bool> hideOffer,
     IQueryHandler<GetUnseenCountQuery, UnseenCountDto> getUnseenCount,
-    ICommandHandler<MarkSeenCommand, bool> markSeen) : ControllerBase
+    ICommandHandler<MarkSeenCommand, bool> markSeen,
+    ICommandHandler<CompleteOfferCommand, OfferDto> completeOffer) : ControllerBase
 {
     /// <summary>İlana teklif verir; aynı ilana tekrar verilirse eski teklifin tutarı güncellenir.</summary>
     // POST /api/v1/listings/{listingId}/offers
@@ -103,6 +104,14 @@ public class OffersController(
         await hideOffer.HandleAsync(new HideOfferCommand(offerId, CurrentUserId, User.IsInRole(RoleNames.Carrier)), cancellationToken);
         return NoContent();
     }
+
+    /// <summary>"İşi bitir ve sil": kabul edilmiş işi tamamlar. Teklif iki tarafta Tamamlandı olur, sohbet iki tarafta kilitlenir; bitirenin geçmişinden silinir.</summary>
+    // POST /api/v1/offers/{offerId}/complete
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/complete")]
+    [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")] // iki taraf da bitirebilir
+    [ProducesResponseType<OfferDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Complete(Guid offerId, CancellationToken cancellationToken) =>
+        Ok(await completeOffer.HandleAsync(new CompleteOfferCommand(offerId, CurrentUserId), cancellationToken));
 
     // Jetondaki 'sub' (kullanıcı numarası).
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);

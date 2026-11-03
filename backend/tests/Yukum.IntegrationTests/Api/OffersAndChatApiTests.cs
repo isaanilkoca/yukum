@@ -341,6 +341,74 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.NotFound, outsiderClear.StatusCode);   // taraf olmayan silemez
     }
 
+    // ---------- işi bitir ve sil ----------
+    [Fact]
+    public async Task Completing_a_job_locks_the_chat_for_both_sides_and_clears_it_only_for_the_one_who_completed()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var chat = $"/api/v1/offers/{offer}/messages";
+        await Call(c, carrier, HttpMethod.Post, chat, new { text = "Yola çıktım" });
+        await Call(c, shipper, HttpMethod.Post, chat, new { text = "Tamam" });
+
+        var complete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");   // Yük Veren bitirir
+
+        Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
+        Assert.Equal("Completed", (await Json(complete)).GetProperty("status").GetString());
+        // sohbet İKİ tarafta da yazmaya kilitli
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, carrier, HttpMethod.Post, chat, new { text = "x" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, shipper, HttpMethod.Post, chat, new { text = "x" })).StatusCode);
+        // silme yalnız bitirende: Yük Veren'de mesajlar ve teklif gitti, Taşımacı'da durur (okunur)
+        Assert.Equal(0, (await Json(await Call(c, shipper, HttpMethod.Get, chat))).GetArrayLength());
+        Assert.Equal(2, (await Json(await Call(c, carrier, HttpMethod.Get, chat))).GetArrayLength());
+        Assert.Equal(0, (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"))).GetArrayLength());
+        Assert.Equal(0, (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"))).GetArrayLength());
+        var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        Assert.Equal("Completed", carrierMine[0].GetProperty("status").GetString());
+        Assert.True(carrierMine[0].GetProperty("isNew").GetBoolean());   // Taşımacı'ya bildirim rozeti
+        // Taşımacı kendi tarafını artık silebilir
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, carrier, HttpMethod.Delete, $"/api/v1/offers/{offer}")).StatusCode);
+        Assert.Equal(0, (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"))).GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Carrier_can_complete_too_and_the_shipper_sees_it_as_completed()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+
+        var complete = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var shipperHistory = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
+        var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+
+        Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
+        Assert.Equal("Completed", shipperHistory.EnumerateArray().Single().GetProperty("status").GetString());   // Yük Veren'de Tamamlandı olarak durur
+        Assert.Equal(0, carrierMine.GetArrayLength());   // bitiren Taşımacı'dan silindi
+    }
+
+    [Fact]
+    public async Task Only_an_accepted_job_can_be_completed_and_only_by_a_participant()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); var outsider = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+
+        var pending = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");     // bekleyen: 409
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var byOutsider = await Call(c, outsider, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");   // taraf değil: 404
+        var first = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var again = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");        // zaten tamamlandı: 409
+
+        Assert.Equal(HttpStatusCode.Conflict, pending.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byOutsider.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, first.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+    }
+
     // ---------- bildirim rozeti ----------
     [Fact]
     public async Task Decision_creates_an_unseen_badge_until_the_carrier_marks_it_seen()

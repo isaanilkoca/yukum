@@ -56,6 +56,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
                         switch offer.status {
                         case "Accepted": Text("Kabul edildi").foregroundColor(.green) // case: değer buna eşitse | Yük Veren kabul etti
                         case "Rejected": Text("Reddedildi").foregroundColor(.red) // Yük Veren reddetti
+                        case "Completed": Text("Tamamlandı").foregroundColor(.gray) // iş bitti, anlaşma tamam | silinebilir
                         default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
                         }
 
@@ -67,7 +68,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
 
                     // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
                     .swipeActions {
-                        if offer.status == "Rejected" { // yalnız REDDEDİLEN teklif silinebilir (bitmiş iş) | bekleyen: karar yok | kabul edilen: AKTİF İŞ, iki taraf da görmeye ve sohbete devam etmeli (API de 409 verir)
+                        if offer.status == "Rejected" || offer.status == "Completed" { // yalnız BİTMİŞ teklif silinebilir: reddedilen ya da tamamlanan (bitmiş iş) | bekleyen: karar yok | kabul edilen: AKTİF İŞ, iki taraf da görmeye ve sohbete devam etmeli (API de 409 verir)
                             Button("Sil", role: .destructive) { hide(offer) } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | basınca aşağıdaki hide fonksiyonu | offer: hangi satır
                         }
                     }
@@ -91,7 +92,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         // Çalışması için bu ekranın HomeView'daki NavigationStack'in içinde olması yeterli, buraya ayrıca NavigationStack KONMAZ.
         .navigationDestination(item: $chatOffer) {   offer in // $ = bağ | offer: dolan teklif (adı bizim)
             // BAĞLANTI: View/ChatView.swift | title: karşı tarafın adı (ilanı açan Yük Veren) | canWrite: reddedilmemişse yazılabilir
-            ChatView(offerId: offer.id, title: offer.shipperName, canWrite: offer.status != "Rejected")
+            ChatView(offerId: offer.id, title: offer.shipperName, canComplete: offer.status == "Accepted", canWrite: offer.status == "Pending" || offer.status == "Accepted") // canComplete: yalnız kabul edilmiş iş bitirilebilir | canWrite: yalnız bekleyen ve kabul edilmişte yazılır (reddedilen/tamamlanmış kilitli)
         }
     }
 

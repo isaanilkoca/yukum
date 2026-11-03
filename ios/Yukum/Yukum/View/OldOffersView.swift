@@ -22,6 +22,10 @@ struct OldOffersView: View {
     
     // errorMessage: kırmızı hata yazısı | NE İŞE YARAR: yükleme/silme başarısız olursa sebebi gösterir | NEREDE DOLAR: loadOffers() ve hide() catch blokları
      @State private var errorMessage: String? // String? = boş olabilir | nil: hata yok
+
+    // chatOffer: sohbeti açılacak teklif | NE İŞE YARAR: "Sohbet" düğmesi buraya teklifi yazar → aşağıdaki .navigationDestination dolunca ChatView'ı açar, nil olunca kapatır
+    // NEDEN burada da Sohbet var: kabul edilen teklif artık "Gelen Teklifler"de değil burada (geçmişte) durur; sohbetine buradan ulaşılır | başta nil
+    @State private var chatOffer: ShipperHistoryOffer?
     
     var body: some View {
     
@@ -46,14 +50,19 @@ struct OldOffersView: View {
 
                                               // karar yazısı | ?: kısa if | Accepted ise yeşil "Kabul ettin", değilse kırmızı "Reddettin"
                                               // (burada yalnız karar verilmişler gelir, "Pending" yok; bu yüzden switch yerine kısa if yeterli)
-                                              Text(offer.status == "Accepted" ? "Kabul ettin" : "Reddettin")
-                                                  .font(.subheadline).foregroundColor(offer.status == "Accepted" ? .green : .red)
+                                              Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered) // chatOffer'ı doldurur → ChatView açılır | Kabul edilende yazılabilir, reddedilende yalnız eski mesajlar okunur/silinir | .bordered: List'te satırın her yeri düğme olmasın diye stil şart
+                                              // durum yazısı | switch [SWIFT]: değere göre dallanır
+                                              switch offer.status {
+                                              case "Accepted": Text("Kabul ettin").font(.subheadline).foregroundColor(.green) // aktif iş
+                                              case "Completed": Text("Tamamlandı").font(.subheadline).foregroundColor(.gray) // karşı taraf işi bitirdi
+                                              default: Text("Reddettin").font(.subheadline).foregroundColor(.red) // Rejected
+                                              }
                         
                     }
                     
                     .padding(.vertical, 4) // satırın üst/alt boşluğu
                                     .swipeActions { // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
-                                        if offer.status == "Rejected" { // yalnız REDDEDİLEN teklif silinebilir (bitmiş iş) | kabul edilen AKTİF İŞ, silinemez (API de 409 verir) | Accepted satırda kaydırınca düğme çıkmaz
+                                        if offer.status == "Rejected" || offer.status == "Completed" { // yalnız BİTMİŞ teklif silinebilir: reddedilen ya da tamamlanan (bitmiş iş) | kabul edilen AKTİF İŞ, silinemez (API de 409 verir) | Accepted satırda kaydırınca düğme çıkmaz
                                             Button("Sil", role: .destructive) { hide(offer) } // role: .destructive: kırmızı silme düğmesi
                                         }
                                     }
@@ -66,6 +75,11 @@ struct OldOffersView: View {
            .navigationTitle("Eski Teklifler") // [SWIFT] üst çubuk başlığı
            .navigationBarTitleDisplayMode(.inline)
            .task { await loadOffers() } // .task [SWIFT]: ekran açılınca bir kez çalışır | listeyi yükler
+           // .navigationDestination(item:) [SWIFT]: chatOffer dolunca ChatView'a GEÇER, nil olunca geri döner (List satırında NavigationLink yerine bu kullanılır, satırdaki düğmeler çalışsın diye) | Hashable gerekir
+           .navigationDestination(item: $chatOffer) { offer in
+               // BAĞLANTI: View/ChatView.swift | title: karşı tarafın adı (Taşımacı) | canWrite: reddedilmemişse yazılabilir
+               ChatView(offerId: offer.id, title: offer.carrierName, canComplete: offer.status == "Accepted", canWrite: offer.status == "Accepted") // yalnız kabul edilmişte yazılır ve bitirilebilir (reddedilen/tamamlanmış kilitli)
+           }
             
         }
     

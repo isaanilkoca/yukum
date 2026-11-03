@@ -81,12 +81,12 @@ public sealed class HideOfferHandler(IRepository<Offer> offers, IRepository<List
             if (listing is null || listing.ShipperId != command.UserId) throw new NotFoundException("Teklif bulunamadı.");
         }
 
-        // Yalnız REDDEDİLMİŞ teklif silinebilir (bitmiş iş). Bekleyen: karar yok. Kabul edilmiş: AKTİF İŞ, iki taraf da görmeye
+        // Yalnız BİTMİŞ teklif silinebilir: reddedilmiş ya da tamamlanmış. Bekleyen: karar yok. Kabul edilmiş: AKTİF İŞ, iki taraf da görmeye
         // ve sohbet etmeye devam etmeli; tek tarafın silmesi sohbeti ve durumu iki tarafta tutarsız bırakırdı.
         if (offer.Status == OfferStatus.Pending)
             throw new ConflictException("Bekleyen teklif silinemez; önce karar verilmeli.");
         if (offer.Status == OfferStatus.Accepted)
-            throw new ConflictException("Kabul edilmiş teklif aktif iştir, silinemez.");
+            throw new ConflictException("Kabul edilmiş teklif aktif iştir; önce \"İşi bitir\" denmeli.");
 
         if (command.IsCarrier) offer.HiddenByCarrier = true; else offer.HiddenByShipper = true;
         await unitOfWork.SaveChangesAsync(cancellationToken);

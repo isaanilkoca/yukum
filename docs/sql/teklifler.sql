@@ -3,7 +3,7 @@
 
 -- 1) Tüm teklifler: hangi ilan, hangi taşımacı, ne durumda
 SELECT o.Id, l.Title AS Ilan, u.FullName AS Tasimaci, o.Amount AS Tutar,
-       CASE o.Status WHEN 1 THEN 'Beklemede' WHEN 2 THEN 'Kabul' WHEN 3 THEN 'Red' END AS Durum,
+       CASE o.Status WHEN 1 THEN 'Beklemede' WHEN 2 THEN 'Kabul' WHEN 3 THEN 'Red' WHEN 4 THEN 'Tamamlandi' END AS Durum,
        o.DecidedAt AS KararAni, o.CarrierSeen AS TasimaciGordu,
        o.HiddenByCarrier AS TasimaciSildi, o.HiddenByShipper AS YukVerenSildi
 FROM Offers o
@@ -13,7 +13,7 @@ ORDER BY o.CreatedAt DESC;
 
 -- 2) İlanlar ve teklif sayıları
 SELECT l.Title AS Ilan, c1.Name + ' → ' + c2.Name AS Rota,
-       CASE l.Status WHEN 1 THEN 'Açık' WHEN 2 THEN 'Atandı' END AS IlanDurumu,
+       CASE l.Status WHEN 1 THEN 'Açık' WHEN 2 THEN 'Atandı' WHEN 3 THEN 'Tamamlandı' END AS IlanDurumu,
        COUNT(o.Id) AS TeklifSayisi
 FROM Listings l
 JOIN Cities c1 ON c1.Id = l.FromCityId

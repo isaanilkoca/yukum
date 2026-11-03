@@ -7,5 +7,8 @@ public enum ListingStatus
     Open = 1,
 
     /// <summary>Atandı: bir teklif kabul edildi, ilan açık listeden düştü.</summary>
-    Assigned = 2
+    Assigned = 2,
+
+    /// <summary>Tamamlandı: atanan iş bitti.</summary>
+    Completed = 3
 }

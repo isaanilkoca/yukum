@@ -38,7 +38,7 @@ public sealed class GetMessagesHandler(IRepository<Offer> offers, IRepository<Li
     }
 }
 
-/// <summary>Sohbete mesaj ekler. Reddedilmiş teklifte yazılamaz.</summary>
+/// <summary>Sohbete mesaj ekler. Reddedilmiş ya da tamamlanmış teklifte yazılamaz.</summary>
 public sealed class SendMessageHandler(
     IValidator<SendMessageCommand> validator,
     IRepository<Offer> offers,
@@ -53,6 +53,8 @@ public sealed class SendMessageHandler(
         var offer = await ChatAccess.RequireParticipantAsync(offers, listings, command.OfferId, command.UserId, cancellationToken);
         if (offer.Status == OfferStatus.Rejected)
             throw new ConflictException("Reddedilen teklifte sohbet kapalı.");
+        if (offer.Status == OfferStatus.Completed)
+            throw new ConflictException("İş tamamlandı, sohbet kapalı.");   // iki tarafta da kilitli
 
         var message = new Message { OfferId = offer.Id, SenderId = command.UserId, Text = command.Text!.Trim() };
         messages.Add(message);
