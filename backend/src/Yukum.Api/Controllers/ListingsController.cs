@@ -15,7 +15,8 @@ namespace Yukum.Api.Controllers;
 public class ListingsController(
     ICommandHandler<CreateListingCommand, ListingDto> createListing,
     IQueryHandler<GetMyListingsQuery, IReadOnlyList<ListingDto>> getMyListings,
-    IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>> getOpenListings) : ControllerBase
+    IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>> getOpenListings,
+    ICommandHandler<CancelListingCommand, bool> cancelListing) : ControllerBase
 {
     /// <summary>Yeni ilan açar. İlan sahibi istekten değil jetondan alınır.</summary>
     // POST /api/v1/listings
@@ -56,6 +57,17 @@ public class ListingsController(
             return ValidationProblem(ModelState);
         }
         return Ok(await getOpenListings.HandleAsync(new GetOpenListingsQuery(CurrentUserId, fromCityId, fromDistrictId, lat, lon), cancellationToken));
+    }
+
+    /// <summary>İlanı yayından kaldırır. Bekleyen ve kabul edilmiş teklifler iptal olur, taşımacılar bilgilenir, sohbet kilitlenir.</summary>
+    // POST /api/v1/listings/{id}/cancel
+    [HttpPost("{id:guid}/cancel")]
+    [Authorize(Roles = RoleNames.Shipper)] // yalnız Yük Veren; ilanın sahibi mi kontrolü handler'da (değilse 404)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Cancel(Guid id, CancellationToken cancellationToken)
+    {
+        await cancelListing.HandleAsync(new CancelListingCommand(id, CurrentUserId), cancellationToken);
+        return NoContent();
     }
 
     // Jetondaki 'sub' (kullanıcı numarası). MapInboundClaims kapalı olduğu için adı 'sub'dır.

@@ -116,4 +116,22 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     
     
     
+
+    // cancel: ilanı yayından kaldırır (yalnız ilanın sahibi Yük Veren)
+    // NE İŞE YARAR: ilan "Kaldırıldı" olur ve hiçbir listede görünmez | bekleyen (ve kabul edilmiş) teklifler iptal olur, Taşımacılar Tekliflerim'de "İlan kaldırıldı" görür ve bildirim rozeti alır, sohbet kilitlenir
+    // NEREDE KULLANILIR: View/ListingOffersView.swift → sağ üst "İlanı Yayından Kaldır", onay penceresinden sonra | API: POST /api/v1/listings/{id}/cancel (gövdesiz, cevap 204)
+    func cancel(listingId: String) async throws { // bir şey dönmez (Void)
+        guard let token = Session.accessToken else { // jeton yoksa giriş yok
+            throw AuthError(message: "Oturum bulunamadı, tekrar giriş yapın.")
+        }
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/listings/\(listingId)/cancel")!) // \(listingId): adrese ilan numarasını koyar
+        request.httpMethod = "POST" // sunucudaki durumu DEĞİŞTİRİYOR, POST şart
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") // kimlik kartı | API jetondan ilanın sahibi olup olmadığımızı kontrol eder
+        let (data, response) = try await URLSession.shared.data(for: request) // gönder, cevabı bekle
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // durum kodu: 204 tamam, 404 ilan yok/sana ait değil, 409 zaten tamamlanmış/kaldırılmış
+        if (200...299).contains(status) { return } // başarı, fonksiyon biter
+        if status == 401 || status == 403 { throw AuthError(message: "Oturum süresi doldu, tekrar giriş yapın.") }
+        let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // hata cevabını çevir
+        throw AuthError(message: apiError?.detail ?? "İlan kaldırılamadı.") // detail: örn. "Bu ilan zaten tamamlanmış ya da kaldırılmış."
+    }
 }

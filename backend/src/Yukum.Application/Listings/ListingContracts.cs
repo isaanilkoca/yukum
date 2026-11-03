@@ -57,3 +57,6 @@ public sealed record GetMyListingsQuery(Guid ShipperId);
 
 /// <summary>Sorgu: tüm açık ilanlar (Taşımacı'nın göreceği liste).</summary>
 public sealed record GetOpenListingsQuery(Guid CarrierId, int? FromCityId = null, int? FromDistrictId = null, double? Lat = null, double? Lon = null); // int? = boş olabilir: null ise o filtre uygulanmaz
+
+/// <summary>Komut: ilan sahibi ilanı yayından kaldırır (açık ilan, ya da atanmış iş iptali).</summary>
+public sealed record CancelListingCommand(Guid ListingId, Guid ShipperId);

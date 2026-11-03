@@ -22,6 +22,11 @@ struct ListingOffersView: View {
     
     @State private var chatOffer: ListingOffer? // ? = boş olabilir
 
+    @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | ilan kaldırılınca bu ekrandan geri dönmek için
+    // showCancelConfirm: "İlanı yayından kaldır" onay penceresi açık mı | true olunca pencere çıkar, seçim yapılınca SwiftUI kendisi false yapar
+    // NEDEN onay penceresi: işlem geri alınamaz ve bekleyen tekliflerin hepsini iptal eder, yanlışlıkla basılmasın
+    @State private var showCancelConfirm = false
+
     var body: some View {
 
         VStack(spacing: 16){
@@ -65,6 +70,19 @@ struct ListingOffersView: View {
         .padding()
         .navigationTitle("Gelen Teklifler") // üst cubuk baslıgı
         .navigationBarTitleDisplayMode(.inline)
+        // .toolbar [SWIFT]: üst çubuğa eleman koyar | sağ üstte "İlanı Yayından Kaldır": iptal olan, vazgeçilen, yanlış açılan ilanlar için
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
+                Button("Kaldır", role: .destructive) { showCancelConfirm = true } // role: .destructive: kırmızı | basınca onay penceresi açılır
+            }
+        }
+        // .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | isPresented: $showCancelConfirm → true olunca açılır
+        .alert("İlan yayından kaldırılsın mı?", isPresented: $showCancelConfirm) {
+            Button("Yayından Kaldır", role: .destructive) { cancelListing() } // seçilince aşağıdaki cancelListing() çalışır
+            Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
+        } message: {
+            Text("İlan herkesin listesinden kalkar. Gelen teklifler iptal edilir, Taşımacılar bilgilendirilir ve sohbetler kapanır.")
+        }
         .task {
             await loadOffers() // .task [SWIFT]: ekran açılınca bir kez çalışır | teklifleri yükler
         }
@@ -106,6 +124,22 @@ struct ListingOffersView: View {
                 await loadOffers() // karar verildi, listeyi yeniden çek (durumlar güncellensin; kabulde diğerleri "Reddedildi" olur)
             } catch let error as AuthError {
                 errorMessage = error.message // örn. "Bu teklif için karar zaten verilmiş."
+            } catch {
+                errorMessage = "Sunucuya ulaşılamadı."
+            }
+        }
+    }
+
+    // cancelListing: onay penceresinde "Yayından Kaldır" seçilince çalışır | ilanı yayından kaldırır
+    // ÇAĞIRAN: yukarıdaki .alert | BAĞLANTI: Network/ListingService.swift → cancel → POST /api/v1/listings/{id}/cancel
+    private func cancelListing() {
+        Task { // Task [SWIFT]: normal fonksiyon içinde await kullanmamızı sağlar
+            errorMessage = nil // eski hatayı temizle
+            do {
+                try await ListingService().cancel(listingId: listing.id) // sunucuda ilan Kaldırıldı olur, teklifler iptal olur
+                dismiss() // ilan artık listemizde yok, bu ekrandan geri dön | önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler
+            } catch let error as AuthError {
+                errorMessage = error.message // örn. "Bu ilan zaten tamamlanmış ya da kaldırılmış."
             } catch {
                 errorMessage = "Sunucuya ulaşılamadı."
             }

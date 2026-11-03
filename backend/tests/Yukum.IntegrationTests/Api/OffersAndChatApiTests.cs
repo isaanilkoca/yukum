@@ -409,6 +409,64 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
     }
 
+    // ---------- ilanı yayından kaldır ----------
+    [Fact]
+    public async Task Cancelling_a_listing_removes_it_everywhere_and_notifies_carriers_with_a_locked_chat()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var a = await NewUser(c, false); var b = await NewUser(c, false);
+        var listing = await NewListing(c, shipper); var other = await NewListing(c, shipper);
+        var offerA = await NewOffer(c, a, listing, 1000); await NewOffer(c, b, listing, 1100);
+        await Call(c, a, HttpMethod.Post, $"/api/v1/offers/{offerA}/messages", new { text = "Merhaba" });
+
+        var cancel = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");
+
+        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
+        // Yük Veren: yalnız diğer ilan kaldı; iptal edilen tekliflerle geçmişi kirlenmedi
+        Assert.Equal(other, (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"))).EnumerateArray().Single().GetProperty("id").GetString());
+        Assert.Equal(0, (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"))).GetArrayLength());
+        // Taşımacı: teklif "Cancelled", rozet var, ana listede ilan yok
+        var mineA = await Json(await Call(c, a, HttpMethod.Get, "/api/v1/offers/mine"));
+        Assert.Equal("Cancelled", mineA[0].GetProperty("status").GetString());
+        Assert.True(mineA[0].GetProperty("isNew").GetBoolean());
+        Assert.Equal(other, (await Json(await Call(c, a, HttpMethod.Get, "/api/v1/listings"))).EnumerateArray().Single().GetProperty("id").GetString());
+        // sohbet kilitli ama eski mesajlar okunur
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, a, HttpMethod.Post, $"/api/v1/offers/{offerA}/messages", new { text = "x" })).StatusCode);
+        Assert.Equal(1, (await Json(await Call(c, a, HttpMethod.Get, $"/api/v1/offers/{offerA}/messages"))).GetArrayLength());
+        // yeni teklif verilemez, taşımacı iptal edileni silebilir
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 5 })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, a, HttpMethod.Delete, $"/api/v1/offers/{offerA}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Cancelling_is_owner_only_and_works_on_an_assigned_job_but_not_twice_or_after_completion()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var other = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");   // iş atandı
+
+        var byOther = await Call(c, other, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");       // başkasının ilanı: 404
+        var byCarrier = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");   // rol: 403
+        var cancel = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");      // atanmış iş iptali
+        var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");       // tekrar: 409
+        var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+
+        var done = await NewListing(c, shipper);
+        var doneOffer = await NewOffer(c, carrier, done, 500);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/accept");
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/complete");
+        var afterComplete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{done}/cancel");   // tamamlanmış iş iptal edilemez
+
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byCarrier.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
+        Assert.Contains(carrierMine.EnumerateArray(), o => o.GetProperty("status").GetString() == "Cancelled");   // kabul edilmiş teklif iptal oldu
+        Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
+    }
+
     // ---------- bildirim rozeti ----------
     [Fact]
     public async Task Decision_creates_an_unseen_badge_until_the_carrier_marks_it_seen()

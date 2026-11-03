@@ -13,5 +13,8 @@ public enum OfferStatus
     Rejected = 3,
 
     /// <summary>Tamamlandı: iş bitti, anlaşma tamam. Sohbet iki tarafta yazmaya kapanır; taraflar kendi geçmişlerinden silebilir.</summary>
-    Completed = 4
+    Completed = 4,
+
+    /// <summary>İptal: ilan sahibi ilanı yayından kaldırdı ya da işi iptal etti. Sohbet iki tarafta yazmaya kapanır; taraflar kendi geçmişlerinden silebilir.</summary>
+    Cancelled = 5
 }

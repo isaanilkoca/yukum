@@ -56,6 +56,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
                         switch offer.status {
                         case "Accepted": Text("Kabul edildi").foregroundColor(.green) // case: değer buna eşitse | Yük Veren kabul etti
                         case "Rejected": Text("Reddedildi").foregroundColor(.red) // Yük Veren reddetti
+                        case "Cancelled": Text("İlan kaldırıldı").foregroundColor(.gray) // ilan sahibi ilanı yayından kaldırdı / işi iptal etti | sohbet kilitli, silinebilir
                         case "Completed": Text("Tamamlandı").foregroundColor(.gray) // iş bitti, anlaşma tamam | silinebilir
                         default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
                         }
@@ -68,7 +69,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
 
                     // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
                     .swipeActions {
-                        if offer.status == "Rejected" || offer.status == "Completed" { // yalnız BİTMİŞ teklif silinebilir: reddedilen ya da tamamlanan (bitmiş iş) | bekleyen: karar yok | kabul edilen: AKTİF İŞ, iki taraf da görmeye ve sohbete devam etmeli (API de 409 verir)
+                        if offer.status == "Rejected" || offer.status == "Completed" || offer.status == "Cancelled" { // yalnız BİTMİŞ teklif silinebilir: reddedilen, tamamlanan ya da iptal edilen (bitmiş iş) | bekleyen: karar yok | kabul edilen: AKTİF İŞ, iki taraf da görmeye ve sohbete devam etmeli (API de 409 verir)
                             Button("Sil", role: .destructive) { hide(offer) } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | basınca aşağıdaki hide fonksiyonu | offer: hangi satır
                         }
                     }

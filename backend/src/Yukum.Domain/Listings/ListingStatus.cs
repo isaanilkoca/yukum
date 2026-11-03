@@ -10,5 +10,8 @@ public enum ListingStatus
     Assigned = 2,
 
     /// <summary>Tamamlandı: atanan iş bitti.</summary>
-    Completed = 3
+    Completed = 3,
+
+    /// <summary>Yayından kaldırıldı: ilan sahibi iptal etti. Hiçbir listede görünmez.</summary>
+    Cancelled = 4
 }
