@@ -44,7 +44,7 @@ struct RegisterResponse : Decodable {
 
 // API hata verince (400, 409...) gelen cevabın kalıbı; ekranda göstereceğimiz mesajı buradan okuruz.
 // KULLANAN: AuthService.post, hata cevabını buna çevirip mesajı AuthError içine koyar; ekran o mesajı gösterir.
-struct APIErrorResponse : Decodable {
+nonisolated struct APIErrorResponse : Decodable {
 
     let detail : String?              // genel Türkçe mesaj (örn. "Bu e-posta zaten kayıtlı")
     let errors: [String: [String]]?   // alan adı → o alanın hata mesajları (örn. "password": ["Şifre en az 8 karakter olmalı"])

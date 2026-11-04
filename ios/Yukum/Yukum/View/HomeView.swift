@@ -163,10 +163,17 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 }
 
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
-                    dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
+                    // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin) | BAĞLANTI: Network/AuthSession.swift → signOut
+                    Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar
+                        await AuthSession.shared.signOut()
+                        dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
+                    }
                 }.buttonStyle(.borderedProminent)
 
             }.padding()
+            // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
+            // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
+            .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() }
             .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
                 if user.role == "Shipper" { // yalnız Yük Veren ilan açabilir

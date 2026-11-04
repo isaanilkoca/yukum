@@ -9,7 +9,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
 // BU EKRAN: giriş ekranı (uygulamanın ilk ekranı). Akış: alanları doldur → kontrol et → pakete koy → AuthService.login → HomeView
 // BAĞLANTI: ContentView.swift bu ekranı açar | "Kayıt ol" → RoleSelectionView.swift | giriş başarılı → HomeView.swift
-//           Paket kalıbı: Network/LoginRequest.swift | gönderen: Network/AuthService.swift → login | jeton saklanır: Network/Session.swift
+//           Paket kalıbı: Network/LoginRequest.swift | gönderen: Network/AuthService.swift → login | jeton saklanır: Network/AuthSession.swift
 struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // @State [SWIFT]: ekranın hafızası; değer değişince ekran kendini yeniler
@@ -17,6 +17,8 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
     @State private var password = ""
     @State private var errorMessage: String? // String? = boş olabilir | nil: hata yok, dolu: kırmızı yazılır
     @State private var isLoading = false // istek sürerken true → düğme kilitlenir
+    // isRestoring: uygulama yeni açıldı, kayıtlı oturum aranıyor | true iken giriş formu yerine "Oturum açılıyor" gösterilir (form bir anlığına yanıp sönmesin)
+    @State private var isRestoring = true
     @State private var loggedInUser: LoginUser? // giriş başarılıysa dolar | nil: henüz girmedi | kalıbı: Network/LoginRequest.swift → LoginUser
 
     var body: some View { // ekranın içeriği
@@ -44,8 +46,8 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         }
 
                         // 2) Paketi hazırla | BAĞLANTI: LoginRequest, Network/LoginRequest.swift'te tanımlı (form kağıdı), sıra oradaki alan sırasıyla aynı
-                        // trimmingCharacters: baş/son boşlukları siler | UUID().uuidString [SWIFT]: rastgele benzersiz kimlik (API cihaz kimliği ister)
-                        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, deviceId: UUID().uuidString)
+                        // trimmingCharacters: baş/son boşlukları siler | DeviceID.current: bu cihaza ait SABİT kimlik (Keychain'de, Security/DeviceID.swift) | sunucu yenileme jetonunu bu cihaza bağlar; her girişte yeni UUID üretirsek "cihaz" kavramı anlamsızlaşır
+                        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, deviceId: DeviceID.current)
 
                         // 3) API'ye gönder
                         Task { // Task [SWIFT]: düğme içinde await (bekleme) kullanmamızı sağlar; ekran donmaz
@@ -56,7 +58,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 // login → post("/api/v1/auth/login") → API'ye POST → cevap LoginResponse'a çevrilir (kalıbı: Network/LoginRequest.swift) → buraya döner.
                                 // try await: try = hata çıkabilir, await = cevabı bekle | hata olursa AuthError fırlatılır → aşağıdaki catch yakalar
                                 let response = try await AuthService().login(body)
-                                Session.accessToken = response.accessToken // BAĞLANTI: Network/Session.swift'e yazar; ListingService gibi servisler buradan okuyup "Authorization: Bearer" başlığına koyar
+                                // NOT: jetonlar AuthService.login içinde AuthSession'a verildi (erişim jetonu belleğe, yenileme jetonu Keychain'e); ekranın jeton yönetmesine gerek yok
                                 loggedInUser = response.user // dolunca aşağıdaki fullScreenCover HomeView'ı açar
                                 print("GİRİŞ BAŞARILI: \(response.user.displayName) (\(response.user.role)) jeton uzunluğu: \(response.accessToken.count)") // geçici test çıktısı (Xcode konsolu) | jetonun kendisi yazılmaz
                             } catch let error as AuthError { // API "hayır" dedi (401, 423...) | AuthError: Network/AuthService.swift'te tanımlı
@@ -80,6 +82,20 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
             }.padding()
         }
 
+        // OTOMATİK GİRİŞ | .task [SWIFT]: ekran açılınca bir kez çalışır
+        // Keychain'de yenileme jetonu varsa sunucudan yeni jeton alınır; başarılıysa kullanıcı şifre yazmadan doğrudan ana sayfaya girer (loggedInUser dolunca fullScreenCover açılır)
+        // Sunucu "oturum geçersiz" derse (süre doldu/çalıntı sanıldı) jeton silinir ve giriş formu görünür | internet yoksa jeton SİLİNMEZ, form görünür, kullanıcı sonra tekrar dener
+        // try?: hata olursa nil ver, çökme | BAĞLANTI: Network/AuthSession.swift → restore
+        .task {
+            if let user = try? await AuthSession.shared.restore() { loggedInUser = user }
+            isRestoring = false
+        }
+        // overlay [SWIFT]: ekranın ÜSTÜNE katman koyar | oturum aranırken giriş formunun üstünü beyazla örter ve dönen çark gösterir
+        .overlay {
+            if isRestoring {
+                ZStack { Color(.systemBackground); ProgressView("Oturum açılıyor...") } // ZStack: üst üste dizer | .systemBackground: açık/koyu moda uyan zemin rengi
+            }
+        }
         // BAĞLANTI: loggedInUser giriş başarılı olunca (response.user) dolar → dolunca HomeView tam ekran açılır.
         // HomeView'daki "Çıkış Yap" dismiss() ile bu ekranı kapatır → loggedInUser tekrar nil olur → giriş ekranına dönülür.
         // item: Identifiable ister, LoginUser'a bu yüzden Identifiable eklendi (Network/LoginRequest.swift).
