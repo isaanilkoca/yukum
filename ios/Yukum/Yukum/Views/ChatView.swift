@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+// ┌─ BAĞLANTI HARİTASI: ChatView (sohbet) ─────────────────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ Mesaj balonları          →  viewModel.messages ← load()         →  ChatService.messages()          →  GET /api/v1/offers/{id}/messages →  [ChatMessage]
+// │ Yazma kutusu             →  viewModel.draft ($ bağ)             →  (yazılır, send() okur)          →  -                                →  -
+// │ Gönder düğmesi           →  viewModel.send()                    →  ChatService.send()              →  POST /api/v1/offers/{id}/messages →  SendMessageRequest
+// │ Menü: Mesajları Temizle  →  viewModel.clear()                   →  ChatService.clear()             →  DELETE .../messages              →  (yok)
+// │ Menü: İşi Bitir ve Sil   →  viewModel.complete()                →  ChatService.complete()          →  POST /api/v1/offers/{id}/complete →  (yok)
+// │ Yazma/menü kuralları     →  viewModel.canWrite, canComplete, canSend, locked  (kural: ChatContext + locked)
+// │ Otomatik yenileme        →  .task { startPolling() } → 3 sn'de bir load()  (ekran kapanınca iptal)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: bir teklifin sohbeti. Yük Veren ile teklifi veren Taşımacı yazışır. Mesajlar balon olarak çizilir, ekran açıkken 3 sn'de bir yenilenir.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Mesajlar, taslak, gönderme, temizleme, işi bitirme, kilit ve yenileme döngüsü ViewModels/ChatViewModel.swift'te.
 // BAĞLANTI: Views/ListingOffersView.swift (Yük Veren), Views/MyOffersView.swift (Taşımacı), Views/OldOffersView.swift (Yük Veren geçmişi) "Sohbet" düğmesiyle bu ekranı açar
@@ -44,7 +55,7 @@ struct ChatView: View {
             ScrollViewReader { proxy in // ScrollViewReader [SWIFT]: kaydırmayı KODLA yönetmeye yarar | proxy: kaydırma kumandası | yeni mesaj gelince en alta inmek için
                 ScrollView { // ScrollView [SWIFT]: kaydırılabilir alan | mesajlar ekrana sığmayınca yukarı-aşağı kayar
                     LazyVStack(spacing: 8) { // LazyVStack [SWIFT]: alt alta dizer, yalnız ekrandakileri çizer (uzun sohbette hızlı)
-                        ForEach(viewModel.messages) { message in // ForEach [SWIFT]: listedeki her mesaj için bir balon çizer | message: o anki mesaj
+                        ForEach(viewModel.messages) { message in // ForEach [SWIFT]: listedeki her mesaj için bir balon çizer | message: o anki mesaj | ⮕ ChatViewModel.messages ← ChatService.messages() → [ChatMessage]
                             HStack { // HStack [SWIFT]: yan yana dizer | Spacer ile balonu sağa ya da sola itiyoruz
                                 if message.isMine { Spacer() } // isMine true (ben yazdım): önce boşluk, balon SAĞA yaslanır
                                 Text(message.text) // mesajın yazısı
@@ -73,10 +84,10 @@ struct ChatView: View {
 
             if viewModel.canWrite { // yazma açıksa (Pending ve Accepted teklifler) VE kilitlenmediyse alt çubuk çizilir
                 HStack { // yan yana: yazma kutusu + Gönder düğmesi
-                    TextField("Mesaj Yaz", text: $viewModel.draft) // TextField [SWIFT]: yazı kutusu | $ = iki yönlü bağ, yazılan her harf ViewModel'deki draft'a gider
+                    TextField("Mesaj Yaz", text: $viewModel.draft) // TextField [SWIFT]: yazı kutusu | $ = iki yönlü bağ, yazılan her harf ViewModel'deki draft'a gider | ⮕ ChatViewModel.draft
                         .textFieldStyle(.roundedBorder) // çerçeveli kutu görünümü
 
-                    Button("Gönder") { Task { await viewModel.send() } } // basınca ViewModel mesajı yollar | Task [SWIFT]: düğmede await kullanmamızı sağlar
+                    Button("Gönder") { Task { await viewModel.send() } } // basınca ViewModel mesajı yollar | Task [SWIFT]: düğmede await kullanmamızı sağlar | ⮕ ChatViewModel.send() → ChatService.send(SendMessageRequest)
                         .buttonStyle(.borderedProminent) // içi dolu düğme
                         .disabled(!viewModel.canSend) // .disabled: koşul doğruysa basılamaz | boş ya da yalnız boşluksa düğme kilitli
                 }
@@ -104,7 +115,7 @@ struct ChatView: View {
         }
         // 1. onay penceresi: mesajları temizle | .confirmationDialog [SWIFT]: ekranın altından açılan seçenek menüsü | isPresented: $showClearConfirm → true olunca açılır
         .confirmationDialog("Mesajlar temizlensin mi?", isPresented: $showClearConfirm, titleVisibility: .visible) {
-            Button("Benden Sil", role: .destructive) { Task { await viewModel.clear() } } // seçilince ViewModel temizler
+            Button("Benden Sil", role: .destructive) { Task { await viewModel.clear() } } // seçilince ViewModel temizler | ⮕ ChatViewModel.clear() → ChatService.clear
             Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
         } message: {
             Text("Mesajlar yalnızca sizin ekranınızdan silinir. Karşı taraf görmeye devam eder, iş ve teklif yerinde kalır.")
@@ -112,7 +123,7 @@ struct ChatView: View {
         // 2. onay penceresi: işi bitir | .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | daha önemli işlemler için (bitirmek iki tarafı etkiler)
         .alert("İş bitsin mi?", isPresented: $showCompleteConfirm) {
             Button("Bitir ve Sil", role: .destructive) { // seçilince ViewModel işi tamamlar; başarılıysa teklif listemizden silindiği için sohbetten geri dönülür
-                Task { if await viewModel.complete() { dismiss() } } // önceki ekran görününce .task ile listeyi kendisi yeniler
+                Task { if await viewModel.complete() { dismiss() } } // önceki ekran görününce .task ile listeyi kendisi yeniler | ⮕ ChatViewModel.complete() → ChatService.complete
             }
             Button("Vazgeç", role: .cancel) { }
         } message: {
@@ -120,6 +131,6 @@ struct ChatView: View {
         }
 
         // .task [SWIFT]: ekran açılınca başlar, ekran kapanınca KENDİLİĞİNDEN iptal olur | ViewModel'in yenileme döngüsü (polling) burada çalışır
-        .task { await viewModel.startPolling() }
+        .task { await viewModel.startPolling() } // ⮕ ChatViewModel.startPolling() → 3 sn'de bir load() → ChatService.messages
     }
 }

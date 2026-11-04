@@ -7,6 +7,15 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: LoginView (giriş) ─────────────────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ E-posta/Telefon + Şifre  →  viewModel.emailOrPhone, password ($ bağ)  →  (login() okur)            →  -                                →  LoginRequest
+// │ Giriş yap düğmesi        →  viewModel.login()                   →  AuthService.login()             →  POST /api/v1/auth/login          →  LoginRequest → LoginResponse
+// │ Açılışta otomatik giriş  →  viewModel.restoreSession()          →  AuthSession.restore()           →  POST /api/v1/auth/refresh        →  LoginResponse → LoginUser
+// │ Hata yazısı              →  viewModel.errorMessage              →  APIError.userMessage            →  (sunucu Türkçe mesajı)           →  APIErrorResponse
+// │ Ana sayfayı açma         →  viewModel.loggedInUser (dolunca)    →  fullScreenCover → HomeView(user:)  →  -                             →  LoginUser
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: giriş ekranı (uygulamanın ilk ekranı). Akış: alanları doldur → kontrol et → AuthService.login → HomeView
 // MVVM: bu dosya yalnız GÖRÜNÜM. Alanlar, doğrulama, giriş isteği, otomatik giriş, hata ViewModels/LoginViewModel.swift'te.
 // BAĞLANTI: ContentView.swift bu ekranı açar | "Kayıt ol" → RoleSelectionView.swift | giriş başarılı → HomeView.swift
@@ -27,7 +36,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 Text("Yüküm").font(.largeTitle).bold() // başlık
 
                 // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .never: baş harf büyümesin | .emailAddress: @ kolay çıkan klavye
-                TextField("Email veya Telefon", text: $viewModel.emailOrPhone).textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).keyboardType(.emailAddress)
+                TextField("Email veya Telefon", text: $viewModel.emailOrPhone).textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).keyboardType(.emailAddress) // ⮕ LoginViewModel.emailOrPhone
 
                 SecureField("Şifre", text: $viewModel.password).textFieldStyle(.roundedBorder) // SecureField [SWIFT]: yazılan nokta nokta görünür
 
@@ -37,7 +46,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                     // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır | Task [SWIFT]: düğmede await (bekleme) kullanmamızı sağlar; ekran donmaz
                     // kontrol, paket hazırlama ve istek ViewModel.login()'de | sonuç: başarıda viewModel.loggedInUser dolar, hatada errorMessage dolar
-                    Button("Giriş yap") { Task { await viewModel.login() } }
+                    Button("Giriş yap") { Task { await viewModel.login() } } // ⮕ LoginViewModel.login() → AuthService.login → POST /api/v1/auth/login
                         .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın)
 
                     NavigationLink("Kayıt ol") { // NavigationLink [SWIFT]: kendisi düğme, basınca süslü parantezdeki ekrana geçer (Button içine konmaz)
@@ -52,7 +61,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
         // OTOMATİK GİRİŞ | .task [SWIFT]: ekran açılınca bir kez çalışır
         // Keychain'de yenileme jetonu varsa sunucudan yeni jeton alınır; başarılıysa kullanıcı şifre yazmadan doğrudan ana sayfaya girer (loggedInUser dolunca fullScreenCover açılır)
         // Sunucu "oturum geçersiz" derse jeton silinir ve giriş formu görünür | internet yoksa jeton SİLİNMEZ, form görünür, kullanıcı sonra tekrar dener | BAĞLANTI: ViewModel.restoreSession → Networking/AuthSession.swift → restore
-        .task { await viewModel.restoreSession() }
+        .task { await viewModel.restoreSession() } // ⮕ LoginViewModel.restoreSession() → AuthSession.restore() (Keychain'deki yenileme jetonuyla)
         // overlay [SWIFT]: ekranın ÜSTÜNE katman koyar | oturum aranırken giriş formunun üstünü örter ve dönen çark gösterir (form bir anlığına yanıp sönmesin)
         .overlay {
             if viewModel.isRestoring {
@@ -62,7 +71,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
         // BAĞLANTI: loggedInUser giriş başarılı olunca dolar → dolunca HomeView tam ekran açılır.
         // HomeView'daki "Çıkış Yap" dismiss() ile bu ekranı kapatır → loggedInUser tekrar nil olur → giriş ekranına dönülür.
         // item: Identifiable ister, LoginUser'a bu yüzden Identifiable eklendi (Models/Auth/).
-        .fullScreenCover(item: $viewModel.loggedInUser) { user in // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ | user: dolan kullanıcı (adı bizim)
+        .fullScreenCover(item: $viewModel.loggedInUser) { user in // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ | user: dolan kullanıcı (adı bizim) | ⮕ LoginViewModel.loggedInUser (LoginUser) dolunca HomeView açılır
             HomeView(user: user) // Views/HomeView.swift'e kullanıcıyı veriyoruz
         }
     }

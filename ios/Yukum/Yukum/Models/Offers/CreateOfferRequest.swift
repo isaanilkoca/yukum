@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: CreateOfferRequest (teklif verme paketi) ────────────────────
+// │ MODEL     : Teklif vermek için GİDEN paket: tutar + not
+// │ DOLDURAN  : ViewModels/ListingDetailViewModel.submit() (amountText → Int, note boşsa nil)
+// │ YOL       : Views/ListingDetailView → ListingDetailViewModel → Services/OfferService.create → POST /api/v1/listings/{id}/offers
+// │ CEVAP     : OfferResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: teklif paketlerinin kalıpları. Gönderilecek paket + gelen cevap.
 // BAĞLANTI: Services/OfferService.swift bu kalıpları kullanır | API: POST /api/v1/listings/{id}/offers
 

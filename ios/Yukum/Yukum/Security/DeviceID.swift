@@ -5,6 +5,12 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: DeviceID (cihaz kimliği) ────────────────────────────────────
+// │ KULLANAN  : ViewModels/LoginViewModel (deviceId: { DeviceID.current } → LoginRequest.deviceId) | Networking/AuthSession.performRefresh (yenilemede aynı kimlik)
+// │ NEDEN SABİT: Sunucu yenileme jetonunu cihaza bağlar; her seferinde yeni kimlik olsaydı yenileme reddedilirdi
+// │ SAKLAR    : Security/KeychainStore (uygulama silinip kurulsa bile aynı kalır)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: bu cihaza ait SABİT bir kimlik üretir ve Keychain'de saklar.
 // NEDEN GEREKLİ: sunucu yenileme jetonunu cihaza BAĞLAR (başka cihazdan yenilenemez) ve cihaz başına tek oturum tutar.
 // Daha önce her girişte yeni UUID üretiyorduk; bu, "cihaz" kavramını anlamsız yapar (her giriş yeni cihaz sayılırdı).

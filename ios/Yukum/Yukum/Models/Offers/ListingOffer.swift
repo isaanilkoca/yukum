@@ -5,9 +5,14 @@
 
 import Foundation
 
-// Hashable [SWIFT]: "birbirinden ayırt edilebilir, karşılaştırılabilir" | .navigationDestination(item:) seçili öğeyi bununla takip eder | alanlar hazır tiplerden olduğu için kod yazmak gerekmez
-// Hashable [SWIFT]: "bu öğe tek başına ayırt edilebilir ve karşılaştırılabilir" demek | NEDEN: .navigationDestination(item:) seçili öğeyi (chatOffer) bununla takip eder | tüm alanlar hazır tipler (String, Double...) olduğu için ek kod yazmak gerekmez
-struct ListingOffer: Decodable, Identifiable , Hashable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez
+// ┌─ BAĞLANTI HARİTASI: ListingOffer (ilana gelen teklif, Yük Veren) ────────────────
+// │ MODEL     : Yük Veren'in ilanına gelen BEKLEYEN tek teklif: taşımacı adı, tutar, not, durum
+// │ ÜRETEN    : Services/OfferService.listingOffers ← GET /api/v1/listings/{id}/offers
+// │ SAKLAYAN  : ViewModels/ListingOffersViewModel.offers → Views/ListingOffersView (List, Kabul/Reddet/Sohbet)
+// │ SOHBET    : ViewModels/ChatContext.forShipperPending(_:) bu modelden sohbet açılış bilgisi üretir
+// └──────────────────────────────────────────────────────────────────────
+
+struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez
     let id: String // teklif numarası (GUID yazı gelir) | kabul/reddet uçlarına bu gider
     let carrierName: String // teklifi veren taşımacının adı
     let amount: Double // tutar | API 48000.0 gönderir

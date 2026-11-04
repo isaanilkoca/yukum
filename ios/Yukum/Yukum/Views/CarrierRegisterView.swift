@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+// ┌─ BAĞLANTI HARİTASI: CarrierRegisterView (Taşımacı kaydı) ──────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ NOT                      →  Bu ekran henüz MVVM'e taşınmadı (RegisterView ile aynı durum)
+// │ Kayıt ol düğmesi         →  (ViewModel yok)                     →  AuthService.registerCarrier()   →  POST /api/v1/auth/register/carrier →  RegisterCarrierRequest (içinde [VehicleRequest]) → RegisterResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Taşımacı kayıt formu. Akış: alanları doldur → kontrol et → pakete koy → AuthService ile API'ye gönder → sonucu göster
 // [BİZİM] = adı biz koyduk | [SWIFT] = Swift/SwiftUI'nin hazır kodu
 

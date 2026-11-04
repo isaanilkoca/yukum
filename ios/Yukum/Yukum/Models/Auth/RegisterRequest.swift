@@ -5,6 +5,12 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: RegisterRequest (Yük Veren kayıt paketi) ────────────────────
+// │ MODEL     : Yük Veren kaydı için GİDEN paket
+// │ YOL       : Views/RegisterView (form alanları, ekranın kendi @State'i: bu ekran henüz ViewModel'siz) → Services/AuthService.register → POST /api/v1/auth/register/shipper
+// │ CEVAP     : RegisterResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA NE İŞE YARAR?
 // API ile konuşurken kullanılan "paketlerin" (form kağıtlarının) kalıpları burada durur.
 // Ekranda doldurulan bilgi bir kalıba yazılır, sonra JSON'a çevrilip API'ye gider.

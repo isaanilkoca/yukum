@@ -7,6 +7,13 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: ListingDetailView (ilan detayı + teklif formu) ────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ İlan bilgileri           →  viewModel.listing                   →  (HomeView listesinden gelir)    →  -                                →  Listing
+// │ Tutar + Not kutuları     →  viewModel.amountText, note ($ bağ)  →  (submit() okur)                 →  -                                →  CreateOfferRequest
+// │ Teklifi Gönder/Güncelle  →  viewModel.submit(), buttonTitle     →  OfferService.create()           →  POST /api/v1/listings/{id}/offers →  CreateOfferRequest → OfferResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Taşımacı bir ilana basınca açılan detay ekranı. İlan bilgisini gösterir + teklif formu içerir.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Tutar/not alanları, doğrulama, gönderme, hata ViewModels/ListingDetailViewModel.swift'te.
 // BAĞLANTI: Views/HomeView.swift → Taşımacı listesindeki NavigationLink bu ekranı açar ve ilanı verir
@@ -44,7 +51,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
             }
 
             // $ = iki yönlü bağ: yazılan doğrudan ViewModel'deki amountText'e gider | .numberPad: yalnız rakam klavyesi
-            TextField("Teklif tutarı (₺)", text: $viewModel.amountText).textFieldStyle(.roundedBorder).keyboardType(.numberPad)
+            TextField("Teklif tutarı (₺)", text: $viewModel.amountText).textFieldStyle(.roundedBorder).keyboardType(.numberPad) // ⮕ ListingDetailViewModel.amountText
             TextField("Not (isteğe bağlı)", text: $viewModel.note).textFieldStyle(.roundedBorder) // not alanı
 
             if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
@@ -53,7 +60,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
             // buttonTitle: "Teklifi Gönder" ya da (daha önce teklif varsa) "Teklifi Güncelle" | KURAL ViewModel'de
             Button(viewModel.buttonTitle) {
                 Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar; ekran donmaz
-                    if await viewModel.submit() { dismiss() } // başarılıysa ekranı kapat → ana sayfaya dön
+                    if await viewModel.submit() { dismiss() } // başarılıysa ekranı kapat → ana sayfaya dön | ⮕ ListingDetailViewModel.submit() → OfferService.create(CreateOfferRequest) → POST /api/v1/listings/{id}/offers
                 }
             }
             .buttonStyle(.borderedProminent) // dolu, renkli düğme görünümü

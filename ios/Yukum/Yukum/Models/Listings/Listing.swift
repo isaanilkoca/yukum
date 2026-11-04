@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: Listing (ilan) ──────────────────────────────────────────────
+// │ MODEL     : Tek bir ilan: başlık, rota (il/ilçe adları), ağırlık, tarih, bütçe, (Taşımacı için) benim teklifim ve uzaklık
+// │ ÜRETEN    : Services/ListingService.myListings() (Yük Veren) ve openListings() (Taşımacı) ← Networking/APIClient JSON'u bu kalıba çevirir
+// │ SAKLAYAN  : ViewModels/HomeViewModel.listings (liste) | ListingOffersViewModel.listing, ListingDetailViewModel.listing (tek ilan)
+// │ GÖSTEREN  : Views/HomeView (List) → Views/ListingRow (satır) | Views/ListingDetailView | Views/ListingOffersView (başlık)
+// └──────────────────────────────────────────────────────────────────────
+
 // API'den gelen tek ilan (GET /api/v1/listings/mine listesindeki her eleman). Yalnız listede göstereceklerimizi aldık.
 // BAĞLANTI: Services/ListingService.swift myListings() bu struct'ın listesini döner → Views/HomeView.swift'te liste olarak gösterilir
 struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, ForEach'te id: yazmak gerekmez

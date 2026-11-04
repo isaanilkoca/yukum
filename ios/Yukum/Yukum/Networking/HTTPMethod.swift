@@ -5,6 +5,11 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: HTTPMethod ──────────────────────────────────────────────────
+// │ NE        : İsteğin türü: .get (veri iste), .post (işlem/yeni kayıt), .put, .delete
+// │ KULLANAN  : Services/*Service.swift → api.send(.get, ...) | Networking/APIClient → request.httpMethod = method.rawValue
+// └──────────────────────────────────────────────────────────────────────
+
 // HTTP yöntemleri | enum [SWIFT]: sabit seçenek listesi | rawValue: sunucuya giden yazı
 enum HTTPMethod: String {
     case get = "GET"       // veri iste

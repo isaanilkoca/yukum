@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: LoginUser (giriş yapan kişi) ────────────────────────────────
+// │ MODEL     : Giriş yapan kişinin kısa bilgisi: id, görünen ad, rol ("Shipper" / "Carrier")
+// │ ÜRETEN    : LoginResponse.user (sunucu JSON) | AuthSession.restore() (otomatik giriş)
+// │ SAKLAYAN  : LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → Views/HomeView(user:) → HomeViewModel.user
+// │ KULLANIM  : HomeViewModel.isShipper rolü okur: Yük Veren mi Taşımacı mı ekranı bu karar belirler (Views/HomeView if/else)
+// └──────────────────────────────────────────────────────────────────────
+
 // Cevaptaki "user" kutusu: giriş yapan kişinin kısa bilgisi.
 // Decodable [SWIFT]: "gelen JSON'dan bu struct üretilebilir"
 // KULLANAN: LoginResponse içinde aşağıda | role'e göre anasayfa seçilecek (Yük Veren / Taşımacı).

@@ -7,6 +7,13 @@
 
 import Foundation // [SWIFT] ağ araçları
 
+// ┌─ BAĞLANTI HARİTASI: OfferService (teklif uçları) ────────────────────────────────
+// │ ÇAĞIRAN   : ViewModels/ListingDetailViewModel (create) | ListingOffersViewModel (listingOffers, decide) | MyOffersViewModel (myOffers, markSeen, hide) | OldOffersViewModel (shipperHistory, hide) | HomeViewModel (unseenCount) — OfferServicing sözleşmesi üzerinden
+// │ KULLANIR  : Networking/APIClient | MODEL: CreateOfferRequest, OfferResponse, ListingOffer, CarrierOffer, ShipperHistoryOffer, UnseenCount
+// │ API       : backend OffersController: /api/v1/listings/{id}/offers, /offers/{id}/accept|reject|complete, /offers/mine, /offers/history...
+// │ SAHTESİ   : YukumTests/Support/FakeOfferService.swift
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: teklif uçlarıyla konuşur. İsteğin kendisi (jeton, 401'de otomatik yenileme, hata çevirme) Networking/APIClient.swift'te;
 // burada yalnız "hangi adres, hangi paket, ne döner" yazılır.
 // FONKSİYON HARİTASI (kim kullanır):
@@ -20,18 +27,21 @@ struct OfferService { // OfferService [BİZİM] ad
     // create: teklif verir (aynı ilana tekrar verilirse eski teklifin tutarı güncellenir)
     // listingId: hangi ilan | _ body: tutar+not paketi | -> OfferResponse: kaydedilen teklif
     // ÇAĞIRAN: Views/ListingDetailView.swift "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers (yalnız Taşımacı)
+    // ⮕ ZİNCİR: ViewModels/ListingDetailViewModel.submit() ← Views/ListingDetailView "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers | GİDEN: CreateOfferRequest | DÖNEN: OfferResponse
     func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse {
         try await api.send(.post, "/api/v1/listings/\(listingId)/offers", body: body, fallback: "Teklif gönderilemedi.")
     }
 
     // listingOffers: bir ilana gelen BEKLEYEN teklifleri getirir (karar verilenler geçmişe gider) | yalnız ilanın sahibi
     // ÇAĞIRAN: Views/ListingOffersView.swift | API: GET /api/v1/listings/{id}/offers
+    // ⮕ ZİNCİR: ViewModels/ListingOffersViewModel.load() ← Views/ListingOffersView .task/.refreshable | API: GET /api/v1/listings/{id}/offers | DÖNEN: [ListingOffer]
     func listingOffers(listingId: String) async throws -> [ListingOffer] {
         try await api.send(.get, "/api/v1/listings/\(listingId)/offers", fallback: "Teklifler alınamadı.")
     }
 
     // decide: teklifi kabul eder ya da reddeder | accept true → /accept, false → /reject | gövde yok, yalnız POST
     // ÇAĞIRAN: Views/ListingOffersView.swift Kabul Et / Reddet düğmeleri | API: POST /api/v1/offers/{id}/accept | reject
+    // ⮕ ZİNCİR: ViewModels/ListingOffersViewModel.decide() ← Views/ListingOffersView "Kabul et"/"Reddet" | API: POST /api/v1/offers/{id}/accept | reject | DÖNEN: yok
     func decide(offerId: String, accept: Bool) async throws {
         let action = accept ? "accept" : "reject" // ?: kısa if | adresin son parçası
         try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/\(action)", fallback: "İşlem yapılamadı.")
@@ -39,12 +49,14 @@ struct OfferService { // OfferService [BİZİM] ad
 
     // myOffers: Taşımacı'nın verdiği TÜM teklifler (bekleyen + kabul + red + tamamlanan + iptal) | "Tekliflerim" ekranının verisi
     // ÇAĞIRAN: Views/MyOffersView.swift | API: GET /api/v1/offers/mine
+    // ⮕ ZİNCİR: ViewModels/MyOffersViewModel.load() ← Views/MyOffersView .task/.refreshable (ve silmeden sonra) | API: GET /api/v1/offers/mine | DÖNEN: [CarrierOffer]
     func myOffers() async throws -> [CarrierOffer] {
         try await api.send(.get, "/api/v1/offers/mine", fallback: "Teklifler alınamadı.")
     }
 
     // unseenCount: Taşımacı'nın henüz GÖRMEDİĞİ karar sayısı | NE İŞE YARAR: push bildirim yerine uygulama içi kırmızı rozet
     // ÇAĞIRAN: Views/HomeView.swift (Taşımacı) | API: GET /api/v1/offers/mine/unseen-count → {"count": 3}
+    // ⮕ ZİNCİR: ViewModels/HomeViewModel.load() (Taşımacı) → Views/HomeView kutu ikonu rozeti | API: GET /api/v1/offers/mine/unseen-count | DÖNEN: Int (UnseenCount.count)
     func unseenCount() async throws -> Int { // -> Int: yalnız sayı döner
         let result: UnseenCount = try await api.send(.get, "/api/v1/offers/mine/unseen-count", fallback: "Bildirim sayısı alınamadı.")
         return result.count // struct'tan yalnız sayıyı al
@@ -52,18 +64,21 @@ struct OfferService { // OfferService [BİZİM] ad
 
     // markSeen: karar bildirimlerini "görüldü" yapar (rozet söner) | sunucuda Offer.CarrierSeen=true olur
     // ÇAĞIRAN: Views/MyOffersView.swift → .task, liste çizildikten SONRA | API: POST /api/v1/offers/mine/seen
+    // ⮕ ZİNCİR: ViewModels/MyOffersViewModel.loadAndMarkSeen() ← Views/MyOffersView .task (liste çizildikten SONRA) | API: POST /api/v1/offers/mine/seen | DÖNEN: yok
     func markSeen() async throws {
         try await api.sendNoContent(.post, "/api/v1/offers/mine/seen", fallback: "İşlem yapılamadı.")
     }
 
     // hide: teklifi KENDİ geçmişimden siler; karşı taraf görmeye devam eder (kayıt DB'den silinmez, bayrak işaretlenir) | yalnız bitmiş teklifler (reddedilen/tamamlanan/iptal) silinebilir
     // ÇAĞIRAN: MyOffersView ve OldOffersView, satırı kaydırıp "Sil" | API: DELETE /api/v1/offers/{id}
+    // ⮕ ZİNCİR: ViewModels/MyOffersViewModel.hide() ve OldOffersViewModel.hide() ← satırı kaydırıp "Sil" (MyOffersView, OldOffersView) | API: DELETE /api/v1/offers/{id} | DÖNEN: yok
     func hide(offerId: String) async throws {
         try await api.sendNoContent(.delete, "/api/v1/offers/\(offerId)", fallback: "Silinemedi.")
     }
 
     // shipperHistory: Yük Veren'in karara bağladığı (kabul/red/tamamlanan) teklifler = "Eski teklifler"
     // ÇAĞIRAN: Views/OldOffersView.swift | API: GET /api/v1/offers/history
+    // ⮕ ZİNCİR: ViewModels/OldOffersViewModel.load() ← Views/OldOffersView .task/.refreshable | API: GET /api/v1/offers/history | DÖNEN: [ShipperHistoryOffer]
     func shipperHistory() async throws -> [ShipperHistoryOffer] {
         try await api.send(.get, "/api/v1/offers/history", fallback: "Eski teklifler alınamadı.")
     }

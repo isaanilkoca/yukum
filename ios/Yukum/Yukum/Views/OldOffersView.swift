@@ -7,6 +7,13 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: OldOffersView (Eski Teklifler, Yük Veren) ─────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ Teklif listesi           →  viewModel.offers ← load()           →  OfferService.shipperHistory()   →  GET /api/v1/offers/history       →  [ShipperHistoryOffer]
+// │ Sil (kaydırınca)         →  viewModel.canHide(_:) / hide(_:)    →  OfferService.hide()             →  DELETE /api/v1/offers/{id}       →  (yok)
+// │ Sohbet düğmesi           →  viewModel.openChat(_:)              →  chat = ChatContext.forShipperHistory →  (ChatView açılır)           →  ChatContext
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Yük Veren'in karara bağladığı (kabul/red/tamamlanan) tüm teklifler = "Eski teklifler". Bitmiş olanları kaydırıp kendi listesinden silebilir.
 // Kabul edilen teklifin sohbetine buradan ulaşılır (aktif iş: silinemez, sohbet açık, "İşi Bitir ve Sil" sohbetin menüsünde).
 // MVVM: bu dosya yalnız GÖRÜNÜM. Liste, silme kuralı, sohbet bilgisi ViewModels/OfferListViewModels.swift → OldOffersViewModel'de.
@@ -26,7 +33,7 @@ struct OldOffersView: View {
             if viewModel.offers.isEmpty {
                 Text("Henüz karar verdiğin teklif yok").foregroundColor(.secondary)
             } else {
-                List(viewModel.offers) { offer in
+                List(viewModel.offers) { offer in // ⮕ OldOffersViewModel.offers ← OfferService.shipperHistory() → [ShipperHistoryOffer]
                     VStack(alignment: .leading, spacing: 6) { // bir teklifin satırı | .leading: sola yasla
 
                         HStack {
@@ -51,7 +58,7 @@ struct OldOffersView: View {
                     .padding(.vertical, 4) // satırın üst/alt boşluğu
                     .swipeActions { // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
                         if viewModel.canHide(offer) { // KURAL ViewModel'de: yalnız reddedilen ya da tamamlanan silinebilir | kabul edilen AKTİF İŞ, silinemez (API de 409 verir)
-                            Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive: kırmızı silme düğmesi
+                            Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive: kırmızı silme düğmesi | ⮕ OldOffersViewModel.hide → OfferService.hide → DELETE /api/v1/offers/{id}
                         }
                     }
                 }.listStyle(.plain) // düz beyaz zemin

@@ -6,6 +6,13 @@
 import Foundation
 import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenler değişince onları okuyan ekranlar kendiliğinden yenilenir
 
+// ┌─ BAĞLANTI HARİTASI: HomeViewModel ───────────────────────────────────────────────
+// │ EKRAN     : Views/HomeView (@State private var viewModel) — iki rol için ana sayfa
+// │ SERVİS    : Services/Protocols/ListingServicing → ListingService | OfferServicing → OfferService | CityServicing → CityService
+// │ MODEL     : Listing, City, District, LoginUser
+// │ AKIŞ      : View .task(id:) → load() → servis → API → Model dizisi → listings değişkeni → @Observable → View yeniden çizer
+// └──────────────────────────────────────────────────────────────────────
+
 // ViewModel NEDİR? (MVVM = Model - View - ViewModel)
 //   Model     : veri kalıpları (Listing, City...) → Models/ ve Services/
 //   View      : ekranın GÖRÜNÜMÜ (SwiftUI) → Views/HomeView.swift | yalnız "ne çizilecek" bilir
@@ -17,6 +24,7 @@ import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenl
 @Observable
 final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebilir" yapar (eski adıyla ObservableObject + @Published yerine)
 
+    // ⮕ ZİNCİR: Views/HomeView: "Hoş Geldin \(viewModel.user.displayName)" | rol kararı isShipper | MODEL: Models/Auth/LoginUser | GELDİĞİ YER: LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → HomeView(user:)
     let user: LoginUser // giriş yapan kişi (ad, rol)
 
     // Bağımlılıklar: gerçek uygulamada varsayılan gerçek servisler, testte sahteleri verilir
@@ -25,17 +33,26 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     private let cityService: CityServicing
 
     // ─── Ekranın durumu (View bunları okur; değişince ekran yenilenir) ───
+    // ⮕ ZİNCİR: Views/HomeView: List(viewModel.listings) (Yük Veren ve Taşımacı için iki ayrı liste) → her satır Views/ListingRow | DOLDURAN: load() | MODEL: [Listing]
     var listings: [Listing] = [] // ekrandaki ilan listesi (Yük Veren: kendi açık ilanları, Taşımacı: teklif vermediği açık ilanlar)
+    // ⮕ ZİNCİR: Views/HomeView: if let listError → kırmızı Text | DOLDURAN: load()'un catch'i (error.userMessage)
     var listError: String? // liste yüklenemezse kırmızı yazılacak mesaj | nil: hata yok
+    // ⮕ ZİNCİR: Views/HomeView toolbar: kutu ikonundaki kırmızı rozet (> 0 ise çizilir) | DOLDURAN: load() ← OfferService.unseenCount()
     var unseenCount = 0 // Taşımacı'nın görmediği karar sayısı (kutu ikonundaki rozet) | 0: rozet çizilmez
 
     // Taşımacı filtresi: kalkış ili / ilçesi | 0 = "Tümü" (filtre yok) | hem Picker seçimini tutar hem API'ye giden filtredir
+    // ⮕ ZİNCİR: Views/HomeView: il Picker'ının satırları (ForEach) | DOLDURAN: load() (yalnız bir kez) ← CityService.cities() | MODEL: [City]
     var cities: [City] = [] // il Picker'ının listesi (bir kez yüklenir)
+    // ⮕ ZİNCİR: Views/HomeView: ilçe Picker'ının satırları | DOLDURAN: cityFilterChanged(to:) ← CityService.districts(cityId:) | MODEL: [District]
     var filterDistricts: [District] = [] // seçilen ilin ilçeleri
+    // ⮕ ZİNCİR: Views/HomeView: Picker("İl", selection: $viewModel.filterCityId) — seçim doğrudan buraya yazılır (@Bindable) | load()'da openListings(fromCityId:) filtresi olarak API'ye gider
     var filterCityId = 0
+    // ⮕ ZİNCİR: Views/HomeView: Picker("İlçe", selection: $viewModel.filterDistrictId) | load()'da openListings(fromDistrictId:) filtresi olarak API'ye gider
     var filterDistrictId = 0
+    // ⮕ ZİNCİR: Views/HomeView: Toggle("Yakınımdakiler", isOn: $viewModel.nearMe) | true iken load() konumu API'ye gönderir (lat/lon) ve sunucu en yakından uzağa sıralar
     var nearMe = false // "Yakınımdakiler" anahtarı: true iken liste telefonun konumuna göre yakından uzağa sıralanır
 
+    // ⮕ ZİNCİR: Views/HomeView: if viewModel.isShipper { Yük Veren ekranı } else { Taşımacı ekranı } ve toolbar düğmeleri | kaynak: user.role
     var isShipper: Bool { user.role == "Shipper" } // türetilmiş değer: rol kararı tek yerde (ekran ve mantık aynı tanımı kullanır)
 
     init(user: LoginUser,
@@ -51,6 +68,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // load: ana sayfanın verisini API'den çekip durum değişkenlerine yazar
     // coordinate: telefonun konumu (nil: yok) | yalnız "Yakınımdakiler" AÇIKSA ve konum BULUNMUŞSA API'ye gönderilir
     // ÇAĞIRAN: View → .task(id:) (ekran açılınca/filtre değişince/konum bulununca) ve .refreshable (aşağı çekince)
+    // ⮕ ZİNCİR: Views/HomeView: .task(id: reloadKey) ve List'lerdeki .refreshable | Yük Veren → ListingService.myListings() | Taşımacı → ListingService.openListings(...) + CityService.cities() + OfferService.unseenCount()
     func load(coordinate: (latitude: Double, longitude: Double)?) async {
         listError = nil // eski hata yazısını temizle | NEDEN: load her yenilemede çalışır; temizlemezsek bir kez çıkan hata sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
         do {
@@ -70,6 +88,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
 
     // cityFilterChanged: il Picker'ı değişince çağrılır | ilçe seçimi sıfırlanır ve yeni ilin ilçeleri çekilir
     // NEDEN sıfırlama: eski ilin ilçesi yeni ile ait değildir, kalırsa yanlış filtre gider
+    // ⮕ ZİNCİR: Views/HomeView: il Picker'ındaki .onChange(of: viewModel.filterCityId) → Task { await viewModel.cityFilterChanged(to:) } | CityService.districts(cityId:)
     func cityFilterChanged(to cityId: Int) async {
         filterDistrictId = 0
         filterDistricts = []
@@ -78,6 +97,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     }
 
     // reloadKey: ekranın .task(id:) değeri | bu yazı değişince liste yeniden yüklenir (filtre, anahtar ya da konum değişti)
+    // ⮕ ZİNCİR: Views/HomeView: .task(id: viewModel.reloadKey(...)) — bu yazı değişince (filtre, anahtar, konum) SwiftUI task'ı yeniden çalıştırır → load()
     func reloadKey(coordinate: (latitude: Double, longitude: Double)?) -> String {
         "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(coordinate.map { "\($0.latitude),\($0.longitude)" } ?? "-")"
     }

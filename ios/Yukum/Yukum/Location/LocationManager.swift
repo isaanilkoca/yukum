@@ -9,6 +9,13 @@ import Foundation
 import CoreLocation // [SWIFT] Apple'ın konum çerçevesi: enlem/boylam alma, izin yönetimi | CLLocationManager buradan gelir
 import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişkenler değişince ekranın kendini yenilemesini sağlar
 
+// ┌─ BAĞLANTI HARİTASI: LocationManager (telefonun konumu) ──────────────────────────
+// │ SAHİBİ    : Views/HomeView (@State locationManager) — izin penceresi ve Ayarlar yönlendirmesi arayüz işidir
+// │ AKIŞ      : Toggle "Yakınımdakiler" açılır → HomeView .onChange → locationManager.request() → izin/konum → coordinate dolar
+// │ ÇIKIŞ     : HomeView coordinate'i HomeViewModel.load(coordinate:)'e verir → ListingService.openListings(lat:lon:) → sunucu mesafeye göre sıralar
+// │ DELEGATE  : CLLocationManagerDelegate: iOS konum olayı olunca aşağıdaki 3 fonksiyonu KENDİSİ çağırır (biz çağırmayız)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU SINIF: telefonun konumunu bulur ve kullanıcıdan konum izni ister.
 // NEDEN ayrı sınıf: konum özelliği (izin, hata, sonuç) ekran koduyla karışmasın | ileride başka ekranlar da aynı sınıfı kullanabilir
 // BAĞLANTI: Views/HomeView.swift (Taşımacı) bunu @State ile tutar → "Yakınımdakiler" düğmesi request() çağırır → konum gelince coordinate dolar → HomeView API'ye lat/lon gönderir

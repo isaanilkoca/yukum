@@ -5,6 +5,11 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: ListingServicing (sözleşme) ─────────────────────────────────
+// │ GERÇEK    : Services/ListingService.swift | SAHTE (test): YukumTests/Support/FakeListingService.swift
+// │ KULLANAN  : ViewModels/HomeViewModel, CreateListingViewModel, ListingOffersViewModel (servise değil bu sözleşmeye bağlıdırlar)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: servislerin "ne yapabildiğini" anlatan SÖZLEŞMELER (protocol).
 // NEDEN: ViewModel'ler somut servise (ListingService) değil, sözleşmeye (ListingServicing) bağlı olur.
 //   → gerçek uygulamada gerçek servis verilir, TESTTE sahte servis verilir (internet/sunucu gerekmez). Buna BAĞIMLILIK ENJEKSİYONU (Dependency Injection) denir.

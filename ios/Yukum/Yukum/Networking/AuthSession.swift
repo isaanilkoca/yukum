@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: AuthSession (oturumun tek sahibi) ───────────────────────────
+// │ SAKLAR    : accessToken (15 dk, bellekte) | refreshToken (30 gün, Keychain'de: Security/KeychainStore)
+// │ ÇAĞIRAN   : Networking/APIClient (her istekte jeton, 401'de yenileme) | Services/AuthService.login (signIn) | LoginViewModel.restoreSession (restore) | Views/HomeView (signOut)
+// │ YAYINLAR  : Süre dolup yenileme reddedilirse .sessionExpired yayınlar → Views/HomeView dinler (.onReceive) → giriş ekranına döner
+// │ KULLANIR  : Security/KeychainStore (jeton), Security/DeviceID (cihaz kimliği), Models/Auth/LoginResponse, Models/Auth/LoginUser
+// └──────────────────────────────────────────────────────────────────────
+
 
 // BU SINIF: oturumun TEK sahibi. İki jetonu yönetir ve süresi dolunca otomatik yeniler.
 //   erişim jetonu (accessToken)   : 15 dk, her istekte gider, yalnız BELLEKTE durur (diske yazılmaz)

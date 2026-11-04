@@ -5,6 +5,11 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: Error.userMessage ───────────────────────────────────────────
+// │ NE        : "Bu hata kullanıcıya ne diye gösterilsin?" kuralı: APIError → mesajı | iptal → nil (gösterme) | diğer → "Sunucuya ulaşılamadı."
+// │ KULLANAN  : ViewModels/* içindeki her catch: if let message = error.userMessage { errorMessage = message }
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: "bu hata kullanıcıya ne diye gösterilsin?" kuralı TEK YERDE. Eskiden her ekranda aynı üç satırlık catch bloğu vardı:
 //   catch APIError → mesajını göster | catch iptal → sessiz geç | catch başka → "Sunucuya ulaşılamadı."
 // BAĞLANTI: tüm ViewModel'ler catch içinde "error.userMessage" kullanır

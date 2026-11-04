@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: LoginRequest (giden paket) ──────────────────────────────────
+// │ MODEL     : Giriş için sunucuya GİDEN paket: e-posta/telefon + şifre + cihaz kimliği
+// │ DOLDURAN  : ViewModels/LoginViewModel.swift → login() (alanlar: emailOrPhone, password; deviceId: Security/DeviceID.swift)
+// │ YOL       : Views/LoginView (TextField) → LoginViewModel → Services/AuthService.login(_:) → Networking/APIClient.send(.post) → JSON → POST /api/v1/auth/login
+// │ KURAL     : Alan adları API'nin JSON adlarıyla BİREBİR aynı olmalı (Encodable, adlar JSON anahtarı olur)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA NE İŞE YARAR?
 // Giriş (login) için API ile konuşurken kullanılan paket kalıpları: biri gönderilen, ikisi gelen cevap için.
 // [BİZİM] = adı biz koyduk | [SWIFT] = Swift'in hazır kodu

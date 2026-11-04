@@ -6,16 +6,27 @@
 import Foundation
 import Observation
 
+// ┌─ BAĞLANTI HARİTASI: ListingOffersViewModel ──────────────────────────────────────
+// │ EKRAN     : Views/ListingOffersView (@State private var viewModel, init(listing:)) — Yük Veren'in ilanına gelen BEKLEYEN teklifler; Views/HomeView listesindeki satır açar
+// │ SERVİS    : Services/Protocols/OfferServicing → OfferService.listingOffers / decide | ListingServicing → ListingService.cancel
+// │ MODEL     : Listing (hangi ilan), ListingOffer | sohbet için ChatContext
+// │ AKIŞ      : View .task → load() → offers | Kabul/Reddet → decide() → load() | Kaldır → cancelListing() → true ise View kapanır
+// └──────────────────────────────────────────────────────────────────────
+
 // BU SINIF: "Gelen Teklifler" (Yük Veren, bir ilanın BEKLEYEN teklifleri) ekranının durumu ve mantığı: liste, kabul/red kararı, ilanı yayından kaldırma
 // BAĞLANTI: Views/ListingOffersView.swift kullanır | servisler: Services/OfferService.swift, Services/ListingService.swift | sohbet bilgisi: ViewModels/ChatContext.swift
 @Observable
 final class ListingOffersViewModel {
+    // ⮕ ZİNCİR: Views/ListingOffersView: başlık Text(viewModel.listing.title) | servis çağrılarında listing.id | gelen: Views/HomeView Yük Veren listesi → ListingOffersView(listing:)
     let listing: Listing
     private let offerService: OfferServicing
     private let listingService: ListingServicing
 
+    // ⮕ ZİNCİR: Views/ListingOffersView: List(viewModel.offers) | DOLDURAN: load() ← OfferService.listingOffers | MODEL: [ListingOffer]
     var offers: [ListingOffer] = []
+    // ⮕ ZİNCİR: Views/ListingOffersView: if let errorMessage → kırmızı yazı
     var errorMessage: String?
+    // ⮕ ZİNCİR: Views/ListingOffersView: .navigationDestination(item: $viewModel.chat) { ChatView(context:) } | DOLDURAN: openChat(_:)
     var chat: ChatContext?
 
     init(listing: Listing, offerService: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
@@ -24,6 +35,7 @@ final class ListingOffersViewModel {
         self.listingService = listingService
     }
 
+    // ⮕ ZİNCİR: Views/ListingOffersView: .task ve .refreshable | OfferService.listingOffers(listingId:)
     func load() async {
         errorMessage = nil
         do { offers = try await offerService.listingOffers(listingId: listing.id) }
@@ -31,6 +43,7 @@ final class ListingOffersViewModel {
     }
 
     // decide: Kabul Et / Reddet | kabulde ilan atanır ve diğer bekleyen teklifler reddedilir (sunucu yapar) → liste yenilenir
+    // ⮕ ZİNCİR: Views/ListingOffersView: "Kabul et"/"Reddet" → Task { await viewModel.decide(offer, accept:) } | OfferService.decide(offerId:accept:) sonra load() (kabulde ilan atanır, diğer bekleyenler reddedilir: sunucu yapar)
     func decide(_ offer: ListingOffer, accept: Bool) async {
         errorMessage = nil
         do {
@@ -42,6 +55,7 @@ final class ListingOffersViewModel {
     }
 
     // cancelListing: ilanı yayından kaldırır | -> Bool: başarılı mı (ekran başarılıysa geri döner)
+    // ⮕ ZİNCİR: Views/ListingOffersView: sağ üst "Kaldır" → alert "Yayından Kaldır" | ListingService.cancel(listingId:) | true dönerse View dismiss() ile HomeView'a döner
     func cancelListing() async -> Bool {
         errorMessage = nil
         do {
@@ -53,5 +67,6 @@ final class ListingOffersViewModel {
         }
     }
 
+    // ⮕ ZİNCİR: Views/ListingOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forShipperPending(offer)
     func openChat(_ offer: ListingOffer) { chat = ChatContext.forShipperPending(offer) }
 }

@@ -7,6 +7,12 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: RoleSelectionView (rol seçimi) ────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ İki düğme                →  NavigationLink → RegisterView (Yük Veren) | CarrierRegisterView (Taşımacı)   (ViewModel yok: yalnız yönlendirme)
+// │ Gelen yer                →  Views/LoginView "Kayıt ol"
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: "Nasıl kayıt olmak istersiniz?" Yük Veren mi, Taşımacı mı seçilir.
 // BAĞLANTI: Views/LoginView.swift'teki "Kayıt ol" NavigationLink'i bu ekranı açar.
 //           Buradan: "Yük Veren" → Views/RegisterView.swift | "Taşımacı" → Views/CarrierRegisterView.swift

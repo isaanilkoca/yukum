@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: CreateListingRequest (ilan verme paketi) ────────────────────
+// │ MODEL     : İlan açmak için GİDEN paket
+// │ DOLDURAN  : ViewModels/CreateListingViewModel.submit() (formdaki alanlardan; tarih "yyyy-MM-dd" yazıya çevrilir)
+// │ YOL       : Views/CreateListingView → CreateListingViewModel → Services/ListingService.create → POST /api/v1/listings
+// │ CEVAP     : ListingResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA NE İŞE YARAR? İlan açarken API'ye giden paket (CreateListingRequest) ve dönen ilan (ListingResponse).
 // KURAL: alan adları API'nin JSON alan adlarıyla BİREBİR aynı olmalı.
 // BAĞLANTI: Views/CreateListingView.swift paketi doldurur → Services/ListingService.swift gönderir. API tarafı: backend ListingsController

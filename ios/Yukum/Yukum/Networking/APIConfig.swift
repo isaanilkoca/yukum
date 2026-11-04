@@ -5,6 +5,11 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: APIConfig (adres) ───────────────────────────────────────────
+// │ NE        : API'nin ana adresi TEK YERDE (http://localhost:5054)
+// │ KULLANAN  : Networking/APIClient ve Networking/AuthSession (yenileme/çıkış istekleri) — canlıya çıkarken yalnız burası değişir
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: API'nin ana adresi TEK YERDE. Daha önce her serviste ayrı "baseURL" yazılıydı; canlıya çıkarken hepsini tek tek değiştirmek gerekirdi.
 // BAĞLANTI: Networking/APIClient.swift ve Networking/AuthSession.swift buradan okur
 // NOT: canlıda https olacak (App Transport Security) ve Debug/Release için ayrı adres tanımlanacak

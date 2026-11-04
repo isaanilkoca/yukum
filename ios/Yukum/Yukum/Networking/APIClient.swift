@@ -5,6 +5,14 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: APIClient (ağın tek kapısı) ─────────────────────────────────
+// │ ÇAĞIRAN   : Services/*Service.swift — hepsi api.send(...) / api.sendNoContent(...) der (ViewModel'ler servis üzerinden buraya gelir)
+// │ AKIŞ      : send → perform (jeton hazırla) → execute (URLSession ile gönder) → durum kodu → JSONDecoder → Model
+// │ 401       : Jeton süresi dolduysa: AuthSession.tokenAfterFailure yeni jeton verir → istek BİR KEZ tekrarlanır
+// │ HATA      : APIError fırlatır (mesaj: APIErrorResponse'tan) → ViewModel'in catch'i → Error.userMessage → ekranda kırmızı yazı
+// │ KULLANIR  : Networking/APIConfig (adres), AuthSession (jeton), HTTPMethod (GET/POST...), APIErrorResponse (hata JSON'u)
+// └──────────────────────────────────────────────────────────────────────
+
 
 // BU STRUCT: API'ye giden TÜM istekler buradan geçer (tek kapı). Daha önce her serviste aynı 15 satır tekrar ediyordu:
 //   adres kur → zarf hazırla → jeton ekle → gönder → durum koduna bak → cevabı çevir → hata yazısı çıkar.

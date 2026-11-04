@@ -5,6 +5,12 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: SendMessageRequest (mesaj gönderme paketi) ──────────────────
+// │ MODEL     : Mesaj göndermek için GİDEN paket: {"text": "..."}
+// │ DOLDURAN  : ViewModels/ChatViewModel.send() (draft'ın baş/son boşluğu temizlenmiş hâli)
+// │ YOL       : Views/ChatView (Gönder) → ChatViewModel.send() → Services/ChatService.send → POST /api/v1/offers/{id}/messages
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: sohbet paketlerinin kalıpları. Gönderilecek mesaj + gelen mesaj satırı.
 // BAĞLANTI: Services/ChatService.swift bu kalıpları kullanır | API: GET/POST /api/v1/offers/{offerId}/messages | ekran: Views/ChatView.swift
 

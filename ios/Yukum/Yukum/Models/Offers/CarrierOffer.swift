@@ -5,11 +5,17 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: CarrierOffer (Taşımacı'nın teklifi) ─────────────────────────
+// │ MODEL     : Taşımacı'nın verdiği tek teklif: ilan özeti, tutar, durum, "Yeni" rozeti bilgisi
+// │ ÜRETEN    : Services/OfferService.myOffers ← GET /api/v1/offers/mine
+// │ SAKLAYAN  : ViewModels/MyOffersViewModel.offers (pendingOffers / historyOffers ile iki bölüme ayrılır) → Views/MyOffersView
+// │ SOHBET    : ViewModels/ChatContext.forCarrier(_:)
+// └──────────────────────────────────────────────────────────────────────
+
 // CarrierOffer: Taşımacı'nın "Tekliflerim" listesindeki TEK SATIRIN kalıbı.
 // NE İŞE YARAR: API'den gelen JSON'daki her teklif bu struct'a çevrilir (Decodable) | alan adları API'deki ile BİREBİR aynı olmalı, yoksa okuma hatası verir
 // NEREDE KULLANILIR: Services/OfferService.swift → myOffers() bu struct'ın listesini döner → Views/MyOffersView.swift listeyi ekrana çizer
-// Hashable: aynı sebep | MyOffersView'daki chatOffer + .navigationDestination(item:) için gerekli
-struct CarrierOffer: Decodable, Identifiable,Hashable { // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, List'te "id:" yazmak gerekmez
+struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var, List'te "id:" yazmak gerekmez
     let id: String // teklif numarası (GUID, yazı gelir) | Identifiable bunu kullanır | silme isteğine (hide) bu gider
     let listingTitle: String // teklif verdiğimiz ilanın başlığı | satırın üst yazısı
     let fromCityName: String // ilanın kalkış ili | rota yazısı için

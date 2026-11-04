@@ -5,6 +5,13 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: City (il) ───────────────────────────────────────────────────
+// │ MODEL     : Bir il: id = plaka kodu (34 İstanbul), ad
+// │ ÜRETEN    : Services/CityService.cities ← GET /api/v1/cities (herkese açık)
+// │ SAKLAYAN  : ViewModels/HomeViewModel.cities (filtre Picker'ı) | ViewModels/CreateListingViewModel.cities (Kalkış/Varış İli Picker'ları)
+// │ SEÇİM     : Picker'ın tag'i city.id → filterCityId / fromCityId / toCityId değişkenine yazılır
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA NE İŞE YARAR? API'den gelen il ve ilçe kayıtlarının kalıbı (form kağıdı). Sadece kalıp; çekme işini CityService yapar.
 // API'nin her il/ilçe elemanı: {"id":34,"name":"İstanbul"} → aşağıdaki struct'a çevrilir.
 // Decodable [SWIFT]: JSON'dan üretilebilir | Identifiable [SWIFT]: benzersiz id'si var (listelerde ForEach için gerekli)

@@ -5,6 +5,12 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: ChatMessage (sohbet mesajı) ─────────────────────────────────
+// │ MODEL     : Sohbetteki tek mesaj: metin, zaman, "benim mi" bilgisi
+// │ ÜRETEN    : Services/ChatService.messages ← GET /api/v1/offers/{id}/messages
+// │ SAKLAYAN  : ViewModels/ChatViewModel.messages → Views/ChatView (balonlar; isMine true ise sağda mavi, değilse solda gri)
+// └──────────────────────────────────────────────────────────────────────
+
 // ChatMessage: sohbetteki TEK MESAJIN kalıbı (GET listesindeki her eleman).
 // NE İŞE YARAR: API'den gelen JSON her mesaj için bu struct'a çevrilir | Decodable [SWIFT]: JSON → struct | Identifiable: benzersiz id'si var, List/ForEach'te id: yazmak gerekmez
 // NEREDE KULLANILIR: ChatService.messages() bu struct'ın listesini döner → Views/ChatView.swift balonları çizer

@@ -5,6 +5,11 @@
 
 import Foundation
 
+// ┌─ BAĞLANTI HARİTASI: APIErrorResponse (sunucunun hata JSON'u) ────────────────────
+// │ NE        : Sunucu hata verince gönderdiği JSON (ProblemDetails): detail = genel mesaj, errors = alan alan hatalar
+// │ KULLANAN  : Networking/APIClient.perform → hata mesajını çıkarıp APIError'a koyar (örn. "Başlık boş olamaz.")
+// └──────────────────────────────────────────────────────────────────────
+
 // API hata verince (400, 409...) gelen cevabın kalıbı; ekranda göstereceğimiz mesajı buradan okuruz.
 // KULLANAN: AuthService.post, hata cevabını buna çevirip mesajı APIError içine koyar; ekran o mesajı gösterir.
 nonisolated struct APIErrorResponse : Decodable {

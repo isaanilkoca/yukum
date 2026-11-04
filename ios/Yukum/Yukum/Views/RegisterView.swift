@@ -7,6 +7,12 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: RegisterView (Yük Veren kaydı) ────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ NOT                      →  Bu ekran henüz MVVM'e taşınmadı: form alanları ekranın kendi @State'inde ve servisi DOĞRUDAN çağırıyor (alıştırma olarak kullanıcıyla taşınacak)
+// │ Kayıt ol düğmesi         →  (ViewModel yok)                     →  AuthService.register()          →  POST /api/v1/auth/register/shipper →  RegisterRequest → RegisterResponse
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Yük Veren kayıt formu. Akış: alanları doldur → kontrol et → pakete koy → AuthService ile API'ye gönder → sonucu göster
 // BAĞLANTI: Views/RoleSelectionView.swift'teki "Yük Veren" NavigationLink'i bu ekranı açar.
 //           Paket kalıbı: Models/Auth/ → RegisterRequest | gönderen: Services/AuthService.swift → register

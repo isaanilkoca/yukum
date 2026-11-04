@@ -7,6 +7,12 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: ContentView ──────────────────────────────────────────────────
+// │ GELEN     : App/YukumApp.swift → WindowGroup { ContentView() }
+// │ GİDEN     : Views/LoginView.swift (uygulamanın ilk ekranı) → oradan ViewModels/LoginViewModel.restoreSession() otomatik girişi dener
+// │ NOT       : Genel proje haritası ve iz sürme rehberi App/YukumApp.swift'in başındadır
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: uygulamanın ilk ekran kapısı. Şimdilik sadece LoginView'a yönlendirir.
 // BAĞLANTI: YukumApp.swift bu ekranı açar → burası Views/LoginView.swift'i gösterir.
 struct ContentView: View { // ContentView [BİZİM] ad | View [SWIFT]: "bu struct bir ekrandır" sözleşmesi

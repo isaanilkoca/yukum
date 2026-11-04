@@ -7,6 +7,15 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: MyOffersView (Tekliflerim, Taşımacı) ──────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ Bekleyenler bölümü       →  viewModel.pendingOffers (offers'tan)  →  OfferService.myOffers()      →  GET /api/v1/offers/mine          →  [CarrierOffer]
+// │ Geçmiş bölümü            →  viewModel.historyOffers (offers'tan)  →  (aynı çağrı)                  →  (aynı)                           →  [CarrierOffer]
+// │ "Yeni" rozeti            →  CarrierOffer.isNew ← loadAndMarkSeen()  →  OfferService.markSeen()     →  POST /api/v1/offers/mine/seen    →  (yok)
+// │ Sil (kaydırınca)         →  viewModel.canHide(_:) / hide(_:)    →  OfferService.hide()             →  DELETE /api/v1/offers/{id}       →  (yok)
+// │ Sohbet düğmesi           →  viewModel.canChat(_:) / openChat(_:) → chat = ChatContext.forCarrier     →  (ChatView açılır)                →  ChatContext
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Taşımacı'nın tüm teklifleri = "Tekliflerim". İki bölüm: BEKLEYENLER (karar bekleyen) ve GEÇMİŞ (kabul/red/tamamlanan/iptal). Bitmiş olanları silebilir.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Liste, bölümler, silme kuralları, sohbet bilgisi ViewModels/OfferListViewModels.swift → MyOffersViewModel'de.
 // BAĞLANTI: Views/HomeView.swift → Taşımacı'nın sağ üst kutu ikonu (rozetli) bu ekranı açar | kalıp: Models/Offers/ → CarrierOffer
@@ -32,12 +41,12 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
                 List {
                     if !viewModel.pendingOffers.isEmpty {
                         Section("Bekleyenler") { // karar bekleyen teklifler
-                            ForEach(viewModel.pendingOffers) { offer in offerRow(offer) } // ForEach [SWIFT]: listedeki her teklif için bir satır çizer
+                            ForEach(viewModel.pendingOffers) { offer in offerRow(offer) } // ForEach [SWIFT]: listedeki her teklif için bir satır çizer | ⮕ MyOffersViewModel.pendingOffers ← offers ← OfferService.myOffers() → [CarrierOffer]
                         }
                     }
                     if !viewModel.historyOffers.isEmpty {
                         Section("Geçmiş") { // kabul edilen, reddedilen, tamamlanan, iptal edilen teklifler
-                            ForEach(viewModel.historyOffers) { offer in offerRow(offer) }
+                            ForEach(viewModel.historyOffers) { offer in offerRow(offer) } // ⮕ MyOffersViewModel.historyOffers (kabul/red/tamamlanan/iptal)
                         }
                     }
                 }.listStyle(.plain) // .plain: düz beyaz zemin, ince çizgiler | varsayılan gri zemin olurdu
@@ -47,7 +56,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         .padding() // ekranın kenarlarından boşluk
         .navigationTitle("Tekliflerim") // [SWIFT] üst çubuk başlığı | geri oku HomeView'daki NavigationStack'ten otomatik gelir
         .navigationBarTitleDisplayMode(.inline) // [SWIFT]: başlığı küçük, ortada gösterir
-        .task { await viewModel.loadAndMarkSeen() } // .task [SWIFT]: ekran HER göründüğünde çalışır | ÖNCE listeyi çek ("Yeni" rozetleri çizilsin), SONRA "görüldü" yap (anasayfadaki rozet söner)
+        .task { await viewModel.loadAndMarkSeen() } // .task [SWIFT]: ekran HER göründüğünde çalışır | ÖNCE listeyi çek ("Yeni" rozetleri çizilsin), SONRA "görüldü" yap (anasayfadaki rozet söner) | ⮕ önce OfferService.myOffers(), sonra OfferService.markSeen()
         // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil?
         //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki "Sohbet" düğmesi çalışmaz.
         //   Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat değişkenini doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat" | ChatContext Hashable olduğu için SwiftUI seçili öğeyi takip edebilir.
@@ -87,14 +96,14 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
             }
 
             if viewModel.canChat(offer) { // KURAL ViewModel'de: reddedilen teklifte sohbet yok
-                Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → ChatView açılır | .bordered: List'te satırın her yeri düğme olmasın diye stil şart
+                Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → ChatView açılır | .bordered: List'te satırın her yeri düğme olmasın diye stil şart | ⮕ MyOffersViewModel.openChat → ChatContext.forCarrier → .navigationDestination → ChatView
             }
         }
         .padding(.vertical, 4) // satırın üst/alt boşluğu
         // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
         .swipeActions {
             if viewModel.canHide(offer) { // KURAL ViewModel'de: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
-                Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi
+                Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | ⮕ MyOffersViewModel.hide → OfferService.hide → DELETE /api/v1/offers/{id}
             }
         }
     }

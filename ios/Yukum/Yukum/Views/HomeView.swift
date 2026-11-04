@@ -8,6 +8,19 @@
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 import CoreLocation // [SWIFT] konum çerçevesi | burada yalnız izin durumunu (.denied) karşılaştırmak için gerekli
 
+// ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ Hoş Geldin yazısı        →  viewModel.user                      →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
+// │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
+// │ Taşımacı ilan listesi    →  viewModel.listings ← load()         →  ListingService.openListings()   →  GET /api/v1/listings?...         →  [Listing]
+// │ İl / İlçe Picker'ları    →  cities, filterDistricts, filterCityId, filterDistrictId  →  CityService.cities() / districts()  →  GET /cities, /cities/{id}/districts  →  [City] / [District]
+// │ Yakınımdakiler anahtarı  →  viewModel.nearMe + @State locationManager (konum)  →  load(coordinate:) → openListings(lat,lon)  →  ...?lat=&lon=  →  Listing.distanceKm
+// │ Kutu ikonundaki rozet    →  viewModel.unseenCount ← load()     →  OfferService.unseenCount()      →  GET /api/v1/offers/mine/unseen-count  →  UnseenCount
+// │ Çıkış Yap                →  (ViewModel yok)                     →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
+// │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
+// │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | CreateListingView, OldOffersView, MyOffersView
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
 // MVVM: bu dosya yalnız GÖRÜNÜM (ne çizilecek). Durum ve iş mantığı (hangi liste, hangi filtre, ne zaman yüklenir, hata yazısı) ViewModels/HomeViewModel.swift'te.
 // BAĞLANTI: Views/LoginView.swift giriş başarılı olunca .fullScreenCover ile bu ekranı açar ve giriş yapan kullanıcıyı verir.
@@ -44,7 +57,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
             VStack(spacing: 24) { // elemanları alt alta dizer
 
-                Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı
+                Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser)
 
                 // user.role API'den "Shipper" ya da "Carrier" gelir | yazımı API ile birebir aynı olmalı
                 if viewModel.isShipper { // GÖRÜNÜM kararı: ekranda ne ÇİZİLECEK | Yük Veren ilan listesini görür, Taşımacı aşağıdaki else'teki yazıyı
@@ -62,7 +75,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             Image(systemName: "truck.box.fill")
                         }
 
-                        List(viewModel.listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listing: o anki ilan
+                        List(viewModel.listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listing: o anki ilan | ⮕ HomeViewModel.listings ← load() ← ListingService.myListings() (Yük Veren) → [Listing]
                             NavigationLink { // satıra basınca süslü parantezdeki ekrana geçer
                                 ListingOffersView(listing: listing) // Views/ListingOffersView.swift → bu ilanın gelen teklifleri | basılan ilanı VERİYORUZ
                             } label: { // label: satırın görünen kısmı
@@ -79,16 +92,16 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                     // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
                     HStack { // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
-                        Picker("İl", selection: $viewModel.filterCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ)
+                        Picker("İl", selection: $viewModel.filterCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ) | ⮕ HomeViewModel.filterCityId (Picker seçimi buraya yazılır)
                             Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok
-                            ForEach(viewModel.cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: ViewModel.load'da dolan liste
+                            ForEach(viewModel.cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: ViewModel.load'da dolan liste | ⮕ HomeViewModel.cities ← CityService.cities() → [City]
                                 Text(city.name).tag(city.id) // city.name: ekranda görünen ad | tag(city.id): seçilince değişkene yazılacak numara
                             }
                         }
                         .pickerStyle(.menu) // açılır menü görünümü
                         // .onChange [SWIFT]: değişkeni izler, değişince BİR KEZ çalışır | il değişince ViewModel ilçe seçimini sıfırlar ve yeni ilin ilçelerini çeker (mantık ViewModel'de, burada yalnız tetikleme)
                         .onChange(of: viewModel.filterCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = yeni değer
-                            Task { await viewModel.cityFilterChanged(to: newId) } // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır
+                            Task { await viewModel.cityFilterChanged(to: newId) } // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır | ⮕ HomeViewModel.cityFilterChanged → CityService.districts(cityId:) → filterDistricts
                         }
                         if viewModel.filterCityId != 0 { // il seçilmeden ilçe Picker'ı çizilmez
                             Picker("İlçe", selection: $viewModel.filterDistrictId) { // seçilen ilçe numarası ViewModel'e yazılır
@@ -106,7 +119,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                     // ─── YAKINIMDAKİLER: telefonun konumuna göre en yakından uzağa sırala ───
                     // Toggle [SWIFT]: aç/kapa anahtarı | isOn: $viewModel.nearMe → açınca nearMe true olur
-                    Toggle("Yakınımdakiler", isOn: $viewModel.nearMe)
+                    Toggle("Yakınımdakiler", isOn: $viewModel.nearMe) // ⮕ HomeViewModel.nearMe → true ise load() konumu API'ye (lat/lon) gönderir
                         // .onChange: nearMe değişince BİR KEZ çalışır | on: yeni değer
                         // açıldıysa konum motoruna "izin sor ve konumu bul" deriz (izin ya da konum gelene kadar liste eskisi gibi kalır, gelince .task(id:) listeyi yeniler)
                         .onChange(of: viewModel.nearMe) { _, on in
@@ -127,7 +140,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     if viewModel.listings.isEmpty { // liste boş mu
                         Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
                     } else {
-                        List(viewModel.listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste teklif vermediğin açık ilanlar
+                        List(viewModel.listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste teklif vermediğin açık ilanlar | ⮕ HomeViewModel.listings ← load() ← ListingService.openListings() (Taşımacı) → [Listing]
                             NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
                                 ListingDetailView(listing: listing) // Views/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
                             } label: { // label: satırın görünen kısmı
@@ -141,7 +154,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
                     // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin) | BAĞLANTI: Networking/AuthSession.swift → signOut
                     Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar
-                        await AuthSession.shared.signOut()
+                        await AuthSession.shared.signOut() // ⮕ Networking/AuthSession.signOut() → Keychain silinir + POST /api/v1/auth/logout
                         dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
                     }
                 }.buttonStyle(.borderedProminent)
@@ -149,7 +162,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             }.padding()
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
-            .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() }
+            .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Networking/Notification+SessionExpired.swift)
             .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
                 if viewModel.isShipper { // yalnız Yük Veren ilan açabilir
@@ -177,7 +190,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             Image(systemName: "tray.full") // SF Symbols: gelen kutusu ikonu
                                 .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun ÜSTÜNE katman koyar | alignment: .topTrailing = sağ üst köşe
                                     if viewModel.unseenCount > 0 { // > büyüktür | görülmemiş karar varsa rozet çizilir, yoksa hiç çizilmez
-                                        Text("\(viewModel.unseenCount)").font(.caption2).foregroundColor(.white) // rozetin içindeki sayı
+                                        Text("\(viewModel.unseenCount)").font(.caption2).foregroundColor(.white) // rozetin içindeki sayı | ⮕ HomeViewModel.unseenCount ← OfferService.unseenCount() → UnseenCount.count
                                             .padding(4).background(Color.red).clipShape(Circle()) // .padding: etrafında boşluk | .background: kırmızı zemin | .clipShape(Circle()): yuvarlak yapar
                                             .offset(x: 10, y: -10) // .offset [SWIFT]: rozeti ikonun biraz sağ-üstüne kaydırır | x: sağa, y: yukarı (eksi)
                                     }
@@ -189,8 +202,8 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .task(id:) [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
             // NE İŞE YARAR: il/ilçe Picker'ı, "Yakınımdakiler" anahtarı ya da konum değişince liste kendiliğinden yeniden çekilir, ayrı "Ara" düğmesi gerekmez | teklif verip/karar verip dönünce de liste ve rozet yenilenir
             // id: ViewModel.reloadKey → filtre + anahtar + konumu birleştiren yazı | bu yazı değişince blok yeniden çalışır
-            .task(id: viewModel.reloadKey(coordinate: coordinate)) {
-                await viewModel.load(coordinate: coordinate) // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın
+            .task(id: viewModel.reloadKey(coordinate: coordinate)) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
+                await viewModel.load(coordinate: coordinate) // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
             }
         }
     }

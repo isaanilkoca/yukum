@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+// ┌─ BAĞLANTI HARİTASI: ListingRow (ilan satırı) ──────────────────────────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ GİRDİ                    →  listing: Listing — HomeView'daki List her satır için verir (ViewModel yok: saf çizim)
+// │ Gösterdikleri            →  başlık, "Mersin → İstanbul", kg · tarih, Taşımacı için "Teklifin: ... Beklemede", "📍 X km uzaklıkta" (Listing.distanceKm)
+// └──────────────────────────────────────────────────────────────────────
+
 struct ListingRow: View {
     
     // BU EKRAN PARÇASI: listedeki TEK ilan satırı. Yük Veren ve Taşımacı listeleri aynı satırı kullanır (kod tekrarı olmasın).

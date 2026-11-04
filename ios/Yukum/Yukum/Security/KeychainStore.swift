@@ -6,6 +6,11 @@
 import Foundation
 import Security // [SWIFT] Apple'ın güvenlik çerçevesi: Keychain (anahtar zinciri) buradan gelir
 
+// ┌─ BAĞLANTI HARİTASI: KeychainStore (güvenli depo) ────────────────────────────────
+// │ KULLANAN  : Security/DeviceID (cihaz kimliği) | Networking/AuthSession (yenileme jetonu)
+// │ NEDEN     : Jeton gibi sırlar şifresiz UserDefaults'a değil, iOS'un şifreli Keychain'ine yazılır
+// └──────────────────────────────────────────────────────────────────────
+
 // BU DOSYA: Keychain'e küçük bir metin (jeton gibi) kaydetme/okuma/silme.
 // KEYCHAIN NEDİR: iOS'un şifreli, uygulamaya özel güvenli deposu. Uygulama kapansa, telefon yeniden başlasa bile veri durur.
 // NEDEN UserDefaults DEĞİL: UserDefaults şifresiz düz dosyadır, yedekten okunabilir; jeton gibi sırlar orada SAKLANMAZ.

@@ -7,6 +7,15 @@
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
+// ┌─ BAĞLANTI HARİTASI: ListingOffersView (Gelen Teklifler, Yük Veren) ────────────
+// │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
+// │ İlan başlığı             →  viewModel.listing                   →  (HomeView'dan gelir)            →  -                                →  Listing
+// │ Bekleyen teklif listesi  →  viewModel.offers ← load()           →  OfferService.listingOffers()    →  GET /api/v1/listings/{id}/offers →  [ListingOffer]
+// │ Kabul et / Reddet        →  viewModel.decide(_:accept:)         →  OfferService.decide()           →  POST /api/v1/offers/{id}/accept|reject →  (yok)
+// │ Sohbet düğmesi           →  viewModel.openChat(_:)              →  chat = ChatContext.forShipperPending →  (ChatView açılır)           →  ChatContext
+// │ Kaldır (ilanı yayından)  →  viewModel.cancelListing()           →  ListingService.cancel()         →  POST /api/v1/listings/{id}/cancel →  (yok)
+// └──────────────────────────────────────────────────────────────────────
+
 // BU EKRAN: Yük Veren kendi ilanına basınca açılır. İlana gelen BEKLEYEN teklifleri listeler (Kabul Et / Reddet / Sohbet) ve ilanı yayından kaldırma düğmesi vardır.
 // Karar verilen teklifler buradan kalkıp "Eski Teklifler"e gider.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Teklif listesi, karar, ilanı kaldırma ViewModels/OfferListViewModels.swift → ListingOffersViewModel'de.
@@ -37,7 +46,7 @@ struct ListingOffersView: View {
             if viewModel.offers.isEmpty { // liste boş mu
                 Text("Henüz teklif gelmedi.").foregroundColor(.secondary) // .secondary [SWIFT]: gri yazı
             } else {
-                List(viewModel.offers) { offer in // List [SWIFT]: kaydırılabilir satır listesi | offer: o anki teklif
+                List(viewModel.offers) { offer in // List [SWIFT]: kaydırılabilir satır listesi | offer: o anki teklif | ⮕ ListingOffersViewModel.offers ← OfferService.listingOffers() → [ListingOffer]
                     VStack(alignment: .leading, spacing: 8) { // bir teklifin satırı: alt alta, sola yaslı
                         HStack {
                             Text(offer.carrierName).font(.headline) // teklifi veren taşımacı
@@ -52,8 +61,8 @@ struct ListingOffersView: View {
                         // Bu ekranda yalnız BEKLEYEN teklifler var (sunucu yalnız onları gönderir); kabul/red verilenler "Eski Teklifler"e gider
                         HStack {
                             // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
-                            Button("Reddet") { Task { await viewModel.decide(offer, accept: false) } }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu
-                            Button("Kabul et") { Task { await viewModel.decide(offer, accept: true) } }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu
+                            Button("Reddet") { Task { await viewModel.decide(offer, accept: false) } }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu | ⮕ ListingOffersViewModel.decide(accept: false) → OfferService.decide → POST .../reject
+                            Button("Kabul et") { Task { await viewModel.decide(offer, accept: true) } }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu | ⮕ ListingOffersViewModel.decide(accept: true) → OfferService.decide → POST .../accept
                             Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
                         }
                     }
@@ -74,7 +83,7 @@ struct ListingOffersView: View {
         // .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | isPresented: $showCancelConfirm → true olunca açılır
         .alert("İlan yayından kaldırılsın mı?", isPresented: $showCancelConfirm) {
             Button("Yayından Kaldır", role: .destructive) { // seçilince ViewModel ilanı kaldırır; başarılıysa ilan listemizde olmadığı için geri dönülür
-                Task { if await viewModel.cancelListing() { dismiss() } } // önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler
+                Task { if await viewModel.cancelListing() { dismiss() } } // önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler | ⮕ ListingOffersViewModel.cancelListing() → ListingService.cancel → POST /api/v1/listings/{id}/cancel
             }
             Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
         } message: {
