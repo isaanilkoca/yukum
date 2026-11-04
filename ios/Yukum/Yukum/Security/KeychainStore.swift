@@ -10,7 +10,7 @@ import Security // [SWIFT] Apple'ın güvenlik çerçevesi: Keychain (anahtar zi
 // KEYCHAIN NEDİR: iOS'un şifreli, uygulamaya özel güvenli deposu. Uygulama kapansa, telefon yeniden başlasa bile veri durur.
 // NEDEN UserDefaults DEĞİL: UserDefaults şifresiz düz dosyadır, yedekten okunabilir; jeton gibi sırlar orada SAKLANMAZ.
 // NE SAKLANIR: yenileme jetonu (refresh token) ve cihaz kimliği | erişim jetonu (15 dk) yalnız bellekte durur, diske yazılmaz
-// BAĞLANTI: Network/AuthSession.swift (yenileme jetonu) ve Security/DeviceID.swift (cihaz kimliği) kullanır
+// BAĞLANTI: Networking/AuthSession.swift (yenileme jetonu) ve Security/DeviceID.swift (cihaz kimliği) kullanır
 // nonisolated [SWIFT]: projede her şey varsayılan olarak ana iş parçacığına bağlı; bu araç her yerden (actor içinden de) çağrılabilsin diye bağsız işaretlendi
 nonisolated enum KeychainStore { // enum: örnek üretilmeyen, sadece ortak fonksiyon taşıyan kutu | adı [BİZİM]
 

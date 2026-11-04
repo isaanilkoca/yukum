@@ -11,7 +11,7 @@ import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişk
 
 // BU SINIF: telefonun konumunu bulur ve kullanıcıdan konum izni ister.
 // NEDEN ayrı sınıf: konum özelliği (izin, hata, sonuç) ekran koduyla karışmasın | ileride başka ekranlar da aynı sınıfı kullanabilir
-// BAĞLANTI: View/HomeView.swift (Taşımacı) bunu @State ile tutar → "Yakınımdakiler" düğmesi request() çağırır → konum gelince coordinate dolar → HomeView API'ye lat/lon gönderir
+// BAĞLANTI: Views/HomeView.swift (Taşımacı) bunu @State ile tutar → "Yakınımdakiler" düğmesi request() çağırır → konum gelince coordinate dolar → HomeView API'ye lat/lon gönderir
 // @Observable [SWIFT]: bu sınıftaki değişkenler değişince onları okuyan ekranlar kendiliğinden yenilenir | struct'taki @State'in sınıf (class) karşılığı gibi düşün
 // NSObject [SWIFT]: Apple'ın eski çerçeveleri (CoreLocation) bu temel sınıfı ister | CLLocationManagerDelegate: "konum olayları olunca beni ara" sözleşmesi
 

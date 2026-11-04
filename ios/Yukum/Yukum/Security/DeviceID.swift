@@ -9,7 +9,7 @@ import Foundation
 // NEDEN GEREKLİ: sunucu yenileme jetonunu cihaza BAĞLAR (başka cihazdan yenilenemez) ve cihaz başına tek oturum tutar.
 // Daha önce her girişte yeni UUID üretiyorduk; bu, "cihaz" kavramını anlamsız yapar (her giriş yeni cihaz sayılırdı).
 // NEDEN Keychain: uygulama silinip yeniden kurulsa bile aynı kimlik korunur (UserDefaults silinirdi) → kullanıcının eski oturumu sunucuda "aynı cihaz" olarak düşer.
-// BAĞLANTI: View/LoginView.swift girişte gönderir | Network/AuthSession.swift yenilemede gönderir
+// BAĞLANTI: Views/LoginView.swift girişte gönderir | Networking/AuthSession.swift yenilemede gönderir
 nonisolated enum DeviceID {
 
     private static let key = "deviceId" // Keychain'deki kaydın adı

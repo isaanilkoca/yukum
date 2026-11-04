@@ -21,10 +21,11 @@ for e in g['links']:
     if a and b and a != b: agg[(a, b)] = agg.get((a, b), 0) + 1
 def layer(n):
     f = n['source_file']
-    if '/View/' in f or f.endswith(('ContentView.swift', 'YukumApp.swift')): return 'view'
-    if n['label'].endswith('Service') or n['label'] in ('Session', 'AuthError'): return 'service'
+    if '/ViewModels/' in f: return 'viewmodel'
+    if '/Views/' in f or '/App/' in f: return 'view'
+    if '/Services/' in f or '/Networking/' in f or '/Security/' in f or '/Location/' in f: return 'service'
     return 'model'
-COL = {'view': '#4C8BF5', 'service': '#F5A623', 'model': '#2EB67D'}
+COL = {'view': '#4C8BF5', 'viewmodel': '#9B59B6', 'service': '#F5A623', 'model': '#2EB67D'}
 nodes = [{'id': i, 'label': n['label'], 'color': COL[layer(n)], 'shape': 'box', 'font': {'color': '#fff'}, 'group': layer(n)} for i, n in classes.items()]
 edges = [{'from': a, 'to': b, 'value': c, 'arrows': 'to'} for (a, b), c in agg.items()]
 
@@ -51,7 +52,7 @@ table{{border-collapse:collapse;background:#fff;margin:8px 0 20px}}td,th{{border
 .k span{{display:inline-block;padding:2px 8px;border-radius:4px;color:#fff;margin-right:8px}}code{{background:#eee;padding:1px 5px;border-radius:3px}}</style>
 <header><b>Yüküm Haritası</b> · iOS sınıf bağlantıları + backend/DB durumu
 <nav><button id="b1" class="on" onclick="t(1)">iOS grafiği</button><button id="b2" onclick="t(2)">Backend &amp; DB durumu</button></nav></header>
-<section id="s1" class="on"><p class="k"><span style="background:#4C8BF5">View (ekran)</span><span style="background:#F5A623">Service (API'ye konuşan)</span><span style="background:#2EB67D">Model (paket kalıbı)</span> Ok: "kullanır". Sürükle, yakınlaştır, düğüme tıkla.</p><div id="net"></div></section>
+<section id="s1" class="on"><p class="k"><span style="background:#4C8BF5">View (ekran)</span><span style="background:#9B59B6">ViewModel (mantık)</span><span style="background:#F5A623">Service (API'ye konuşan)</span><span style="background:#2EB67D">Model (paket kalıbı)</span> Ok: "kullanır". Sürükle, yakınlaştır, düğüme tıkla.</p><div id="net"></div></section>
 <section id="s2"><h3>Şu an geldiğimiz yer (son günlük satırları)</h3><ul>{''.join('<li>'+esc(l[2:])+'</li>' for l in log)}</ul>
 <h3>DB tabloları</h3><table><tr><th>Tablo</th><th>Ne</th></tr>{''.join(f'<tr><td>{esc(a)}</td><td>{esc(b)}</td></tr>' for a,b in TABLES)}</table>
 <h3>Migration'lar (sırayla uygulandı)</h3><table><tr><th>Zaman</th><th>Ad</th></tr>{''.join(f'<tr><td>{a}</td><td>{b}</td></tr>' for a,b in migs)}</table>
