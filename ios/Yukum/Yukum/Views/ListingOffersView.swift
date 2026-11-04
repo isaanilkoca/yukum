@@ -39,7 +39,7 @@ struct ListingOffersView: View {
         _viewModel = State(initialValue: ListingOffersViewModel(listing: listing))
     }
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
 
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar

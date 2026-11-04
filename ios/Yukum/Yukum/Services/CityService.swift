@@ -25,7 +25,7 @@ struct CityService {
     // cities: iller (81) | -> [City]: City listesi döner
     // ÇAĞIRAN: Views/CreateListingView.swift, Views/HomeView.swift (filtre), kayıt ekranları | API: GET /api/v1/cities
     // ⮕ ZİNCİR: ViewModels/HomeViewModel.load() (bir kez) ve CreateListingViewModel.loadCities() ← Views/HomeView / CreateListingView .task | API: GET /api/v1/cities | DÖNEN: [City]
-    // ⮕ KULLANIM [cities]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [cities]: çağırır: CreateListingViewModel › loadCities(), HomeViewModel › load()
     func cities() async throws -> [City] { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         try await api.send(.get, "/api/v1/cities", authorized: false, fallback: "Liste yüklenemedi.") // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }

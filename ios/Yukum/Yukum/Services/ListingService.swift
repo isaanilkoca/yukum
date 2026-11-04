@@ -27,7 +27,7 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     // _ body: dışarıdan CreateListingRequest alır (Models/Listings/) | ÇAĞIRAN: Views/CreateListingView.swift "İlanı Yayınla" düğmesi
     // API: POST /api/v1/listings (yalnız Yük Veren) | body: JSON'a çevrilip gövdeye konur
     // ⮕ ZİNCİR: ViewModels/CreateListingViewModel.submit() ← Views/CreateListingView "İlanı Yayınla" | API: POST /api/v1/listings | GİDEN: CreateListingRequest | DÖNEN: ListingResponse
-    // ⮕ KULLANIM [create]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [create]: çağırır: CreateListingViewModel › submit()
     func create(_ body: CreateListingRequest) async throws -> ListingResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         try await api.send(.post, "/api/v1/listings", body: body, fallback: "İlan açılamadı.") // fallback: sunucu açıklama vermezse gösterilecek yazı | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }

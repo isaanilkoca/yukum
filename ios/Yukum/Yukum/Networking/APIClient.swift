@@ -23,7 +23,7 @@ import Foundation
 // ⮕ KULLANIM [APIClient]: kullanır: AuthService › api, ChatService › api, CityService › api, ListingService › api, OfferService › api, AuthSessionTests (test)
 struct APIClient {
 
-    // ⮕ KULLANIM [shared]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [shared]: okur: AuthService › api, ChatService › api, CityService › api, ListingService › api, OfferService › api
     static let shared = APIClient() // ortak örnek | servisler bunu kullanır | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     // ⮕ KULLANIM [baseURL]: okur: APIClient › execute()

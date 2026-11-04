@@ -43,7 +43,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
         _viewModel = State(initialValue: HomeViewModel(user: user))
     }
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable bir sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (Picker/Toggle seçimi doğrudan ViewModel'e yazılsın diye)

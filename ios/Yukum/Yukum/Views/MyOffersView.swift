@@ -26,7 +26,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
     // ⮕ KULLANIM [viewModel]: okur: MyOffersView › body, MyOffersView › offerRow() | bağlar(okur+yazar): MyOffersView › body
     @State private var viewModel = MyOffersViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar (.navigationDestination(item: $viewModel.chat) için)

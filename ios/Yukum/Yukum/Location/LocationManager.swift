@@ -63,7 +63,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSO
     var coordinate : CLLocationCoordinate2D?
     
     // errorMessage: kullanıcıya gösterilecek hata yazısı | NE İŞE YARAR: izin kapalı ya da konum alınamadı | nil: hata yok
-    // ⮕ KULLANIM [errorMessage]: YAZAR: LocationManager › request(), LocationManager › locationManager()
+    // ⮕ KULLANIM [errorMessage]: okur: HomeViewModel › locationError | YAZAR: LocationManager › request(), LocationManager › locationManager(), HomeViewModelTests (test)
     var errorMessage : String?
     
     //manager: Apple'ın hazır konum motoru | CLLocationManager [SWIFT]: izin isteme ve konum alma işini yapan asıl nesne, biz onu yönetiyoruz

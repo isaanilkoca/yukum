@@ -20,7 +20,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // ⮕ KULLANIM [RoleSelectionView]: kullanır: LoginView › body
 struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         VStack(spacing: 24) { // VStack [SWIFT]: elemanları alt alta dizer | spacing: elemanlar arası 24 nokta boşluk

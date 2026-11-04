@@ -17,7 +17,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BAĞLANTI: YukumApp.swift bu ekranı açar → burası Views/LoginView.swift'i gösterir.
 // ⮕ KULLANIM [ContentView]: kullanır: YukumApp › body
 struct ContentView: View { // ContentView [BİZİM] ad | View [SWIFT]: "bu struct bir ekrandır" sözleşmesi
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // body [SWIFT] zorunlu: ekranın içeriği | some View: "bir ekran parçası döner"
         LoginView() // uygulamanın ilk ekranı: giriş | () = örnek üret
     }

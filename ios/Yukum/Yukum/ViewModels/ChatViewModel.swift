@@ -46,7 +46,7 @@ final class ChatViewModel {
     // ⮕ KULLANIM [canWrite]: okur: ChatView › body, ChatViewModelTests (test)
     var canWrite: Bool { context.canWrite && !locked }
     // ⮕ ZİNCİR: Views/ChatView: menüdeki "İşi Bitir ve Sil" yalnız bu true ise görünür | kural: context.canComplete && !locked
-    // ⮕ KULLANIM [canComplete]: okur: ChatView › body, ChatViewModelTests (test)
+    // ⮕ KULLANIM [canComplete]: okur: ChatView › body, ChatViewModelTests (test), MyOffersViewModelTests (test)
     var canComplete: Bool { context.canComplete && !locked }
     // ⮕ ZİNCİR: Views/ChatView: "Gönder" düğmesi .disabled(!viewModel.canSend) — draft boşsa kilitli
     // ⮕ KULLANIM [canSend]: okur: ChatView › body, ChatViewModelTests (test)

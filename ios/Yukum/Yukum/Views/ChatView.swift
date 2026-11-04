@@ -51,7 +51,7 @@ struct ChatView: View {
         _viewModel = State(initialValue: ChatViewModel(context: context))
     }
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
 
         // @Bindable [SWIFT]: @Observable bir sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'deki taslağa yazsın diye)

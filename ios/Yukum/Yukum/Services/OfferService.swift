@@ -30,7 +30,7 @@ struct OfferService { // OfferService [BİZİM] ad
     // listingId: hangi ilan | _ body: tutar+not paketi | -> OfferResponse: kaydedilen teklif
     // ÇAĞIRAN: Views/ListingDetailView.swift "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers (yalnız Taşımacı)
     // ⮕ ZİNCİR: ViewModels/ListingDetailViewModel.submit() ← Views/ListingDetailView "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers | GİDEN: CreateOfferRequest | DÖNEN: OfferResponse
-    // ⮕ KULLANIM [create]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [create]: çağırır: ListingDetailViewModel › submit()
     func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         try await api.send(.post, "/api/v1/listings/\(listingId)/offers", body: body, fallback: "Teklif gönderilemedi.") // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
@@ -46,7 +46,7 @@ struct OfferService { // OfferService [BİZİM] ad
     // decide: teklifi kabul eder ya da reddeder | accept true → /accept, false → /reject | gövde yok, yalnız POST
     // ÇAĞIRAN: Views/ListingOffersView.swift Kabul Et / Reddet düğmeleri | API: POST /api/v1/offers/{id}/accept | reject
     // ⮕ ZİNCİR: ViewModels/ListingOffersViewModel.decide() ← Views/ListingOffersView "Kabul et"/"Reddet" | API: POST /api/v1/offers/{id}/accept | reject | DÖNEN: yok
-    // ⮕ KULLANIM [decide]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [decide]: çağırır: ListingOffersViewModel › decide()
     func decide(offerId: String, accept: Bool) async throws {
         let action = accept ? "accept" : "reject" // ?: kısa if | adresin son parçası
         try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/\(action)", fallback: "İşlem yapılamadı.")
@@ -63,7 +63,7 @@ struct OfferService { // OfferService [BİZİM] ad
     // unseenCount: Taşımacı'nın henüz GÖRMEDİĞİ karar sayısı | NE İŞE YARAR: push bildirim yerine uygulama içi kırmızı rozet
     // ÇAĞIRAN: Views/HomeView.swift (Taşımacı) | API: GET /api/v1/offers/mine/unseen-count → {"count": 3}
     // ⮕ ZİNCİR: ViewModels/HomeViewModel.load() (Taşımacı) → Views/HomeView kutu ikonu rozeti | API: GET /api/v1/offers/mine/unseen-count | DÖNEN: Int (UnseenCount.count)
-    // ⮕ KULLANIM [unseenCount]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [unseenCount]: çağırır: HomeViewModel › load()
     func unseenCount() async throws -> Int { // -> Int: yalnız sayı döner
         let result: UnseenCount = try await api.send(.get, "/api/v1/offers/mine/unseen-count", fallback: "Bildirim sayısı alınamadı.")
         return result.count // struct'tan yalnız sayıyı al
@@ -80,7 +80,7 @@ struct OfferService { // OfferService [BİZİM] ad
     // hide: teklifi KENDİ geçmişimden siler; karşı taraf görmeye devam eder (kayıt DB'den silinmez, bayrak işaretlenir) | yalnız bitmiş teklifler (reddedilen/tamamlanan/iptal) silinebilir
     // ÇAĞIRAN: MyOffersView ve OldOffersView, satırı kaydırıp "Sil" | API: DELETE /api/v1/offers/{id}
     // ⮕ ZİNCİR: ViewModels/MyOffersViewModel.hide() ve OldOffersViewModel.hide() ← satırı kaydırıp "Sil" (MyOffersView, OldOffersView) | API: DELETE /api/v1/offers/{id} | DÖNEN: yok
-    // ⮕ KULLANIM [hide]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [hide]: çağırır: MyOffersViewModel › hide(), OldOffersViewModel › hide()
     func hide(offerId: String) async throws {
         try await api.sendNoContent(.delete, "/api/v1/offers/\(offerId)", fallback: "Silinemedi.")
     }

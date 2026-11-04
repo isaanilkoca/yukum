@@ -27,7 +27,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): LoginView › body | okur: LoginView › body
     @State private var viewModel = LoginViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'e yazsın diye)

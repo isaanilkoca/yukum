@@ -25,7 +25,7 @@ struct OldOffersView: View {
     // ⮕ KULLANIM [viewModel]: okur: OldOffersView › body | bağlar(okur+yazar): OldOffersView › body
     @State private var viewModel = OldOffersViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
 
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar

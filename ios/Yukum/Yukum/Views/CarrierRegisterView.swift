@@ -27,7 +27,7 @@ struct CarrierRegisterView: View {
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CarrierRegisterView › body | okur: CarrierRegisterView › body
     @State private var viewModel = CarrierRegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Picker/Toggle doğrudan ViewModel'e yazsın diye)

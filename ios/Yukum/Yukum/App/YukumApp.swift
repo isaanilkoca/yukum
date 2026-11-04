@@ -53,7 +53,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi: View, Text, VStack, Button
 // ⮕ KULLANIM [YukumApp]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
 @main // [SWIFT] "program buradan başlar" işareti | projede yalnız bir tane olabilir | @main [SWIFT]: program buradan başlar işareti
 struct YukumApp: App { // YukumApp [BİZİM] ad | App [SWIFT]: "bu struct bir uygulamadır" sözleşmesi
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some Scene { // body [SWIFT] zorunlu özellik | Scene: uygulamanın pencere kısmı | some: tür Swift'e bırakıldı
         WindowGroup { // [SWIFT] ana pencere kutusu | iPhone'da tek pencere gösterir | WindowGroup [SWIFT]: ana pencereyi tanımlar
             ContentView() // pencerede ilk açılacak ekran | () = ContentView'dan bir örnek üret

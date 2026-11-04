@@ -22,7 +22,7 @@ struct ListingRow: View { // View [SWIFT]: bu bir ekran/görünüm
     // ⮕ KULLANIM [listing]: okur: ListingRow › body
     let listing : Listing
     
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
         VStack(alignment:.leading ,spacing: 6) { // alt alta, sola hizalı | spacing: satırlar arası boşluk | VStack [SWIFT]: elemanları alt alta dizer
             Text(listing.title).font(.headline)  // başlık: kalın ve büyük | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili

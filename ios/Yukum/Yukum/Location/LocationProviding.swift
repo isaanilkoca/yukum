@@ -20,7 +20,7 @@ protocol LocationProviding: AnyObject {
     var longitude: Double? { get }     // boylamı
     // ⮕ KULLANIM [isDenied]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError | YAZAR: HomeViewModelTests (test)
     var isDenied: Bool { get }         // kullanıcı konum iznini reddetti mi (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
-    // ⮕ KULLANIM [errorMessage]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [errorMessage]: okur: HomeViewModel › locationError | YAZAR: HomeViewModelTests (test)
     var errorMessage: String? { get }  // konum alınamadı gibi hata yazısı, yoksa nil
     // ⮕ KULLANIM [request]: çağırır: HomeViewModel › nearMeChanged()
     func request()                     // izin sor / konumu iste

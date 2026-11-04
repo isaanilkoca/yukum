@@ -23,7 +23,7 @@ import Foundation
 // ⮕ KULLANIM [AuthSession]: kullanır: HomeViewModel › init(), LoginViewModel › init(), APIClient › auth, APIClient › init(), AuthService › login(), AuthSessionTests (test)
 actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | adı [BİZİM]
 
-    // ⮕ KULLANIM [shared]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [shared]: okur: AuthService › login()
     static let shared = AuthSession() // uygulamanın tek oturumu | testlerde kendi örneğimizi oluştururuz (aşağıdaki init) | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     // ⮕ KULLANIM [baseURL]: okur: AuthSession › signOut(), AuthSession › performRefresh()

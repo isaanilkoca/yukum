@@ -18,7 +18,7 @@ import Foundation
 
 // ⮕ KULLANIM [ListingServicing]: kullanır: CreateListingViewModel › listingService, CreateListingViewModel › init(), HomeViewModel › listingService, HomeViewModel › init(), ListingOffersViewModel › listingService, ListingOffersViewModel › init() … +2
 protocol ListingServicing {
-    // ⮕ KULLANIM [create]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [create]: çağırır: CreateListingViewModel › submit()
     func create(_ body: CreateListingRequest) async throws -> ListingResponse // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
     // ⮕ KULLANIM [myListings]: çağırır: HomeViewModel › load()
     func myListings() async throws -> [Listing]

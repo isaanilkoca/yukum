@@ -25,7 +25,7 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): RegisterView › body | okur: RegisterView › body
     @State private var viewModel = RegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Toggle doğrudan ViewModel'e yazsın diye)

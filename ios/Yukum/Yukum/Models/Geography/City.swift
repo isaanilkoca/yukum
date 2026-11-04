@@ -22,9 +22,9 @@ import Foundation
 // ⮕ KULLANIM [City]: kullanır: CreateListingViewModel › cities, HomeViewModel › cities, CityService › cities(), CityServicing › cities(), CreateListingViewModelTests (test), HomeViewModelTests (test) … +1
 struct City: Decodable,Identifiable {
 
-    // ⮕ KULLANIM [id]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [id]: okur: CreateListingView › body, HomeView › body
     let id : Int // plaka kodu (İstanbul = 34); ilan ve kayıt bunu API'ye cityId olarak gönderir
-    // ⮕ KULLANIM [name]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [name]: okur: CreateListingView › body, HomeView › body
     let name : String  // ekranda görünen ad
 
 }

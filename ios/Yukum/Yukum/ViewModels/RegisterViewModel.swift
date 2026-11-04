@@ -46,7 +46,7 @@ final class RegisterViewModel {
     var isSuccess = false
 
     // GEÇİCİ BORÇ: kayıtta il seçimi henüz yok, API il numarası ister → şimdilik sabit İstanbul (34). İl seçimi eklenince bu sabit kalkar.
-    // ⮕ KULLANIM [defaultCityId]: okur: RegisterViewModelTests (test)
+    // ⮕ KULLANIM [defaultCityId]: okur: CarrierRegisterViewModelTests (test), RegisterViewModelTests (test)
     static let defaultCityId = 34 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     init(auth: AuthServicing = AuthService()) { self.auth = auth }

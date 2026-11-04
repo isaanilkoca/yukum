@@ -51,7 +51,7 @@ nonisolated enum KeychainStore { // enum: örnek üretilmeyen, sadece ortak fonk
     }
 
     // get: oku | -> String?: kayıt yoksa nil
-    // ⮕ KULLANIM [get]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [get]: çağırır: DeviceID › current, AuthSession › hasStoredSession, AuthSession › signOut(), AuthSession › performRefresh(), AuthSessionTests (test)
     static func get(key: String, service: String = defaultService) -> String? {
         var request = query(key: key, service: service)
         request[kSecReturnData as String] = true // veriyi geri ver

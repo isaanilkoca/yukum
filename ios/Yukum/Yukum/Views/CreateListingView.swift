@@ -29,7 +29,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
     // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemin hazır değerini al | dismiss: "bu ekranı kapat" komutu | ilan açılınca HomeView'a dönmek için
 
-    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Picker doğrudan ViewModel'e yazsın diye)

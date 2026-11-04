@@ -28,7 +28,7 @@ struct AuthService {
     // register: Yük Veren kaydı | _ body: dolu form kağıdı | async: cevabı bekler | throws: hata fırlatabilir | -> RegisterResponse: başarılıysa bu döner
     // ÇAĞIRAN: Views/RegisterView.swift → AuthService().register(body) | body'nin kalıbı: Models/Auth/ → struct RegisterRequest
     // ⮕ ZİNCİR: ViewModels/RegisterViewModel.register() ← Views/RegisterView "Kayıt Ol" | API: POST /api/v1/auth/register/shipper | GİDEN: RegisterRequest | DÖNEN: RegisterResponse
-    // ⮕ KULLANIM [register]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [register]: çağırır: RegisterViewModel › register()
     func register(_ body: RegisterRequest) async throws -> RegisterResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         try await api.send(.post, "/api/v1/auth/register/shipper", body: body, authorized: false) // "/api/..." = sunucudaki oda | authorized: false → jeton yok | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
@@ -45,7 +45,7 @@ struct AuthService {
     // ÇAĞIRAN: Views/LoginView.swift → AuthService().login(body) | kalıplar: Models/Auth/
     // GİRİŞ BAŞARILI OLUNCA jetonlar burada AuthSession'a verilir: erişim jetonu belleğe, yenileme jetonu Keychain'e (ekranlar jeton yönetmek zorunda kalmaz)
     // ⮕ ZİNCİR: ViewModels/LoginViewModel.login() ← Views/LoginView "Giriş yap" | API: POST /api/v1/auth/login | GİDEN: LoginRequest | DÖNEN: LoginResponse → AuthSession.signIn jetonları saklar
-    // ⮕ KULLANIM [login]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [login]: çağırır: LoginViewModel › login()
     func login(_ body: LoginRequest) async throws -> LoginResponse {
         let response: LoginResponse = try await api.send(.post, "/api/v1/auth/login", body: body, authorized: false) // 401 burada "şifre yanlış" demek; yenileme denenmez
         await AuthSession.shared.signIn(response) // jetonları sakla | actor'a erişim "await" ister
