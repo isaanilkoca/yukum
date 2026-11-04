@@ -467,6 +467,90 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
     }
 
+    // ---------- ilan güncelle ----------
+    private static async Task<object> UpdateBody(HttpClient c, string title = "Güncel ilan", decimal? budget = 7000, int weightKg = 2000)
+    {
+        var from = (await Json(await c.GetAsync("/api/v1/cities/35/districts")))[0].GetProperty("id").GetInt32();
+        var to = (await Json(await c.GetAsync("/api/v1/cities/6/districts")))[0].GetProperty("id").GetInt32();
+        return new
+        {
+            title, description = "Yeni açıklama", weightKg, vehicleType = "Lorry", fromCityId = 35, fromDistrictId = from, toCityId = 6, toDistrictId = to,
+            pickupDate = DateTime.UtcNow.AddDays(10).ToString("yyyy-MM-dd"), budget
+        };
+    }
+
+    [Fact]
+    public async Task Updating_an_open_listing_changes_it_and_keeps_pending_offers()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+
+        var response = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{listing}", await UpdateBody(c));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var json = await Json(response);
+        Assert.Equal("Güncel ilan", json.GetProperty("title").GetString());
+        Assert.Equal(2000, json.GetProperty("weightKg").GetInt32());
+        Assert.Equal(35, json.GetProperty("fromCityId").GetInt32());
+        Assert.Equal(7000m, json.GetProperty("budget").GetDecimal());
+        // liste de güncel; aynı sayıda ilan, bekleyen teklif durduğu yerde
+        var mine = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"));
+        Assert.Equal("Güncel ilan", mine.EnumerateArray().Single().GetProperty("title").GetString());
+        var offers = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        Assert.Equal("Pending", offers.EnumerateArray().Single().GetProperty("status").GetString());
+        Assert.Equal("Güncel ilan", offers.EnumerateArray().Single().GetProperty("listingTitle").GetString());
+    }
+
+    [Fact]
+    public async Task Updating_a_listing_is_owner_only_and_returns_the_right_error_codes()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var other = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var body = await UpdateBody(c);
+
+        var anonymous = await Call(c, null, HttpMethod.Put, $"/api/v1/listings/{listing}", body);
+        var byCarrier = await Call(c, carrier, HttpMethod.Put, $"/api/v1/listings/{listing}", body);
+        var byOther = await Call(c, other, HttpMethod.Put, $"/api/v1/listings/{listing}", body);
+        var missing = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{Guid.NewGuid()}", body);
+        var invalid = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{listing}", await UpdateBody(c, title: "", budget: 200_000_000m));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byCarrier.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);     // başkasının ilanı: varlığı sızdırılmaz
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
+        // reddedilen isteklerden sonra ilan değişmedi
+        var mine = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"));
+        Assert.Equal("Test ilan", mine.EnumerateArray().Single().GetProperty("title").GetString());
+    }
+
+    [Fact]
+    public async Task A_listing_cannot_be_updated_once_a_job_is_assigned_completed_or_removed()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var body = await UpdateBody(c);
+
+        var assigned = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, assigned, 1000);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var whileAssigned = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{assigned}", body);
+
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var afterComplete = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{assigned}", body);
+
+        var removed = await NewListing(c, shipper);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{removed}/cancel");
+        var afterRemove = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{removed}", body);
+
+        Assert.Equal(HttpStatusCode.Conflict, whileAssigned.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, afterRemove.StatusCode);
+    }
+
     // ---------- bildirim rozeti ----------
     [Fact]
     public async Task Decision_creates_an_unseen_badge_until_the_carrier_marks_it_seen()

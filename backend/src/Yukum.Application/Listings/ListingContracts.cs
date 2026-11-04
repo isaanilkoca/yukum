@@ -60,3 +60,32 @@ public sealed record GetOpenListingsQuery(Guid CarrierId, int? FromCityId = null
 
 /// <summary>Komut: ilan sahibi ilanı yayından kaldırır (açık ilan, ya da atanmış iş iptali).</summary>
 public sealed record CancelListingCommand(Guid ListingId, Guid ShipperId);
+
+
+/// <summary>Komut: ilan sahibi ilanın bilgilerini günceller (yalnız hâlâ açık ilan). Alanlar ilan açma ile aynıdır.</summary>
+public sealed record UpdateListingCommand(
+    Guid ListingId,
+    Guid ShipperId,
+    string? Title,
+    string? Description,
+    int WeightKg,
+    VehicleType VehicleType,
+    int FromCityId,
+    int FromDistrictId,
+    int ToCityId,
+    int ToDistrictId,
+    DateOnly PickupDate,
+    decimal? Budget);
+
+/// <summary>İstemciden gelen ilan güncelleme gövdesi (ilan numarası adresten, sahibi jetondan gelir). Tam değiştirme: tüm alanlar gönderilir.</summary>
+public sealed record UpdateListingRequest(
+    string? Title,
+    string? Description,
+    int WeightKg,
+    VehicleType VehicleType,
+    int FromCityId,
+    int FromDistrictId,
+    int ToCityId,
+    int ToDistrictId,
+    DateOnly PickupDate,
+    decimal? Budget);

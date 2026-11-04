@@ -16,7 +16,8 @@ public class ListingsController(
     ICommandHandler<CreateListingCommand, ListingDto> createListing,
     IQueryHandler<GetMyListingsQuery, IReadOnlyList<ListingDto>> getMyListings,
     IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>> getOpenListings,
-    ICommandHandler<CancelListingCommand, bool> cancelListing) : ControllerBase
+    ICommandHandler<CancelListingCommand, bool> cancelListing,
+    ICommandHandler<UpdateListingCommand, ListingDto> updateListing) : ControllerBase
 {
     /// <summary>Yeni ilan açar. İlan sahibi istekten değil jetondan alınır.</summary>
     // POST /api/v1/listings
@@ -57,6 +58,20 @@ public class ListingsController(
             return ValidationProblem(ModelState);
         }
         return Ok(await getOpenListings.HandleAsync(new GetOpenListingsQuery(CurrentUserId, fromCityId, fromDistrictId, lat, lon), cancellationToken));
+    }
+
+    /// <summary>İlanı günceller (tam değiştirme). Yalnız sahibi ve yalnız hâlâ açık ilan; kabul edilmiş iş/tamamlanmış/kaldırılmış 409, başkasının ilanı 404.</summary>
+    // PUT /api/v1/listings/{id}
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = RoleNames.Shipper)] // yalnız Yük Veren; ilanın sahibi mi kontrolü handler'da (değilse 404)
+    [ProducesResponseType<ListingDto>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Update(Guid id, UpdateListingRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdateListingCommand(id, CurrentUserId, request.Title, request.Description, request.WeightKg,
+            request.VehicleType, request.FromCityId, request.FromDistrictId, request.ToCityId, request.ToDistrictId,
+            request.PickupDate, request.Budget);
+        return Ok(await updateListing.HandleAsync(command, cancellationToken));
     }
 
     /// <summary>İlanı yayından kaldırır. Bekleyen ve kabul edilmiş teklifler iptal olur, taşımacılar bilgilenir, sohbet kilitlenir.</summary>
