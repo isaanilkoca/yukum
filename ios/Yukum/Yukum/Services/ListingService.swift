@@ -12,6 +12,8 @@ import Foundation // [SWIFT] ağ araçları (URL, JSON) bu kütüphanede
 // │ KULLANIR  : Networking/APIClient (tek kapı) | MODEL: Listing, CreateListingRequest, ListingResponse
 // │ API       : backend ListingsController: POST/GET /api/v1/listings, GET /listings/mine, POST /listings/{id}/cancel
 // │ SAHTESİ   : YukumTests/Support/FakeListingService.swift
+// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, URLQueryItem, String, Int, Double
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingService | fonksiyonlar: create, myListings, openListings, cancel | değişken/durumlar: api, items, lat, lon
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: ilan uçlarıyla konuşur. İsteğin kendisi (zarf, jeton, 401'de otomatik yenileme, hata çevirme) Networking/APIClient.swift'te;
@@ -25,8 +27,8 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     // _ body: dışarıdan CreateListingRequest alır (Models/Listings/) | ÇAĞIRAN: Views/CreateListingView.swift "İlanı Yayınla" düğmesi
     // API: POST /api/v1/listings (yalnız Yük Veren) | body: JSON'a çevrilip gövdeye konur
     // ⮕ ZİNCİR: ViewModels/CreateListingViewModel.submit() ← Views/CreateListingView "İlanı Yayınla" | API: POST /api/v1/listings | GİDEN: CreateListingRequest | DÖNEN: ListingResponse
-    func create(_ body: CreateListingRequest) async throws -> ListingResponse {
-        try await api.send(.post, "/api/v1/listings", body: body, fallback: "İlan açılamadı.") // fallback: sunucu açıklama vermezse gösterilecek yazı
+    func create(_ body: CreateListingRequest) async throws -> ListingResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
+        try await api.send(.post, "/api/v1/listings", body: body, fallback: "İlan açılamadı.") // fallback: sunucu açıklama vermezse gösterilecek yazı | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // myListings: Yük Veren'in kendi AÇIK ilanları | -> [Listing]: ilan listesi (kalıbı: Models/Listings/)
@@ -65,4 +67,4 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
 
 // ListingService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
 // Gerçek servisler zaten bu fonksiyonlara sahip; "sen de bu sözleşmeyi karşılıyorsun" demek için boş extension yeter
-extension ListingService: ListingServicing {}
+extension ListingService: ListingServicing {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler

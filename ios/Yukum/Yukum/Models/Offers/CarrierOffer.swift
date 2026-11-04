@@ -10,6 +10,8 @@ import Foundation
 // │ ÜRETEN    : Services/OfferService.myOffers ← GET /api/v1/offers/mine
 // │ SAKLAYAN  : ViewModels/MyOffersViewModel.offers (pendingOffers / historyOffers ile iki bölüme ayrılır) → Views/MyOffersView
 // │ SOHBET    : ViewModels/ChatContext.forCarrier(_:)
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int, Bool, Double
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CarrierOffer | değişken/durumlar: id, listingTitle, fromCityName, toCityName, amount, status, isNew, fromDistrictName, toDistrictName, shipperName …
 // └──────────────────────────────────────────────────────────────────────
 
 // CarrierOffer: Taşımacı'nın "Tekliflerim" listesindeki TEK SATIRIN kalıbı.

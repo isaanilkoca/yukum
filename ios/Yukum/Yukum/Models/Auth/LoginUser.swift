@@ -10,13 +10,15 @@ import Foundation
 // │ ÜRETEN    : LoginResponse.user (sunucu JSON) | AuthSession.restore() (otomatik giriş)
 // │ SAKLAYAN  : LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → Views/HomeView(user:) → HomeViewModel.user
 // │ KULLANIM  : HomeViewModel.isShipper rolü okur: Yük Veren mi Taşımacı mı ekranı bu karar belirler (Views/HomeView if/else)
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LoginUser | değişken/durumlar: id, displayName, role
 // └──────────────────────────────────────────────────────────────────────
 
 // Cevaptaki "user" kutusu: giriş yapan kişinin kısa bilgisi.
 // Decodable [SWIFT]: "gelen JSON'dan bu struct üretilebilir"
 // KULLANAN: LoginResponse içinde aşağıda | role'e göre anasayfa seçilecek (Yük Veren / Taşımacı).
 // BAĞLANTI: Views/LoginView.swift'te "loggedInUser" değişkeninin türü bu | Views/HomeView.swift'te "user" olarak buraya gelir (ad ve rol oradan okunur).
-nonisolated struct LoginUser: Decodable,Identifiable { // Bu, ekranı "kullanıcı dolunca aç" diye açabilmek için lazım. identifiable
+nonisolated struct LoginUser: Decodable,Identifiable { // Bu, ekranı "kullanıcı dolunca aç" diye açabilmek için lazım. identifiable | Identifiable [SWIFT]: benzersiz id'si var (List/ForEach'te id: yazmak gerekmez)
 
     let id: String // kullanıcı numarası
     let displayName: String // ekranda göstereceğimiz ad ("Hoş geldin Ali")

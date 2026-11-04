@@ -8,11 +8,13 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: APIConfig (adres) ───────────────────────────────────────────
 // │ NE        : API'nin ana adresi TEK YERDE (http://localhost:5054)
 // │ KULLANAN  : Networking/APIClient ve Networking/AuthSession (yenileme/çıkış istekleri) — canlıya çıkarken yalnız burası değişir
+// │ HAZIR (Swift/Apple) [SWIFT] : enum, static
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: APIConfig | değişken/durumlar: baseURL
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: API'nin ana adresi TEK YERDE. Daha önce her serviste ayrı "baseURL" yazılıydı; canlıya çıkarken hepsini tek tek değiştirmek gerekirdi.
 // BAĞLANTI: Networking/APIClient.swift ve Networking/AuthSession.swift buradan okur
 // NOT: canlıda https olacak (App Transport Security) ve Debug/Release için ayrı adres tanımlanacak
-nonisolated enum APIConfig {
-    static let baseURL = "http://localhost:5054" // localhost: simülatörde Mac'imiz | 5054: API'nin portu
+nonisolated enum APIConfig { // enum [SWIFT]: sabit seçenek listesi
+    static let baseURL = "http://localhost:5054" // localhost: simülatörde Mac'imiz | 5054: API'nin portu | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 }

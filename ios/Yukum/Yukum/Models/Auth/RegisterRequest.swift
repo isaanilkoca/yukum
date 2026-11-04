@@ -10,6 +10,8 @@ import Foundation
 // │ DOLDURAN  : ViewModels/RegisterViewModel.register() (formdaki alanlardan; cityId şimdilik sabit 34)
 // │ YOL       : Views/RegisterView → RegisterViewModel → Services/AuthService.register → POST /api/v1/auth/register/shipper
 // │ CEVAP     : RegisterResponse
+// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int, Bool
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterRequest | değişken/durumlar: fullName, email, password, phone, cityId, companyName, kvkkAccepted
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA NE İŞE YARAR?
@@ -23,7 +25,7 @@ import Foundation
 // Gönderdiğimiz paket (form kağıdı).
 // Encodable = Swift'in hazır sözü: "bu struct JSON'a çevrilebilir" (JSONEncoder bunu kullanır).
 // KULLANAN: Views/RegisterView.swift paketi doldurur → AuthService.register gönderir.
-struct RegisterRequest: Encodable {
+struct RegisterRequest: Encodable { // Encodable [SWIFT]: bu türdeki değer JSON'a çevrilebilir
 
     let fullName : String      // ad soyad
     let email: String

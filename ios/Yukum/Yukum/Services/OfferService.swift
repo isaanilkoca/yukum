@@ -12,6 +12,8 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient | MODEL: CreateOfferRequest, OfferResponse, ListingOffer, CarrierOffer, ShipperHistoryOffer, UnseenCount
 // │ API       : backend OffersController: /api/v1/listings/{id}/offers, /offers/{id}/accept|reject|complete, /offers/mine, /offers/history...
 // │ SAHTESİ   : YukumTests/Support/FakeOfferService.swift
+// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, String, Int, Bool
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OfferService | fonksiyonlar: create, listingOffers, decide, myOffers, unseenCount, markSeen, hide, shipperHistory | değişken/durumlar: api, action, result
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: teklif uçlarıyla konuşur. İsteğin kendisi (jeton, 401'de otomatik yenileme, hata çevirme) Networking/APIClient.swift'te;
@@ -28,8 +30,8 @@ struct OfferService { // OfferService [BİZİM] ad
     // listingId: hangi ilan | _ body: tutar+not paketi | -> OfferResponse: kaydedilen teklif
     // ÇAĞIRAN: Views/ListingDetailView.swift "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers (yalnız Taşımacı)
     // ⮕ ZİNCİR: ViewModels/ListingDetailViewModel.submit() ← Views/ListingDetailView "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers | GİDEN: CreateOfferRequest | DÖNEN: OfferResponse
-    func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse {
-        try await api.send(.post, "/api/v1/listings/\(listingId)/offers", body: body, fallback: "Teklif gönderilemedi.")
+    func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
+        try await api.send(.post, "/api/v1/listings/\(listingId)/offers", body: body, fallback: "Teklif gönderilemedi.") // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // listingOffers: bir ilana gelen BEKLEYEN teklifleri getirir (karar verilenler geçmişe gider) | yalnız ilanın sahibi
@@ -85,4 +87,4 @@ struct OfferService { // OfferService [BİZİM] ad
 }
 
 // OfferService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
-extension OfferService: OfferServicing {}
+extension OfferService: OfferServicing {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler

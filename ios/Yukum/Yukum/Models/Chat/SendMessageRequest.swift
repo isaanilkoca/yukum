@@ -9,6 +9,8 @@ import Foundation
 // │ MODEL     : Mesaj göndermek için GİDEN paket: {"text": "..."}
 // │ DOLDURAN  : ViewModels/ChatViewModel.send() (draft'ın baş/son boşluğu temizlenmiş hâli)
 // │ YOL       : Views/ChatView (Gönder) → ChatViewModel.send() → Services/ChatService.send → POST /api/v1/offers/{id}/messages
+// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: SendMessageRequest | değişken/durumlar: text
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: sohbet paketlerinin kalıpları. Gönderilecek mesaj + gelen mesaj satırı.

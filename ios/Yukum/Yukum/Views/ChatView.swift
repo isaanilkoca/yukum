@@ -5,7 +5,7 @@
 //  Created by İsa Anıl Koca on 2.11.2026.
 //
 
-import SwiftUI
+import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: ChatView (sohbet) ─────────────────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
@@ -16,6 +16,8 @@ import SwiftUI
 // │ Menü: İşi Bitir ve Sil   →  viewModel.complete()                →  ChatService.complete()          →  POST /api/v1/offers/{id}/complete →  (yok)
 // │ Yazma/menü kuralları     →  viewModel.canWrite, canComplete, canSend, locked  (kural: ChatContext + locked)
 // │ Otomatik yenileme        →  .task { startPolling() } → 3 sn'de bir load()  (ekran kapanınca iptal)
+// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, import SwiftUI, View, ForEach, VStack, HStack, LazyVStack, ScrollView, ScrollViewReader, Text, TextField, Button, Menu, Image, Spacer, ToolbarItem, Color, RoundedRectangle, .task, .onChange, .navigationTitle, .toolbar, .alert, .confirmationDialog, .padding, .disabled, .buttonStyle, .textFieldStyle, .font, .foregroundColor, .background, .clipShape, .id, dismiss, .navigationBarTitleDisplayMode
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatView | değişken/durumlar: viewModel, dismiss, showClearConfirm, showCompleteConfirm, body, last, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: bir teklifin sohbeti. Yük Veren ile teklifi veren Taşımacı yazışır. Mesajlar balon olarak çizilir, ekran açıkken 3 sn'de bir yenilenir.
@@ -31,7 +33,7 @@ import SwiftUI
 struct ChatView: View {
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
-    @State private var viewModel: ChatViewModel
+    @State private var viewModel: ChatViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | iş bitirilince sohbetten geri dönmek için
 
@@ -60,9 +62,9 @@ struct ChatView: View {
                                 if message.isMine { Spacer() } // isMine true (ben yazdım): önce boşluk, balon SAĞA yaslanır
                                 Text(message.text) // mesajın yazısı
                                     .padding(10) // .padding [SWIFT]: yazının etrafında boşluk, balon dolgusu
-                                    .background(message.isMine ? Color.blue : Color(.systemGray5)) // ?: kısa if | benim mesajım mavi, karşı tarafınki açık gri
-                                    .foregroundColor(message.isMine ? .white : .primary) // yazı rengi | benimki beyaz, karşınınki sistem rengi (koyu/açık moda uyar)
-                                    .clipShape(RoundedRectangle(cornerRadius: 16)) // köşeleri yuvarlar, balon şekli verir
+                                    .background(message.isMine ? Color.blue : Color(.systemGray5)) // ?: kısa if | benim mesajım mavi, karşı tarafınki açık gri | Color [SWIFT]: renk | .background [SWIFT]: arka plan
+                                    .foregroundColor(message.isMine ? .white : .primary) // yazı rengi | benimki beyaz, karşınınki sistem rengi (koyu/açık moda uyar) | .foregroundColor [SWIFT]: yazı rengi
+                                    .clipShape(RoundedRectangle(cornerRadius: 16)) // köşeleri yuvarlar, balon şekli verir | RoundedRectangle [SWIFT]: köşeleri yuvarlak dikdörtgen | .clipShape [SWIFT]: görünümü şekle göre keser
 
                                 if !message.isMine { Spacer() } // ! = değil | karşı tarafın mesajı: balondan sonra boşluk, SOLA yaslanır
                             }
@@ -80,29 +82,29 @@ struct ChatView: View {
                 }
             }
 
-            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red).font(.caption).padding(.horizontal) } // if let: doluysa kırmızı küçük yaz, nil ise çizilmez | gönderme/yükleme hatası burada çıkar
+            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red).font(.caption).padding(.horizontal) } // if let: doluysa kırmızı küçük yaz, nil ise çizilmez | gönderme/yükleme hatası burada çıkar | .font [SWIFT]: yazı boyutu/stili
 
             if viewModel.canWrite { // yazma açıksa (Pending ve Accepted teklifler) VE kilitlenmediyse alt çubuk çizilir
                 HStack { // yan yana: yazma kutusu + Gönder düğmesi
                     TextField("Mesaj Yaz", text: $viewModel.draft) // TextField [SWIFT]: yazı kutusu | $ = iki yönlü bağ, yazılan her harf ViewModel'deki draft'a gider | ⮕ ChatViewModel.draft
-                        .textFieldStyle(.roundedBorder) // çerçeveli kutu görünümü
+                        .textFieldStyle(.roundedBorder) // çerçeveli kutu görünümü | .textFieldStyle [SWIFT]: yazı kutusu stili
 
-                    Button("Gönder") { Task { await viewModel.send() } } // basınca ViewModel mesajı yollar | Task [SWIFT]: düğmede await kullanmamızı sağlar | ⮕ ChatViewModel.send() → ChatService.send(SendMessageRequest)
-                        .buttonStyle(.borderedProminent) // içi dolu düğme
-                        .disabled(!viewModel.canSend) // .disabled: koşul doğruysa basılamaz | boş ya da yalnız boşluksa düğme kilitli
+                    Button("Gönder") { Task { await viewModel.send() } } // basınca ViewModel mesajı yollar | Task [SWIFT]: düğmede await kullanmamızı sağlar | ⮕ ChatViewModel.send() → ChatService.send(SendMessageRequest) | Button [SWIFT]: dokununca kod çalıştıran düğme
+                        .buttonStyle(.borderedProminent) // içi dolu düğme | .buttonStyle [SWIFT]: düğme görünüm stili
+                        .disabled(!viewModel.canSend) // .disabled: koşul doğruysa basılamaz | boş ya da yalnız boşluksa düğme kilitli | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli
                 }
                 .padding()
             } else {
                 Text("Bu sohbet kapalı (teklif reddedildi ya da iş tamamlandı). Eski mesajlar okunabilir.").font(.caption).foregroundColor(.secondary).padding() // yazma kutusu yerine bilgi yazısı | iki taraf da aynı mesajı görür
             }
         }
-        .navigationTitle(viewModel.context.title) // üst çubuk başlığı | karşı tarafın adı
-        .navigationBarTitleDisplayMode(.inline) // küçük, ortada başlık
+        .navigationTitle(viewModel.context.title) // üst çubuk başlığı | karşı tarafın adı | .navigationTitle [SWIFT]: üst çubuk başlığı
+        .navigationBarTitleDisplayMode(.inline) // küçük, ortada başlık | .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
 
         // ─── SAĞ ÜST MENÜ: iki ayrı işlem ───
         // Menu [SWIFT]: basınca seçenek listesi açan düğme | label: menüyü açan görünen kısım (üç nokta ikonu)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
+        .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
+            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe | ToolbarItem [SWIFT]: üst çubukta bir eleman
                 Menu {
                     // 1) MESAJLARI TEMİZLE: yalnız mesajlar silinir, teklif ve iş yerinde kalır | yalnız KENDİ ekranımdan
                     Button("Mesajları Temizle", systemImage: "trash") { showClearConfirm = true } // systemImage: SF Symbols ikonu | basınca onay penceresi açılır
@@ -110,7 +112,7 @@ struct ChatView: View {
                     if viewModel.canComplete { // kabul edilmiş aktif iş ve henüz kilitlenmemişse
                         Button("İşi Bitir ve Sil", systemImage: "checkmark.seal", role: .destructive) { showCompleteConfirm = true } // role: .destructive: kırmızı
                     }
-                } label: { Image(systemName: "ellipsis.circle") } // üç nokta ikonu
+                } label: { Image(systemName: "ellipsis.circle") } // üç nokta ikonu | Image [SWIFT]: görsel/ikon (systemName: SF Symbols hazır ikonları)
             }
         }
         // 1. onay penceresi: mesajları temizle | .confirmationDialog [SWIFT]: ekranın altından açılan seçenek menüsü | isPresented: $showClearConfirm → true olunca açılır

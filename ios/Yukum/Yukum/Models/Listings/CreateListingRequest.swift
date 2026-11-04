@@ -10,6 +10,8 @@ import Foundation
 // │ DOLDURAN  : ViewModels/CreateListingViewModel.submit() (formdaki alanlardan; tarih "yyyy-MM-dd" yazıya çevrilir)
 // │ YOL       : Views/CreateListingView → CreateListingViewModel → Services/ListingService.create → POST /api/v1/listings
 // │ CEVAP     : ListingResponse
+// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CreateListingRequest | değişken/durumlar: title, description, weightKg, vehicleType, fromCityId, fromDistrictId, toCityId, toDistrictId, pickupDate, budget
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA NE İŞE YARAR? İlan açarken API'ye giden paket (CreateListingRequest) ve dönen ilan (ListingResponse).

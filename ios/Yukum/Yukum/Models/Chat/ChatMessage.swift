@@ -9,6 +9,8 @@ import Foundation
 // │ MODEL     : Sohbetteki tek mesaj: metin, zaman, "benim mi" bilgisi
 // │ ÜRETEN    : Services/ChatService.messages ← GET /api/v1/offers/{id}/messages
 // │ SAKLAYAN  : ViewModels/ChatViewModel.messages → Views/ChatView (balonlar; isMine true ise sağda mavi, değilse solda gri)
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Bool
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatMessage | değişken/durumlar: id, text, createdAt, isMine
 // └──────────────────────────────────────────────────────────────────────
 
 // ChatMessage: sohbetteki TEK MESAJIN kalıbı (GET listesindeki her eleman).

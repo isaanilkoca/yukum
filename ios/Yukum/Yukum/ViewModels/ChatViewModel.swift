@@ -4,18 +4,20 @@
 //
 
 import Foundation
-import Observation
+import Observation // Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: ChatViewModel ───────────────────────────────────────────────
 // │ EKRAN     : Views/ChatView (@State private var viewModel, init(context:))
 // │ SERVİS    : Services/Protocols/ChatServicing → ChatService
 // │ MODEL     : ChatMessage, SendMessageRequest, ChatContext (açılış bilgisi)
 // │ AKIŞ      : View .task → startPolling() → 3 sn'de bir load() → messages → balonlar | Gönder → send() → servis → load()
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, guard, try?, Task, Duration, String, Bool, Observation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatViewModel | fonksiyonlar: startPolling, load, send, clear, complete | değişken/durumlar: context, service, pollInterval, messages, draft, errorMessage, locked, canWrite, canComplete, canSend …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: sohbet ekranının durumu ve mantığı (mesajlar, taslak, hata, kilit, gönderme, temizleme, işi bitirme, otomatik yenileme)
 // BAĞLANTI: Views/ChatView.swift kullanır | servis: Services/ChatService.swift (ChatServicing sözleşmesi)
-@Observable
+@Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class ChatViewModel {
 
     // ⮕ ZİNCİR: Views/ChatView: başlık (context.title) ve menü kuralları | gelen: bir üstteki ekranın navigationDestination'ı (ChatContext.forCarrier / forShipperPending / forShipperHistory)
@@ -51,10 +53,10 @@ final class ChatViewModel {
     // startPolling: YENİLEME DÖNGÜSÜ | ekran açılınca başlar, ekran kapanınca (.task iptal edilince) kendiliğinden durur
     // POLLING: sunucu "push" yapmaz; biz birkaç saniyede bir tekrar sorarız | canlı bağlantı (SignalR/WebSocket) yerine basit yöntem
     // ⮕ ZİNCİR: Views/ChatView: .task { await viewModel.startPolling() } — ekran kapanınca task iptal edilir, döngü kendiliğinden durur | POLLING: canlı bağlantı yok, 3 sn'de bir sorarız
-    func startPolling() async {
-        while !Task.isCancelled { // iptal edilene kadar tekrarla
-            await load()
-            try? await Task.sleep(for: pollInterval) // bekle | try?: iptal edilirse hata fırlatır, sessiz geç
+    func startPolling() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
+        while !Task.isCancelled { // iptal edilene kadar tekrarla | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar
+            await load() // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
+            try? await Task.sleep(for: pollInterval) // bekle | try?: iptal edilirse hata fırlatır, sessiz geç | try? [SWIFT]: hata olursa çökme, nil ver
         }
     }
 
@@ -72,7 +74,7 @@ final class ChatViewModel {
     // ⮕ ZİNCİR: Views/ChatView: Button("Gönder") { Task { await viewModel.send() } } | ChatService.send(offerId:_:) ← SendMessageRequest(text:)
     func send() async {
         let text = draft.trimmingCharacters(in: .whitespaces) // baş/son boşlukları temizle
-        guard !text.isEmpty else { return } // boşsa dur (düğme zaten kilitli, ikinci güvenlik)
+        guard !text.isEmpty else { return } // boşsa dur (düğme zaten kilitli, ikinci güvenlik) | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
         draft = "" // kutuyu hemen boşalt, kullanıcı beklemeden yeni mesaj yazabilir
         errorMessage = nil
         do {

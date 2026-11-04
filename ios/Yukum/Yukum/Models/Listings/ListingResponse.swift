@@ -9,6 +9,8 @@ import Foundation
 // │ MODEL     : İlan açılınca sunucunun döndüğü kısa özet (id, başlık)
 // │ ÜRETEN    : Services/ListingService.create ← Networking/APIClient
 // │ TÜKETEN   : ViewModels/CreateListingViewModel.submit(): yalnız başarılı olduğunu kullanır → Views/CreateListingView dismiss() ile kapanır
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, String
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingResponse | değişken/durumlar: id, title
 // └──────────────────────────────────────────────────────────────────────
 
 // API'den dönen oluşturulmuş ilan (201). Yalnız ihtiyacımız olan alanları aldık, Swift fazlasını yok sayar.

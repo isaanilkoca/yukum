@@ -10,6 +10,8 @@ import Foundation
 // │ ÇAĞIRAN   : Networking/APIClient (her istekte jeton, 401'de yenileme) | Services/AuthService.login (signIn) | LoginViewModel.restoreSession (restore) | Views/HomeView (signOut)
 // │ YAYINLAR  : Süre dolup yenileme reddedilirse .sessionExpired yayınlar → Views/HomeView dinler (.onReceive) → giriş ekranına döner
 // │ KULLANIR  : Security/KeychainStore (jeton), Security/DeviceID (cihaz kimliği), Models/Auth/LoginResponse, Models/Auth/LoginUser
+// │ HAZIR (Swift/Apple) [SWIFT] : actor, async, await, defer, guard, throws, try?, Task, extension, static, Error, URLSession, URLRequest, HTTPURLResponse, JSONEncoder, JSONDecoder, NotificationCenter, String, Bool, URL, .contains, .decode, .encode
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: AuthSession | fonksiyonlar: currentAccessToken, signIn, restore, tokenAfterFailure, refreshAccessToken, refresh, expireSession, signOut, clearLocal, performRefresh | değişken/durumlar: shared, baseURL, session, keychainService, refreshKey, accessToken, refreshTask, keychainServiceForTests, hasStoredSession, task …
 // └──────────────────────────────────────────────────────────────────────
 
 
@@ -22,7 +24,7 @@ import Foundation
 // BAĞLANTI: Networking/APIClient.swift (her istekte jeton ister, 401'de yenileme ister) | Services/AuthService.swift (girişte signIn) | Views/LoginView.swift (açılışta restore) | Views/HomeView.swift (çıkışta signOut)
 actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | adı [BİZİM]
 
-    static let shared = AuthSession() // uygulamanın tek oturumu | testlerde kendi örneğimizi oluştururuz (aşağıdaki init)
+    static let shared = AuthSession() // uygulamanın tek oturumu | testlerde kendi örneğimizi oluştururuz (aşağıdaki init) | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     private let baseURL: String
     private let session: URLSession // URLSession [SWIFT]: postacı | dışarıdan verilebilir ki testlerde sahte postacı takılsın
@@ -31,7 +33,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 
     private var accessToken: String? // bellekteki erişim jetonu | nil: henüz yok (uygulama yeni açıldı ya da çıkış yapıldı)
     // refreshTask: şu an devam eden yenileme işi | nil: yenileme yok | "tek uçuş"un anahtarı: varsa yenisini başlatma, bunu bekle
-    private var refreshTask: Task<LoginResponse, Error>?
+    private var refreshTask: Task<LoginResponse, Error>? // Error [SWIFT]: fırlatılabilir hata türü
 
     init(baseURL: String = APIConfig.baseURL, session: URLSession = .shared, keychainService: String = KeychainStore.defaultService) {
         self.baseURL = baseURL
@@ -58,9 +60,9 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     // restore: OTOMATİK GİRİŞ | uygulama açılırken çağrılır | -> LoginUser?: oturum varsa kullanıcı, yoksa nil
     // Keychain'de yenileme jetonu varsa sunucudan yeni jeton ister; başarılıysa kullanıcı şifre yazmadan içeri girer
     // İnternet yoksa (hata fırlar) oturum SİLİNMEZ: kullanıcı sonra tekrar deneyebilir | sunucu "geçersiz" derse silinir (aşağıda)
-    func restore() async throws -> LoginUser? {
-        guard hasStoredSession else { return nil } // hiç oturum yok → giriş ekranı
-        return try await refresh().user
+    func restore() async throws -> LoginUser? { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
+        guard hasStoredSession else { return nil } // hiç oturum yok → giriş ekranı | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
+        return try await refresh().user // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // tokenAfterFailure: bir istek 401 alınca APIClient bunu çağırır | -> yeni geçerli erişim jetonu
@@ -86,7 +88,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     // expireSession: yenileme artık mümkün değil (sunucu reddetti) → yerel oturumu sil ve ekranlara haber ver
     func expireSession() {
         clearLocal()
-        NotificationCenter.default.post(name: .sessionExpired, object: nil) // "yayınla": HomeView dinler, giriş ekranına döner
+        NotificationCenter.default.post(name: .sessionExpired, object: nil) // "yayınla": HomeView dinler, giriş ekranına döner | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
     }
 
     // signOut: kullanıcı "Çıkış Yap"a bastı
@@ -95,10 +97,10 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
         let stored = KeychainStore.get(key: refreshKey, service: keychainService)
         clearLocal()
         guard let stored else { return }
-        var request = URLRequest(url: URL(string: baseURL + "/api/v1/auth/logout")!)
+        var request = URLRequest(url: URL(string: baseURL + "/api/v1/auth/logout")!) // URLRequest [SWIFT]: gidecek istek zarfı (adres, yöntem, başlıklar, gövde)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try? JSONEncoder().encode(["refreshToken": stored]) // [String: String] sözlüğü de JSON'a çevrilebilir
+        request.httpBody = try? JSONEncoder().encode(["refreshToken": stored]) // [String: String] sözlüğü de JSON'a çevrilebilir | try? [SWIFT]: hata olursa çökme, nil ver | JSONEncoder [SWIFT]: struct'ı JSON'a çevirir | .encode [SWIFT]: Swift nesnesinden JSON'a çevirir
         _ = try? await session.data(for: request) // try?: hata olursa yok say | _ = cevabı kullanmayacağız
     }
 
@@ -122,10 +124,10 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 
         // İnternet yoksa ya da sunucu kapalıysa burada hata fırlar ve oturum SİLİNMEZ (kullanıcı sonra tekrar dener).
         let (data, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0 // HTTPURLResponse [SWIFT]: sunucunun cevap bilgisi (durum kodu dahil)
 
-        if (200...299).contains(status) {
-            let decoded = try JSONDecoder().decode(LoginResponse.self, from: data)
+        if (200...299).contains(status) { // .contains [SWIFT]: içinde var mı diye bakar
+            let decoded = try JSONDecoder().decode(LoginResponse.self, from: data) // JSONDecoder [SWIFT]: JSON'u struct'a çevirir | .decode [SWIFT]: JSON'dan Swift nesnesine çevirir
             signIn(decoded) // rotasyon: YENİ yenileme jetonunu hemen sakla (eskisi sunucuda iptal oldu)
             return decoded
         }
@@ -139,4 +141,4 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 }
 
 // AuthSession, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
-extension AuthSession: SessionRestoring, SessionSigningOut {}
+extension AuthSession: SessionRestoring, SessionSigningOut {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler

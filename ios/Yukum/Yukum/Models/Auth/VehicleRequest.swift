@@ -8,11 +8,13 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: VehicleRequest (araç) ───────────────────────────────────────
 // │ MODEL     : Taşımacı kaydındaki tek araç bilgisi
 // │ YOL       : Views/CarrierRegisterView araç alanları → CarrierRegisterViewModel.register() VehicleRequest'e çevirir → RegisterCarrierRequest.vehicles listesine konur → AuthService.registerCarrier | araç türü seçenekleri: Models/Vehicles/VehicleType.swift
+// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: VehicleRequest | değişken/durumlar: type, plateNumber, capacityKg
 // └──────────────────────────────────────────────────────────────────────
 
 // Tek araç bilgisi; API'nin "vehicles" listesindeki her eleman böyle görünür.
 // KULLANAN: Views/CarrierRegisterView.swift içinde "vehicle" değişkenine atanır, sonra RegisterCarrierRequest.vehicles listesine konur.
-struct VehicleRequest: Encodable {
+struct VehicleRequest: Encodable { // Encodable [SWIFT]: bu türdeki değer JSON'a çevrilebilir
     let type: String          // "Truck", "Lorry"... (Picker'daki tag değeri; yazımı API ile aynı olmalı)
     let plateNumber: String?  // plaka, isteğe bağlı; nil ise JSON'a yazılmaz
     let capacityKg: Int       // kapasite kg; sayı olarak gider, metin değil

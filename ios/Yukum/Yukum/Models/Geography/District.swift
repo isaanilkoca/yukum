@@ -10,10 +10,12 @@ import Foundation
 // │ ÜRETEN    : Services/CityService.districts(cityId:) ← GET /api/v1/cities/{id}/districts (il seçilince çekilir)
 // │ SAKLAYAN  : ViewModels/HomeViewModel.filterDistricts | ViewModels/CreateListingViewModel.fromDistricts, toDistricts
 // │ SEÇİM     : Picker'ın tag'i district.id → filterDistrictId / fromDistrictId / toDistrictId
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: District | değişken/durumlar: id, name
 // └──────────────────────────────────────────────────────────────────────
 
 // KULLANAN: Services/CityService.swift districts(cityId:) → [District] döner | ilçe listesi seçilen ile göre CreateListingView'da gösterilecek
-struct District: Decodable, Identifiable {
+struct District: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan bu türde değer üretilebilir | Identifiable [SWIFT]: benzersiz id'si var (List/ForEach'te id: yazmak gerekmez)
     let id: Int // ilçe numarası (ilanda fromDistrictId / toDistrictId olarak gidecek)
     let name: String // ekranda görünen ad
 }

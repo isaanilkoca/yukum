@@ -5,12 +5,14 @@
 //  Created by İsa Anıl Koca on 28.10.2026.
 //
 
-import SwiftUI // [SWIFT] ekran çizim kütüphanesi
+import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: RoleSelectionView (rol seçimi) ────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ İki düğme                →  NavigationLink → RegisterView (Yük Veren) | CarrierRegisterView (Taşımacı)   (ViewModel yok: yalnız yönlendirme)
 // │ Gelen yer                →  Views/LoginView "Kayıt ol"
+// │ HAZIR (Swift/Apple) [SWIFT] : import SwiftUI, View, NavigationLink, VStack, HStack, Text, #Preview, .padding, .buttonStyle, .font, .bold
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RoleSelectionView | değişken/durumlar: body
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: "Nasıl kayıt olmak istersiniz?" Yük Veren mi, Taşımacı mı seçilir.
@@ -28,17 +30,17 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad | View [SWIFT
 
                 NavigationLink("Yük Veren") { // NavigationLink [SWIFT]: düğme gibi, basınca süslü parantezdeki ekrana geçer
                     RegisterView() // Views/RegisterView.swift → Yük Veren kayıt formu
-                }.buttonStyle(.borderedProminent) // dolgulu (mavi) düğme görünümü
+                }.buttonStyle(.borderedProminent) // dolgulu (mavi) düğme görünümü | .buttonStyle [SWIFT]: düğme görünüm stili
 
                 NavigationLink("Taşımacı") {
                     CarrierRegisterView() // Views/CarrierRegisterView.swift → Taşımacı kayıt formu
                 }.buttonStyle(.borderedProminent)
             }
 
-        }.padding() // padding [SWIFT]: kenarlardan iç boşluk
+        }.padding() // padding [SWIFT]: kenarlardan iç boşluk | .padding [SWIFT]: etrafında boşluk bırakır
     }
 }
 
-#Preview { // Xcode önizleme
+#Preview { // Xcode önizleme | #Preview [SWIFT]: Xcode'da canlı önizleme (uygulamayı etkilemez)
     RoleSelectionView()
 }

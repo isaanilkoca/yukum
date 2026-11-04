@@ -10,6 +10,8 @@ import Foundation
 // │ ÜRETEN    : Services/OfferService.shipperHistory ← GET /api/v1/offers/history
 // │ SAKLAYAN  : ViewModels/OldOffersViewModel.offers → Views/OldOffersView
 // │ SOHBET    : ViewModels/ChatContext.forShipperHistory(_:)
+// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int, Double
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ShipperHistoryOffer | değişken/durumlar: id, listingTitle, fromCityName, fromDistrictName, toCityName, toDistrictName, weightKg, pickupDate, carrierName, amount …
 // └──────────────────────────────────────────────────────────────────────
 
 // ShipperHistoryOffer: Yük Veren'in "Eski teklifler" listesindeki TEK SATIRIN kalıbı (karara bağladığı bir teklif).

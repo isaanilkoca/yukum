@@ -7,13 +7,15 @@
 
 import Foundation
 import CoreLocation // [SWIFT] Apple'ın konum çerçevesi: enlem/boylam alma, izin yönetimi | CLLocationManager buradan gelir
-import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişkenler değişince ekranın kendini yenilemesini sağlar
+import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişkenler değişince ekranın kendini yenilemesini sağlar | Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: LocationManager (telefonun konumu) ──────────────────────────
 // │ SAHİBİ    : ViewModels/HomeViewModel (Location/LocationProviding sözleşmesi üzerinden) — View konumu doğrudan tutmaz
 // │ AKIŞ      : Toggle "Yakınımdakiler" açılır → HomeView .onChange → HomeViewModel.nearMeChanged → location.request() → izin/konum → coordinate dolar
 // │ ÇIKIŞ     : HomeViewModel.load() konumu okur → ListingService.openListings(lat:lon:) → sunucu mesafeye göre sıralar
 // │ DELEGATE  : CLLocationManagerDelegate: iOS konum olayı olunca aşağıdaki 3 fonksiyonu KENDİSİ çağırır (biz çağırmayız)
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, @ObservationIgnored, extension, Error, NSObject, CLLocationManager, CLLocationManagerDelegate, CLLocationCoordinate2D, CLAuthorizationStatus, CLLocation, String, Bool, Double, Observation, CoreLocation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LocationManager | fonksiyonlar: request, locationManagerDidChangeAuthorization, locationManager | değişken/durumlar: status, coordinate, errorMessage, manager, latitude, longitude, isDenied
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: telefonun konumunu bulur ve kullanıcıdan konum izni ister.
@@ -53,7 +55,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate {
 
     // status: konum izninin şu anki durumu | NE İŞE YARAR: izin verilmiş mi, reddedilmiş mi, hiç sorulmamış mı | değerler: .notDetermined (sorulmadı), .authorizedWhenInUse (uygulama açıkken izin var), .denied (reddetti), .restricted (cihaz kısıtlı, örn. ebeveyn denetimi)
     // NEREDE KULLANILIR: HomeView reddedilmişse "Ayarlardan izin ver" uyarısı gösterir | başlangıç değeri init içinde atanır
-    var status : CLAuthorizationStatus
+    var status : CLAuthorizationStatus // CLAuthorizationStatus [SWIFT]: konum izni durumu
     
     //coordinate: bulunan konum (enlem + boylam) | CLLocationCoordinate2D [SWIFT]: latitude (enlem) ve longitude (boylam) taşıyan hazır tip | ? = henüz konum yoksa nil
     // NEREDE KULLANILIR: HomeView dolunca openListings(lat:lon:) ile API'ye gönderir
@@ -64,7 +66,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate {
     
     //manager: Apple'ın hazır konum motoru | CLLocationManager [SWIFT]: izin isteme ve konum alma işini yapan asıl nesne, biz onu yönetiyoruz
     // @ObservationIgnored: bu değişken değişse bile ekran yenilenmesin (ekranın ilgilendiği şey manager değil, sonuçlar) | private: yalnız bu sınıf görür
-    @ObservationIgnored private let manager = CLLocationManager()
+    @ObservationIgnored private let manager = CLLocationManager() // @ObservationIgnored [SWIFT]: bu değişken değişse bile ekran yenilenmesin
     
     // init: sınıf oluşturulurken bir kez çalışır | override: NSObject'in init'ini ezeriz
     override init(){
@@ -106,7 +108,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate {
     }
     
     // konum ALINAMAYINCA iOS bunu çağırır (örn. GPS yok, simülatörde konum ayarlanmamış)
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { // Error [SWIFT]: fırlatılabilir hata türü
         errorMessage = "Konum alınamadı" // basit mesaj | kullanıcı tekrar deneyebilir
     }
     //Neden delegate? Konum bulmak anında bitmez, uydu ve ağ gerektirir. Bu yüzden "konumu ver" diye bir değer dönmez. Konum motoruna "bulunca beni ara" deriz (delegate), bulunca o fonksiyonları çağırır. Daha önceki await ile bekleme mantığına benzer ama eski bir stil.
@@ -115,7 +117,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate {
 }
 
 // LocationManager, LocationProviding sözleşmesini karşılar: ViewModel'ler CoreLocation türlerini (CLLocationCoordinate2D, CLAuthorizationStatus) bilmesin, sade değerler görsün
-extension LocationManager: LocationProviding {
+extension LocationManager: LocationProviding { // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler
     var latitude: Double? { coordinate?.latitude }
     var longitude: Double? { coordinate?.longitude }
     var isDenied: Bool { status == .denied }

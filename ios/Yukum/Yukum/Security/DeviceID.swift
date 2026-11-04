@@ -9,6 +9,8 @@ import Foundation
 // │ KULLANAN  : ViewModels/LoginViewModel (deviceId: { DeviceID.current } → LoginRequest.deviceId) | Networking/AuthSession.performRefresh (yenilemede aynı kimlik)
 // │ NEDEN SABİT: Sunucu yenileme jetonunu cihaza bağlar; her seferinde yeni kimlik olsaydı yenileme reddedilirdi
 // │ SAKLAR    : Security/KeychainStore (uygulama silinip kurulsa bile aynı kalır)
+// │ HAZIR (Swift/Apple) [SWIFT] : enum, static, UUID, String
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: DeviceID | değişken/durumlar: key, current, saved, new
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: bu cihaza ait SABİT bir kimlik üretir ve Keychain'de saklar.
@@ -16,9 +18,9 @@ import Foundation
 // Daha önce her girişte yeni UUID üretiyorduk; bu, "cihaz" kavramını anlamsız yapar (her giriş yeni cihaz sayılırdı).
 // NEDEN Keychain: uygulama silinip yeniden kurulsa bile aynı kimlik korunur (UserDefaults silinirdi) → kullanıcının eski oturumu sunucuda "aynı cihaz" olarak düşer.
 // BAĞLANTI: Views/LoginView.swift girişte gönderir | Networking/AuthSession.swift yenilemede gönderir
-nonisolated enum DeviceID {
+nonisolated enum DeviceID { // enum [SWIFT]: sabit seçenek listesi
 
-    private static let key = "deviceId" // Keychain'deki kaydın adı
+    private static let key = "deviceId" // Keychain'deki kaydın adı | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     // current: bu cihazın kimliği | ilk çağrıda üretilip kaydedilir, sonra hep aynısı döner
     static var current: String {

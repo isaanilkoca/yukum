@@ -4,18 +4,20 @@
 //
 
 import Foundation
-import Observation
+import Observation // Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: RegisterViewModel ───────────────────────────────────────────
 // │ EKRAN     : Views/RegisterView (@State private var viewModel) — Yük Veren kayıt formu; Views/RoleSelectionView açar
 // │ SERVİS    : Services/Protocols/AuthServicing → AuthService.register → POST /api/v1/auth/register/shipper
 // │ MODEL     : RegisterRequest (giden), RegisterResponse (gelen)
 // │ AKIŞ      : Alanlar $viewModel ile doldurulur → "Kayıt Ol" → register(): doğrula → RegisterRequest → AuthService → isSuccess / errorMessage
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, static, String, Self, Observation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterViewModel | fonksiyonlar: register | değişken/durumlar: auth, fullName, email, phone, password, companyName, kvkkAccepted, errorMessage, isLoading, isSuccess …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: Yük Veren kayıt formunun durumu ve mantığı (alanlar, doğrulama, paket hazırlama, gönderme, sonuç)
 // BAĞLANTI: Views/RegisterView.swift kullanır | servis: Services/AuthService.swift (AuthServicing sözleşmesi)
-@Observable
+@Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class RegisterViewModel {
 
     private let auth: AuthServicing
@@ -35,15 +37,15 @@ final class RegisterViewModel {
     var isSuccess = false
 
     // GEÇİCİ BORÇ: kayıtta il seçimi henüz yok, API il numarası ister → şimdilik sabit İstanbul (34). İl seçimi eklenince bu sabit kalkar.
-    static let defaultCityId = 34
+    static let defaultCityId = 34 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     init(auth: AuthServicing = AuthService()) { self.auth = auth }
 
     // register: "Kayıt Ol" düğmesi | ⮕ ZİNCİR: Views/RegisterView: Button { Task { await viewModel.register() } } → AuthService.register(RegisterRequest) → RegisterResponse (kullanılmaz, yalnız başarı)
-    func register() async {
+    func register() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         // ---- 1) KONTROLLER: API'ye gitmeden ekranda yakalıyoruz ----
         let name = fullName.trimmingCharacters(in: .whitespaces), mail = email.trimmingCharacters(in: .whitespaces), tel = phone.trimmingCharacters(in: .whitespaces)
-        guard !name.isEmpty, !mail.isEmpty, !tel.isEmpty, !password.isEmpty else {
+        guard !name.isEmpty, !mail.isEmpty, !tel.isEmpty, !password.isEmpty else { // guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
             errorMessage = "Lütfen zorunlu alanları doldurun."
             return
         }
@@ -61,9 +63,9 @@ final class RegisterViewModel {
         isLoading = true // düğme kilitlenir
         errorMessage = nil // eski hatayı temizle
         isSuccess = false
-        defer { isLoading = false } // düğme tekrar açılır
+        defer { isLoading = false } // düğme tekrar açılır | defer [SWIFT]: fonksiyondan çıkarken çalışacak kod
         do {
-            _ = try await auth.register(body)
+            _ = try await auth.register(body) // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
             isSuccess = true // yeşil mesaj
         } catch {
             if let message = error.userMessage { errorMessage = message } // API'nin Türkçe mesajı (örn. "Bu e-posta zaten kayıtlı.")

@@ -4,18 +4,20 @@
 //
 
 import Foundation
-import Observation
+import Observation // Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: MyOffersViewModel ───────────────────────────────────────────
 // │ EKRAN     : Views/MyOffersView (@State private var viewModel) — Taşımacı'nın "Tekliflerim"i; Views/HomeView sağ üst kutu ikonu açar
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.myOffers / markSeen / hide
 // │ MODEL     : CarrierOffer | sohbet için ChatContext
 // │ AKIŞ      : View .task → loadAndMarkSeen() → myOffers → offers → pending/history bölümleri | Sil → hide() → load()
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, try?, String, Bool, Observation, .contains
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: MyOffersViewModel | fonksiyonlar: canHide, canChat, load, loadAndMarkSeen, hide, openChat | değişken/durumlar: service, offers, errorMessage, chat, pendingOffers, historyOffers, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "Tekliflerim" (Taşımacı) ekranının durumu ve mantığı: teklif listesi, Bekleyenler/Geçmiş bölümleri, silme ve sohbet kuralları, "görüldü" işaretleme
 // BAĞLANTI: Views/MyOffersView.swift kullanır | servis: Services/OfferService.swift (OfferServicing sözleşmesi) | sohbet bilgisi: ViewModels/ChatContext.swift
-@Observable
+@Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class MyOffersViewModel {
     private let service: OfferServicing
 
@@ -36,15 +38,15 @@ final class MyOffersViewModel {
 
     // KURAL: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal edilen) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
     // ⮕ ZİNCİR: Views/MyOffersView: .swipeActions { if viewModel.canHide(offer) { "Sil" } } — yalnız reddedilen/tamamlanan/iptal
-    func canHide(_ offer: CarrierOffer) -> Bool { ["Rejected", "Completed", "Cancelled"].contains(offer.status) }
+    func canHide(_ offer: CarrierOffer) -> Bool { ["Rejected", "Completed", "Cancelled"].contains(offer.status) } // .contains [SWIFT]: içinde var mı diye bakar
     // KURAL: reddedilen teklifte sohbet yok | bekleyen, kabul, tamamlanan, iptalde düğme çıkar (kapalı olanlarda yalnız eski mesajlar okunur/silinir)
     // ⮕ ZİNCİR: Views/MyOffersView: if viewModel.canChat(offer) { "Sohbet" düğmesi } — reddedilende yok
     func canChat(_ offer: CarrierOffer) -> Bool { offer.status != "Rejected" }
 
     // ⮕ ZİNCİR: Views/MyOffersView: .refreshable ve hide() sonrası | OfferService.myOffers()
-    func load() async {
+    func load() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         errorMessage = nil
-        do { offers = try await service.myOffers() }
+        do { offers = try await service.myOffers() } // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
         catch { if let message = error.userMessage { errorMessage = message } }
     }
 
@@ -52,7 +54,7 @@ final class MyOffersViewModel {
     // ⮕ ZİNCİR: Views/MyOffersView: .task | önce load() ("Yeni" rozetleri çizilsin), sonra OfferService.markSeen() (HomeView rozeti söner)
     func loadAndMarkSeen() async {
         await load()
-        try? await service.markSeen() // try?: hata olursa sessiz geç, kritik değil
+        try? await service.markSeen() // try?: hata olursa sessiz geç, kritik değil | try? [SWIFT]: hata olursa çökme, nil ver
     }
 
     // ⮕ ZİNCİR: Views/MyOffersView: Button("Sil") { Task { await viewModel.hide(offer) } } | OfferService.hide(offerId:) sonra load()

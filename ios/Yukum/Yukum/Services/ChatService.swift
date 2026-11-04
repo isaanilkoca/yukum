@@ -10,6 +10,8 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient | MODEL: ChatMessage, SendMessageRequest
 // │ API       : backend MessagesController: GET/POST/DELETE /api/v1/offers/{id}/messages | OffersController: POST /offers/{id}/complete
 // │ SAHTESİ   : YukumTests/Support/FakeChatService.swift
+// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, String
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatService | fonksiyonlar: messages, send, clear, complete | değişken/durumlar: api
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: teklif sohbeti uçlarıyla konuşur. İsteğin kendisi (jeton, 401'de yenileme, hata çevirme) Networking/APIClient.swift'te.
@@ -22,8 +24,8 @@ struct ChatService { // ChatService [BİZİM] ad
     // messages: bir teklifin sohbetindeki tüm mesajları getirir (eskiden yeniye) | yalnız teklifin iki tarafı görür
     // ÇAĞIRAN: Views/ChatView.swift → loadMessages() | ekran açılınca ve 3 saniyede bir çağrılır (yenileme) | API: GET /api/v1/offers/{offerId}/messages
     // ⮕ ZİNCİR: ViewModels/ChatViewModel.load() ← startPolling() döngüsü (3 sn) + send/clear sonrası ← Views/ChatView .task | API: GET /api/v1/offers/{id}/messages | DÖNEN: [ChatMessage]
-    func messages(offerId: String) async throws -> [ChatMessage] { // offerId: hangi teklifin sohbeti
-        try await api.send(.get, "/api/v1/offers/\(offerId)/messages", fallback: "Mesajlar alınamadı.")
+    func messages(offerId: String) async throws -> [ChatMessage] { // offerId: hangi teklifin sohbeti | async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
+        try await api.send(.get, "/api/v1/offers/\(offerId)/messages", fallback: "Mesajlar alınamadı.") // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // send: sohbete mesaj yazar | _ body: yazılan mesaj paketi ({"text":"..."}) | reddedilmiş/tamamlanmış/iptal edilmiş tekliflerde API 409 verir
@@ -50,4 +52,4 @@ struct ChatService { // ChatService [BİZİM] ad
 }
 
 // ChatService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
-extension ChatService: ChatServicing {}
+extension ChatService: ChatServicing {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler

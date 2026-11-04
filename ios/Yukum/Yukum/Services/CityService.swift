@@ -12,6 +12,8 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient (authorized: false, herkese açık uçlar) | MODEL: City, District
 // │ API       : backend CitiesController: GET /api/v1/cities, GET /api/v1/cities/{id}/districts
 // │ SAHTESİ   : YukumTests/Support/FakeCityService.swift
+// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, Int
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CityService | fonksiyonlar: cities, districts | değişken/durumlar: api
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: il ve ilçe listelerini API'den getirir. Bu uçlar HERKESE AÇIKTIR: authorized: false → istekte jeton gitmez (kayıt ekranında henüz giriş yok).
@@ -23,8 +25,8 @@ struct CityService {
     // cities: iller (81) | -> [City]: City listesi döner
     // ÇAĞIRAN: Views/CreateListingView.swift, Views/HomeView.swift (filtre), kayıt ekranları | API: GET /api/v1/cities
     // ⮕ ZİNCİR: ViewModels/HomeViewModel.load() (bir kez) ve CreateListingViewModel.loadCities() ← Views/HomeView / CreateListingView .task | API: GET /api/v1/cities | DÖNEN: [City]
-    func cities() async throws -> [City] {
-        try await api.send(.get, "/api/v1/cities", authorized: false, fallback: "Liste yüklenemedi.")
+    func cities() async throws -> [City] { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
+        try await api.send(.get, "/api/v1/cities", authorized: false, fallback: "Liste yüklenemedi.") // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // districts: seçilen ilin ilçeleri | cityId: ilin numarası (plaka kodu, 34 gibi) → City.id'den gelir
@@ -36,4 +38,4 @@ struct CityService {
 }
 
 // CityService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
-extension CityService: CityServicing {}
+extension CityService: CityServicing {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler

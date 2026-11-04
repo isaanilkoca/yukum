@@ -4,18 +4,20 @@
 //
 
 import Foundation
-import Observation
+import Observation // Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: CreateListingViewModel ──────────────────────────────────────
 // │ EKRAN     : Views/CreateListingView (@State private var viewModel) — "İlan Ver" formu
 // │ SERVİS    : Services/Protocols/ListingServicing → ListingService.create | CityServicing → CityService
 // │ MODEL     : CreateListingRequest (giden), ListingResponse (gelen), City, District
 // │ AKIŞ      : Alanlar $viewModel.x ile doldurulur → "İlanı Yayınla" → submit(): doğrula → CreateListingRequest → ListingService.create → true ise View kapanır
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, try?, static, DateFormatter, Locale, Date, String, Int, Bool, Self, Observation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CreateListingViewModel | fonksiyonlar: loadCities, fromCityChanged, toCityChanged, formatDate, submit | değişken/durumlar: listingService, cityService, title, details, weightKg, vehicleType, pickupDate, budget, errorMessage, isLoading …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "İlan Ver" formunun durumu ve mantığı (alanlar, il→ilçe zinciri, doğrulama, paket hazırlama, gönderme)
 // BAĞLANTI: Views/CreateListingView.swift kullanır | servisler: Services/ListingService.swift (ListingServicing), Services/CityService.swift (CityServicing) | paket kalıbı: Models/Listings/
-@Observable
+@Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class CreateListingViewModel {
 
     private let listingService: ListingServicing
@@ -55,7 +57,7 @@ final class CreateListingViewModel {
     var toDistricts: [District] = []
 
     // Sınırlar sunucudaki ile AYNI: aşırı büyük değer sunucuda 400 verirdi, burada daha ekranda yakalanır
-    static let maxWeightKg = 1_000_000
+    static let maxWeightKg = 1_000_000 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
     static let maxBudget = 100_000_000
 
     init(listingService: ListingServicing = ListingService(), cityService: CityServicing = CityService()) {
@@ -65,8 +67,8 @@ final class CreateListingViewModel {
 
     // loadCities: ekran açılınca il listesini çeker | try?: hata olursa nil | ?? []: nil ise boş liste
     // ⮕ ZİNCİR: Views/CreateListingView: .task { await viewModel.loadCities() } | CityService.cities()
-    func loadCities() async {
-        if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] }
+    func loadCities() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
+        if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder) | try? [SWIFT]: hata olursa çökme, nil ver
     }
 
     // fromCityChanged / toCityChanged: il Picker'ı değişince | ilçe seçimini sıfırlar (eski ilin ilçesi yeni ile ait değil, kalırsa yanlış ilan gider) ve yeni ilin ilçelerini çeker
@@ -74,7 +76,7 @@ final class CreateListingViewModel {
     func fromCityChanged(to cityId: Int) async {
         fromDistrictId = 0
         fromDistricts = []
-        guard cityId != 0 else { return } // "Seçiniz"e dönüldüyse çekecek il yok
+        guard cityId != 0 else { return } // "Seçiniz"e dönüldüyse çekecek il yok | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
         fromDistricts = (try? await cityService.districts(cityId: cityId)) ?? []
     }
 
@@ -92,7 +94,7 @@ final class CreateListingViewModel {
     static func formatDate(_ date: Date) -> String {
         let formatter = DateFormatter() // DateFormatter [SWIFT]: tarih ↔ yazı çevirici
         formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.locale = Locale(identifier: "en_US_POSIX") // Locale [SWIFT]: dil/bölge ayarı
         return formatter.string(from: date)
     }
 
@@ -135,7 +137,7 @@ final class CreateListingViewModel {
                                            budget: budgetValue)
 
         isLoading = true // düğme kilitlenir
-        defer { isLoading = false }
+        defer { isLoading = false } // defer [SWIFT]: fonksiyondan çıkarken çalışacak kod
         do {
             _ = try await listingService.create(request) // POST /api/v1/listings
             return true

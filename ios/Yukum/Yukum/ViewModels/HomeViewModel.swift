@@ -4,7 +4,7 @@
 //
 
 import Foundation
-import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenler değişince onları okuyan ekranlar kendiliğinden yenilenir
+import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenler değişince onları okuyan ekranlar kendiliğinden yenilenir | Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: HomeViewModel ───────────────────────────────────────────────
 // │ EKRAN     : Views/HomeView (@State private var viewModel) — iki rol için ana sayfa
@@ -12,6 +12,8 @@ import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenl
 // │ MODEL     : Listing, City, District, LoginUser
 // │ AKIŞ      : View .task(id:) → load() → servis → API → Model dizisi → listings değişkeni → @Observable → View yeniden çizer
 // │ KONUM/ÇIKIŞ: Location/LocationProviding (konum) ve Services/Protocols/SessionRestoring.swift → SessionSigningOut (çıkış) sözleşmeleri; View bunlara doğrudan dokunmaz
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, guard, try?, String, Int, Bool, Observation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: HomeViewModel | fonksiyonlar: nearMeChanged, signOut, load, cityFilterChanged | değişken/durumlar: user, listingService, offerService, cityService, session, location, listings, listError, unseenCount, cities …
 // └──────────────────────────────────────────────────────────────────────
 
 // ViewModel NEDİR? (MVVM = Model - View - ViewModel)
@@ -86,8 +88,8 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
 
     // signOut: "Çıkış Yap" düğmesi | önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin)
     // ⮕ ZİNCİR: Views/HomeView: Button("Çıkış Yap") { Task { await viewModel.signOut(); dismiss() } } → Networking/AuthSession.signOut() → POST /api/v1/auth/logout
-    func signOut() async {
-        await session.signOut()
+    func signOut() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
+        await session.signOut() // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
     // load: ana sayfanın verisini API'den çekip durum değişkenlerine yazar
@@ -103,7 +105,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
                 let lat = nearMe ? location.latitude : nil // nearMe ? A : B kısa if | konum yoksa nil kalır, liste eskisi gibi (en yeni üstte) gelir
                 let lon = nearMe ? location.longitude : nil
                 listings = try await listingService.openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId, lat: lat, lon: lon) // GET /api/v1/listings?...
-                if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // il listesi yalnız bir kez yüklenir | try?: hata olursa nil | ?? []: nil ise boş liste
+                if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // il listesi yalnız bir kez yüklenir | try?: hata olursa nil | ?? []: nil ise boş liste | try? [SWIFT]: hata olursa çökme, nil ver
                 unseenCount = try await offerService.unseenCount() // rozet sayısı
             }
         } catch {
@@ -117,7 +119,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     func cityFilterChanged(to cityId: Int) async {
         filterDistrictId = 0
         filterDistricts = []
-        guard cityId != 0 else { return } // "Tüm İller"e dönüldüyse çekecek ilçe yok
+        guard cityId != 0 else { return } // "Tüm İller"e dönüldüyse çekecek ilçe yok | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
         filterDistricts = (try? await cityService.districts(cityId: cityId)) ?? []
     }
 

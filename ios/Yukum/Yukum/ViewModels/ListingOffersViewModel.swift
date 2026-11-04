@@ -4,18 +4,20 @@
 //
 
 import Foundation
-import Observation
+import Observation // Observation [SWIFT]: @Observable özelliğini veren kütüphane
 
 // ┌─ BAĞLANTI HARİTASI: ListingOffersViewModel ──────────────────────────────────────
 // │ EKRAN     : Views/ListingOffersView (@State private var viewModel, init(listing:)) — Yük Veren'in ilanına gelen BEKLEYEN teklifler; Views/HomeView listesindeki satır açar
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.listingOffers / decide | ListingServicing → ListingService.cancel
 // │ MODEL     : Listing (hangi ilan), ListingOffer | sohbet için ChatContext
 // │ AKIŞ      : View .task → load() → offers | Kabul/Reddet → decide() → load() | Kaldır → cancelListing() → true ise View kapanır
+// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, String, Bool, Observation
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingOffersViewModel | fonksiyonlar: load, decide, cancelListing, openChat | değişken/durumlar: listing, offerService, listingService, offers, errorMessage, chat, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "Gelen Teklifler" (Yük Veren, bir ilanın BEKLEYEN teklifleri) ekranının durumu ve mantığı: liste, kabul/red kararı, ilanı yayından kaldırma
 // BAĞLANTI: Views/ListingOffersView.swift kullanır | servisler: Services/OfferService.swift, Services/ListingService.swift | sohbet bilgisi: ViewModels/ChatContext.swift
-@Observable
+@Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class ListingOffersViewModel {
     // ⮕ ZİNCİR: Views/ListingOffersView: başlık Text(viewModel.listing.title) | servis çağrılarında listing.id | gelen: Views/HomeView Yük Veren listesi → ListingOffersView(listing:)
     let listing: Listing
@@ -36,9 +38,9 @@ final class ListingOffersViewModel {
     }
 
     // ⮕ ZİNCİR: Views/ListingOffersView: .task ve .refreshable | OfferService.listingOffers(listingId:)
-    func load() async {
+    func load() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         errorMessage = nil
-        do { offers = try await offerService.listingOffers(listingId: listing.id) }
+        do { offers = try await offerService.listingOffers(listingId: listing.id) } // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
         catch { if let message = error.userMessage { errorMessage = message } }
     }
 

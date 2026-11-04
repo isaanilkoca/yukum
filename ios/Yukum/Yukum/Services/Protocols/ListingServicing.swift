@@ -8,6 +8,8 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: ListingServicing (sözleşme) ─────────────────────────────────
 // │ GERÇEK    : Services/ListingService.swift | SAHTE (test): YukumTests/Support/FakeListingService.swift
 // │ KULLANAN  : ViewModels/HomeViewModel, CreateListingViewModel, ListingOffersViewModel (servise değil bu sözleşmeye bağlıdırlar)
+// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol, String, Int, Double
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingServicing | fonksiyonlar: create, myListings, openListings, cancel
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: servislerin "ne yapabildiğini" anlatan SÖZLEŞMELER (protocol).
@@ -17,7 +19,7 @@ import Foundation
 // BAĞLANTI: ViewModels/*.swift sözleşmeleri kullanır | gerçek servisler Services/*Service.swift (aşağıdaki extension'lar onları sözleşmeye bağlar) | sahte servisler YukumTests/Support/
 
 protocol ListingServicing {
-    func create(_ body: CreateListingRequest) async throws -> ListingResponse
+    func create(_ body: CreateListingRequest) async throws -> ListingResponse // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
     func myListings() async throws -> [Listing]
     func openListings(fromCityId: Int, fromDistrictId: Int, lat: Double?, lon: Double?) async throws -> [Listing]
     func cancel(listingId: String) async throws

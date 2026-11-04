@@ -10,6 +10,8 @@ import Foundation
 // │ ÜRETEN    : MyOffersViewModel.openChat | ListingOffersViewModel.openChat | OldOffersViewModel.openChat → kendi "chat" değişkenine yazar
 // │ TÜKETEN   : Views/*View.navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } → ViewModels/ChatViewModel(context:)
 // │ MODEL     : CarrierOffer, ListingOffer, ShipperHistoryOffer'dan türetilir
+// │ HAZIR (Swift/Apple) [SWIFT] : static, Hashable, String, Bool
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatContext | fonksiyonlar: forCarrier, forShipperPending, forShipperHistory | değişken/durumlar: offerId, title, canComplete, canWrite
 // └──────────────────────────────────────────────────────────────────────
 
 // ChatContext: bir sohbetin AÇILIŞ BİLGİSİ | hangi teklif, başlıkta kim yazsın, yazılabilir mi, bitirilebilir mi
@@ -25,7 +27,7 @@ struct ChatContext: Hashable {
 
     // Taşımacı kendi teklifinin sohbetini açıyor (Tekliflerim): yazı yalnız bekleyen ve kabul edilende, bitirme yalnız kabul edilende
     // ⮕ ZİNCİR: Taşımacı kendi teklifinin sohbetini açıyor ← MyOffersViewModel.openChat(_:) ← Views/MyOffersView "Sohbet" düğmesi
-    static func forCarrier(_ offer: CarrierOffer) -> ChatContext {
+    static func forCarrier(_ offer: CarrierOffer) -> ChatContext { // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
         ChatContext(offerId: offer.id, title: offer.shipperName,
                     canComplete: offer.status == "Accepted", canWrite: offer.status == "Pending" || offer.status == "Accepted")
     }

@@ -5,7 +5,7 @@
 //  Created by İsa Anıl Koca on 29.10.2026.
 //
 
-import SwiftUI // [SWIFT] ekran çizim kütüphanesi
+import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
@@ -18,6 +18,8 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 // │ Çıkış Yap                →  viewModel.signOut()                 →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
 // │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
 // │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | CreateListingView, OldOffersView, MyOffersView
+// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, NotificationCenter, import SwiftUI, View, NavigationStack, NavigationLink, List, ForEach, VStack, HStack, Text, Button, Toggle, Picker, Image, ToolbarItem, Color, Circle, .task, .refreshable, .onChange, .onReceive, .navigationTitle, .toolbar, .overlay, .padding, .buttonStyle, .pickerStyle, .listStyle, .font, .foregroundColor, .background, .clipShape, .offset, .tag, dismiss …
+// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: HomeView | değişken/durumlar: viewModel, dismiss, openURL, body, listError, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
@@ -27,11 +29,11 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (her yenilemede yeni ViewModel oluşmaz)
     // @Observable olduğu için viewModel içindeki değişkenler değişince bu ekran kendiliğinden yenilenir
-    @State private var viewModel: HomeViewModel
+    @State private var viewModel: HomeViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
 
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
-    @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır
+    @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
     // init: dışarıdan "user" verilir (LoginView: HomeView(user: user)), ViewModel burada oluşturulur
     // State(initialValue:): @State'i elle başlatma yolu | kalıbı: Models/Auth/ → struct LoginUser
@@ -46,14 +48,14 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
         NavigationStack { // NavigationStack [SWIFT]: ekranlar arası geçiş + geri oku yönetir | NavigationLink'ler bunun içinde çalışır
 
-            VStack(spacing: 24) { // elemanları alt alta dizer
+            VStack(spacing: 24) { // elemanları alt alta dizer | VStack [SWIFT]: elemanları alt alta dizer
 
-                Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser)
+                Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser) | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
 
                 // user.role API'den "Shipper" ya da "Carrier" gelir | yazımı API ile birebir aynı olmalı
                 if viewModel.isShipper { // GÖRÜNÜM kararı: ekranda ne ÇİZİLECEK | Yük Veren ilan listesini görür, Taşımacı aşağıdaki else'teki yazıyı
 
-                    if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+                    if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez | .foregroundColor [SWIFT]: yazı rengi
 
                     if viewModel.listings.isEmpty { // liste boş mu
                         Text("Henüz ilanın yok, ilk ilanını ver.").foregroundColor(.secondary) // boşsa bu yazı görünür | .secondary [SWIFT]: gri, ikincil yazı rengi
@@ -72,7 +74,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             } label: { // label: satırın görünen kısmı
                                 ListingRow(listing: listing) // BAĞLANTI: Views/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
                             }
-                        }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi
+                        }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi | .listStyle [SWIFT]: liste görünüm stili
                         .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister
                     }
 
@@ -84,12 +86,12 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
                     HStack { // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
                         Picker("İl", selection: $viewModel.filterCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ) | ⮕ HomeViewModel.filterCityId (Picker seçimi buraya yazılır)
-                            Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok
+                            Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok | .tag [SWIFT]: Picker seçeneğinin değeri
                             ForEach(viewModel.cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: ViewModel.load'da dolan liste | ⮕ HomeViewModel.cities ← CityService.cities() → [City]
                                 Text(city.name).tag(city.id) // city.name: ekranda görünen ad | tag(city.id): seçilince değişkene yazılacak numara
                             }
                         }
-                        .pickerStyle(.menu) // açılır menü görünümü
+                        .pickerStyle(.menu) // açılır menü görünümü | .pickerStyle [SWIFT]: seçici görünüm stili
                         // .onChange [SWIFT]: değişkeni izler, değişince BİR KEZ çalışır | il değişince ViewModel ilçe seçimini sıfırlar ve yeni ilin ilçelerini çeker (mantık ViewModel'de, burada yalnız tetikleme)
                         .onChange(of: viewModel.filterCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = yeni değer
                             Task { await viewModel.cityFilterChanged(to: newId) } // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır | ⮕ HomeViewModel.cityFilterChanged → CityService.districts(cityId:) → filterDistricts
@@ -122,7 +124,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         HStack {
                             Text("Konum izni kapalı").font(.caption).foregroundColor(.red)
                             // Button: basınca iOS Ayarlar uygulamasında bu uygulamanın sayfasını açar | UIApplication.openSettingsURLString: Apple'ın hazır "ayarlar" adresi
-                            Button("Ayarları aç") { openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption)
+                            Button("Ayarları aç") { openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption) // UIApplication [SWIFT]: iOS uygulama nesnesi (Ayarlar adresi için)
                         }
                     } else if let message = viewModel.locationError { // else if: ya da | konum alınamadıysa (GPS yok vb.) hata yazısı
                         Text(message).font(.caption).foregroundColor(.red)
@@ -148,13 +150,13 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         await viewModel.signOut() // ⮕ HomeViewModel.signOut() → Networking/AuthSession.signOut() → Keychain silinir + POST /api/v1/auth/logout
                         dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
                     }
-                }.buttonStyle(.borderedProminent)
+                }.buttonStyle(.borderedProminent) // .buttonStyle [SWIFT]: düğme görünüm stili
 
-            }.padding()
+            }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
-            .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Networking/Notification+SessionExpired.swift)
-            .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık
+            .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
+            .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık | .navigationTitle [SWIFT]: üst çubuk başlığı
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
                 if viewModel.isShipper { // yalnız Yük Veren ilan açabilir
                     ToolbarItem(placement: .topBarTrailing) { // ToolbarItem [SWIFT]: çubuktaki bir eleman | placement: nerede durur | .topBarTrailing: sağ üst köşe
@@ -182,7 +184,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun ÜSTÜNE katman koyar | alignment: .topTrailing = sağ üst köşe
                                     if viewModel.unseenCount > 0 { // > büyüktür | görülmemiş karar varsa rozet çizilir, yoksa hiç çizilmez
                                         Text("\(viewModel.unseenCount)").font(.caption2).foregroundColor(.white) // rozetin içindeki sayı | ⮕ HomeViewModel.unseenCount ← OfferService.unseenCount() → UnseenCount.count
-                                            .padding(4).background(Color.red).clipShape(Circle()) // .padding: etrafında boşluk | .background: kırmızı zemin | .clipShape(Circle()): yuvarlak yapar
+                                            .padding(4).background(Color.red).clipShape(Circle()) // .padding: etrafında boşluk | .background: kırmızı zemin | .clipShape(Circle()): yuvarlak yapar | Color [SWIFT]: renk | Circle [SWIFT]: daire şekli | .background [SWIFT]: arka plan | .clipShape [SWIFT]: görünümü şekle göre keser
                                             .offset(x: 10, y: -10) // .offset [SWIFT]: rozeti ikonun biraz sağ-üstüne kaydırır | x: sağa, y: yukarı (eksi)
                                     }
                                 }
