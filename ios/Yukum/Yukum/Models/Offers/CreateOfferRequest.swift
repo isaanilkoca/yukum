@@ -10,8 +10,6 @@ import Foundation
 // │ DOLDURAN  : ViewModels/ListingDetailViewModel.submit() (amountText → Int, note boşsa nil)
 // │ YOL       : Views/ListingDetailView → ListingDetailViewModel → Services/OfferService.create → POST /api/v1/listings/{id}/offers
 // │ CEVAP     : OfferResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CreateOfferRequest | değişken/durumlar: amount, note
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: teklif paketlerinin kalıpları. Gönderilecek paket + gelen cevap.

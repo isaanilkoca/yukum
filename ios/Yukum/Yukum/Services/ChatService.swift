@@ -10,8 +10,6 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient | MODEL: ChatMessage, SendMessageRequest
 // │ API       : backend MessagesController: GET/POST/DELETE /api/v1/offers/{id}/messages | OffersController: POST /offers/{id}/complete
 // │ SAHTESİ   : YukumTests/Support/FakeChatService.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatService | fonksiyonlar: messages, send, clear, complete | değişken/durumlar: api
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: teklif sohbeti uçlarıyla konuşur. İsteğin kendisi (jeton, 401'de yenileme, hata çevirme) Networking/APIClient.swift'te.

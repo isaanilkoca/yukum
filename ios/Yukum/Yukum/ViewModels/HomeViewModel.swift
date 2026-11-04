@@ -12,8 +12,6 @@ import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenl
 // │ MODEL     : Listing, City, District, LoginUser
 // │ AKIŞ      : View .task(id:) → load() → servis → API → Model dizisi → listings değişkeni → @Observable → View yeniden çizer
 // │ KONUM/ÇIKIŞ: Location/LocationProviding (konum) ve Services/Protocols/SessionRestoring.swift → SessionSigningOut (çıkış) sözleşmeleri; View bunlara doğrudan dokunmaz
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, guard, try?, String, Int, Bool, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: HomeViewModel | fonksiyonlar: nearMeChanged, signOut, load, cityFilterChanged | değişken/durumlar: user, listingService, offerService, cityService, session, location, listings, listError, unseenCount, cities …
 // └──────────────────────────────────────────────────────────────────────
 
 // ViewModel NEDİR? (MVVM = Model - View - ViewModel)

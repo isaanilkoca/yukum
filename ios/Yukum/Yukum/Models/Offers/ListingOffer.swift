@@ -10,8 +10,6 @@ import Foundation
 // │ ÜRETEN    : Services/OfferService.listingOffers ← GET /api/v1/listings/{id}/offers
 // │ SAKLAYAN  : ViewModels/ListingOffersViewModel.offers → Views/ListingOffersView (List, Kabul/Reddet/Sohbet)
 // │ SOHBET    : ViewModels/ChatContext.forShipperPending(_:) bu modelden sohbet açılış bilgisi üretir
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingOffer | değişken/durumlar: id, carrierName, amount, note, status
 // └──────────────────────────────────────────────────────────────────────
 
 struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersiz id'si var, List'te id: yazmak gerekmez | Decodable [SWIFT]: JSON'dan bu türde değer üretilebilir

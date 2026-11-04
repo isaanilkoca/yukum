@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/AuthServicing → AuthService.login | SessionRestoring → Networking/AuthSession.restore | Security/DeviceID
 // │ MODEL     : LoginRequest (giden), LoginResponse (gelen), LoginUser (giriş yapan kişi)
 // │ AKIŞ      : Açılış: restoreSession() otomatik giriş | Giriş: login() → AuthService → jetonlar AuthSession'a → loggedInUser dolar → View HomeView'ı açar
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, @escaping, async, await, defer, guard, try?, String, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LoginViewModel | fonksiyonlar: restoreSession, login | değişken/durumlar: auth, session, deviceId, emailOrPhone, password, errorMessage, isLoading, isRestoring, loggedInUser, user …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: giriş ekranının durumu ve mantığı (alanlar, doğrulama, giriş isteği, otomatik giriş, hata)

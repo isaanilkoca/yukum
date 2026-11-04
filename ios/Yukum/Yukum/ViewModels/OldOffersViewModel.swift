@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.shipperHistory / hide
 // │ MODEL     : ShipperHistoryOffer | sohbet için ChatContext
 // │ AKIŞ      : View .task → load() → shipperHistory → offers | Sil → hide() → load()
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, String, Bool, Observation, .contains
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OldOffersViewModel | fonksiyonlar: canHide, load, hide, openChat | değişken/durumlar: service, offers, errorMessage, chat, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "Eski Teklifler" (Yük Veren, karara bağlanmış teklifler) ekranının durumu ve mantığı: liste, silme kuralı, sohbet

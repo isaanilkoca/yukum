@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: ListingServicing (sözleşme) ─────────────────────────────────
 // │ GERÇEK    : Services/ListingService.swift | SAHTE (test): YukumTests/Support/FakeListingService.swift
 // │ KULLANAN  : ViewModels/HomeViewModel, CreateListingViewModel, ListingOffersViewModel (servise değil bu sözleşmeye bağlıdırlar)
-// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol, String, Int, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingServicing | fonksiyonlar: create, myListings, openListings, cancel
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: servislerin "ne yapabildiğini" anlatan SÖZLEŞMELER (protocol).

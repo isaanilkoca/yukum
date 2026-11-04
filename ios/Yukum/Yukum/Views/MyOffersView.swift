@@ -14,8 +14,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ "Yeni" rozeti            →  CarrierOffer.isNew ← loadAndMarkSeen()  →  OfferService.markSeen()     →  POST /api/v1/offers/mine/seen    →  (yok)
 // │ Sil (kaydırınca)         →  viewModel.canHide(_:) / hide(_:)    →  OfferService.hide()             →  DELETE /api/v1/offers/{id}       →  (yok)
 // │ Sohbet düğmesi           →  viewModel.canChat(_:) / openChat(_:) → chat = ChatContext.forCarrier     →  (ChatView açılır)                →  ChatContext
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @ViewBuilder, await, Task, import SwiftUI, View, List, ForEach, Section, VStack, HStack, Text, Button, Spacer, Color, Capsule, #Preview, .task, .refreshable, .navigationDestination, .navigationTitle, .swipeActions, .padding, .buttonStyle, .listStyle, .font, .foregroundColor, .background, .clipShape, Int, ViewBuilder, .bold, .navigationBarTitleDisplayMode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: MyOffersView | fonksiyonlar: offerRow | değişken/durumlar: viewModel, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Taşımacı'nın tüm teklifleri = "Tekliflerim". İki bölüm: BEKLEYENLER (karar bekleyen) ve GEÇMİŞ (kabul/red/tamamlanan/iptal). Bitmiş olanları silebilir.

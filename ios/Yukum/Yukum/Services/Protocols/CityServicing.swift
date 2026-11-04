@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: CityServicing (sözleşme) ────────────────────────────────────
 // │ GERÇEK    : Services/CityService.swift | SAHTE (test): YukumTests/Support/FakeCityService.swift
 // │ KULLANAN  : ViewModels/HomeViewModel (filtre), ViewModels/CreateListingViewModel (Kalkış/Varış)
-// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CityServicing | fonksiyonlar: cities, districts
 // └──────────────────────────────────────────────────────────────────────
 
 protocol CityServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sahip olan her şey bu sözleşmeyi karşılar"

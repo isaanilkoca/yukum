@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: OfferServicing (sözleşme) ───────────────────────────────────
 // │ GERÇEK    : Services/OfferService.swift | SAHTE (test): YukumTests/Support/FakeOfferService.swift
 // │ KULLANAN  : ViewModels/HomeViewModel (unseenCount), MyOffersViewModel, ListingOffersViewModel, OldOffersViewModel, ListingDetailViewModel
-// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol, String, Int, Bool
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OfferServicing | fonksiyonlar: create, listingOffers, decide, myOffers, unseenCount, markSeen, hide, shipperHistory
 // └──────────────────────────────────────────────────────────────────────
 
 protocol OfferServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sahip olan her şey bu sözleşmeyi karşılar"

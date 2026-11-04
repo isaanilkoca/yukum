@@ -18,8 +18,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Çıkış Yap                →  viewModel.signOut()                 →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
 // │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
 // │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | CreateListingView, OldOffersView, MyOffersView
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, NotificationCenter, import SwiftUI, View, NavigationStack, NavigationLink, List, ForEach, VStack, HStack, Text, Button, Toggle, Picker, Image, ToolbarItem, Color, Circle, .task, .refreshable, .onChange, .onReceive, .navigationTitle, .toolbar, .overlay, .padding, .buttonStyle, .pickerStyle, .listStyle, .font, .foregroundColor, .background, .clipShape, .offset, .tag, dismiss …
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: HomeView | değişken/durumlar: viewModel, dismiss, openURL, body, listError, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.

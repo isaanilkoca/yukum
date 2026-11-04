@@ -10,8 +10,6 @@ import Foundation
 // │ ÜRETEN    : LoginResponse.user (sunucu JSON) | AuthSession.restore() (otomatik giriş)
 // │ SAKLAYAN  : LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → Views/HomeView(user:) → HomeViewModel.user
 // │ KULLANIM  : HomeViewModel.isShipper rolü okur: Yük Veren mi Taşımacı mı ekranı bu karar belirler (Views/HomeView if/else)
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LoginUser | değişken/durumlar: id, displayName, role
 // └──────────────────────────────────────────────────────────────────────
 
 // Cevaptaki "user" kutusu: giriş yapan kişinin kısa bilgisi.

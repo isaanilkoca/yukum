@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.listingOffers / decide | ListingServicing → ListingService.cancel
 // │ MODEL     : Listing (hangi ilan), ListingOffer | sohbet için ChatContext
 // │ AKIŞ      : View .task → load() → offers | Kabul/Reddet → decide() → load() | Kaldır → cancelListing() → true ise View kapanır
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, String, Bool, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingOffersViewModel | fonksiyonlar: load, decide, cancelListing, openChat | değişken/durumlar: listing, offerService, listingService, offers, errorMessage, chat, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "Gelen Teklifler" (Yük Veren, bir ilanın BEKLEYEN teklifleri) ekranının durumu ve mantığı: liste, kabul/red kararı, ilanı yayından kaldırma

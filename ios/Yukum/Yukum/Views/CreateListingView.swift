@@ -13,8 +13,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Kalkış/Varış il Picker'ı →  viewModel.cities, fromCityId, toCityId  →  CityService.cities()         →  GET /api/v1/cities               →  [City]
 // │ Kalkış/Varış ilçe Picker →  viewModel.fromDistricts, toDistricts ← fromCityChanged/toCityChanged  →  CityService.districts()  →  GET /cities/{id}/districts  →  [District]
 // │ İlanı Yayınla düğmesi    →  viewModel.submit()                  →  ListingService.create()         →  POST /api/v1/listings            →  CreateListingRequest → ListingResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, Date, import SwiftUI, View, ForEach, VStack, ScrollView, Text, TextField, Button, Picker, DatePicker, #Preview, .task, .onChange, .padding, .disabled, .buttonStyle, .pickerStyle, .textFieldStyle, .keyboardType, .font, .foregroundColor, .tag, dismiss, .bold
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CreateListingView | değişken/durumlar: viewModel, dismiss, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Yük Veren'in ilan ver formu. Akış: alanları doldur → kontrol et → pakete koy → API'ye gönder

@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/AuthServicing → AuthService.register → POST /api/v1/auth/register/shipper
 // │ MODEL     : RegisterRequest (giden), RegisterResponse (gelen)
 // │ AKIŞ      : Alanlar $viewModel ile doldurulur → "Kayıt Ol" → register(): doğrula → RegisterRequest → AuthService → isSuccess / errorMessage
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, static, String, Self, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterViewModel | fonksiyonlar: register | değişken/durumlar: auth, fullName, email, phone, password, companyName, kvkkAccepted, errorMessage, isLoading, isSuccess …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: Yük Veren kayıt formunun durumu ve mantığı (alanlar, doğrulama, paket hazırlama, gönderme, sonuç)

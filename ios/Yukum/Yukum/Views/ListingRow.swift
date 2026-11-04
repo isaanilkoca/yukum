@@ -11,8 +11,6 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ GİRDİ                    →  listing: Listing — HomeView'daki List her satır için verir (ViewModel yok: saf çizim)
 // │ Gösterdikleri            →  başlık, "Mersin → İstanbul", kg · tarih, Taşımacı için "Teklifin: ... Beklemede", "📍 X km uzaklıkta" (Listing.distanceKm)
-// │ HAZIR (Swift/Apple) [SWIFT] : import SwiftUI, View, VStack, Text, .padding, .font, .foregroundColor, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingRow | değişken/durumlar: listing, body, km, amount
 // └──────────────────────────────────────────────────────────────────────
 
 struct ListingRow: View { // View [SWIFT]: bu bir ekran/görünüm

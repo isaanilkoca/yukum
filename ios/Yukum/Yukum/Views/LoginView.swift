@@ -14,8 +14,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Açılışta otomatik giriş  →  viewModel.restoreSession()          →  AuthSession.restore()           →  POST /api/v1/auth/refresh        →  LoginResponse → LoginUser
 // │ Hata yazısı              →  viewModel.errorMessage              →  APIError.userMessage            →  (sunucu Türkçe mesajı)           →  APIErrorResponse
 // │ Ana sayfayı açma         →  viewModel.loggedInUser (dolunca)    →  fullScreenCover → HomeView(user:)  →  -                             →  LoginUser
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, await, Task, import SwiftUI, View, NavigationStack, NavigationLink, VStack, HStack, ZStack, Text, TextField, SecureField, Button, ProgressView, Color, #Preview, .task, .fullScreenCover, .overlay, .padding, .disabled, .textFieldStyle, .keyboardType, .textInputAutocapitalization, .font, .foregroundColor, .bold
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LoginView | değişken/durumlar: viewModel, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş ekranı (uygulamanın ilk ekranı). Akış: alanları doldur → kontrol et → AuthService.login → HomeView

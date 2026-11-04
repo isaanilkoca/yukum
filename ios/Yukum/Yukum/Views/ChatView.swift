@@ -16,8 +16,6 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // │ Menü: İşi Bitir ve Sil   →  viewModel.complete()                →  ChatService.complete()          →  POST /api/v1/offers/{id}/complete →  (yok)
 // │ Yazma/menü kuralları     →  viewModel.canWrite, canComplete, canSend, locked  (kural: ChatContext + locked)
 // │ Otomatik yenileme        →  .task { startPolling() } → 3 sn'de bir load()  (ekran kapanınca iptal)
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, import SwiftUI, View, ForEach, VStack, HStack, LazyVStack, ScrollView, ScrollViewReader, Text, TextField, Button, Menu, Image, Spacer, ToolbarItem, Color, RoundedRectangle, .task, .onChange, .navigationTitle, .toolbar, .alert, .confirmationDialog, .padding, .disabled, .buttonStyle, .textFieldStyle, .font, .foregroundColor, .background, .clipShape, .id, dismiss, .navigationBarTitleDisplayMode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatView | değişken/durumlar: viewModel, dismiss, showClearConfirm, showCompleteConfirm, body, last, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: bir teklifin sohbeti. Yük Veren ile teklifi veren Taşımacı yazışır. Mesajlar balon olarak çizilir, ekran açıkken 3 sn'de bir yenilenir.

@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: APIErrorResponse (sunucunun hata JSON'u) ────────────────────
 // │ NE        : Sunucu hata verince gönderdiği JSON (ProblemDetails): detail = genel mesaj, errors = alan alan hatalar
 // │ KULLANAN  : Networking/APIClient.perform → hata mesajını çıkarıp APIError'a koyar (örn. "Başlık boş olamaz.")
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: APIErrorResponse | değişken/durumlar: detail, errors
 // └──────────────────────────────────────────────────────────────────────
 
 // API hata verince (400, 409...) gelen cevabın kalıbı; ekranda göstereceğimiz mesajı buradan okuruz.

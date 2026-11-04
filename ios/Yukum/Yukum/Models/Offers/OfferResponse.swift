@@ -9,8 +9,6 @@ import Foundation
 // │ MODEL     : Teklif kaydedilince sunucunun döndüğü özet (tutar)
 // │ ÜRETEN    : Services/OfferService.create ← Networking/APIClient
 // │ TÜKETEN   : ViewModels/ListingDetailViewModel.submit(): yalnız başarıyı kullanır
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OfferResponse | değişken/durumlar: amount
 // └──────────────────────────────────────────────────────────────────────
 
 // Gelen cevap. Decodable [SWIFT]: JSON → struct'a çevrilebilir. Yalnız ihtiyacımız olan alanı aldık.

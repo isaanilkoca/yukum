@@ -11,8 +11,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ GELEN     : App/YukumApp.swift → WindowGroup { ContentView() }
 // │ GİDEN     : Views/LoginView.swift (uygulamanın ilk ekranı) → oradan ViewModels/LoginViewModel.restoreSession() otomatik girişi dener
 // │ NOT       : Genel proje haritası ve iz sürme rehberi App/YukumApp.swift'in başındadır
-// │ HAZIR (Swift/Apple) [SWIFT] : import SwiftUI, View, #Preview
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ContentView | değişken/durumlar: body
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: uygulamanın ilk ekran kapısı. Şimdilik sadece LoginView'a yönlendirir.

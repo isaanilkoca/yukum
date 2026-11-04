@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.create
 // │ MODEL     : Listing (gösterilen ilan), CreateOfferRequest (giden), OfferResponse (gelen)
 // │ AKIŞ      : Tutar/not $viewModel ile yazılır → "Teklifi Gönder" → submit(): doğrula → CreateOfferRequest → OfferService.create → true ise View kapanır
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, static, String, Int, Bool, Self, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingDetailViewModel | fonksiyonlar: submit | değişken/durumlar: listing, service, amountText, note, errorMessage, isLoading, maxAmount, hasExistingOffer, buttonTitle, amount …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: ilan detay ekranındaki TEKLİF formunun durumu ve mantığı (tutar, not, doğrulama, gönderme, hata)

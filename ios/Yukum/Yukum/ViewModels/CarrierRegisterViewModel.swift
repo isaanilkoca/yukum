@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/AuthServicing → AuthService.registerCarrier → POST /api/v1/auth/register/carrier
 // │ MODEL     : RegisterCarrierRequest (içinde [VehicleRequest]) (giden), RegisterResponse (gelen), VehicleType (araç Picker'ı)
 // │ AKIŞ      : Alanlar $viewModel ile doldurulur → "Kayıt Ol" → register(): doğrula → VehicleRequest → RegisterCarrierRequest → AuthService
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, static, String, Int, Self, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CarrierRegisterViewModel | fonksiyonlar: register | değişken/durumlar: auth, fullName, email, phone, password, vehicleType, capacityKg, plateNumber, kvkkAccepted, errorMessage …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: Taşımacı kayıt formunun durumu ve mantığı (kişi alanları + tek araç, doğrulama, paket hazırlama, gönderme, sonuç)

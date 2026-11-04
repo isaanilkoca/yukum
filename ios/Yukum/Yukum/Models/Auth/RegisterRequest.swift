@@ -10,8 +10,6 @@ import Foundation
 // │ DOLDURAN  : ViewModels/RegisterViewModel.register() (formdaki alanlardan; cityId şimdilik sabit 34)
 // │ YOL       : Views/RegisterView → RegisterViewModel → Services/AuthService.register → POST /api/v1/auth/register/shipper
 // │ CEVAP     : RegisterResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int, Bool
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterRequest | değişken/durumlar: fullName, email, password, phone, cityId, companyName, kvkkAccepted
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA NE İŞE YARAR?

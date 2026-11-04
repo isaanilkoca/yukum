@@ -12,8 +12,6 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient (authorized: false, herkese açık uçlar) | MODEL: City, District
 // │ API       : backend CitiesController: GET /api/v1/cities, GET /api/v1/cities/{id}/districts
 // │ SAHTESİ   : YukumTests/Support/FakeCityService.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CityService | fonksiyonlar: cities, districts | değişken/durumlar: api
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: il ve ilçe listelerini API'den getirir. Bu uçlar HERKESE AÇIKTIR: authorized: false → istekte jeton gitmez (kayıt ekranında henüz giriş yok).

@@ -12,8 +12,6 @@ import Foundation // [SWIFT] ağ araçları
 // │ KULLANIR  : Networking/APIClient | MODEL: CreateOfferRequest, OfferResponse, ListingOffer, CarrierOffer, ShipperHistoryOffer, UnseenCount
 // │ API       : backend OffersController: /api/v1/listings/{id}/offers, /offers/{id}/accept|reject|complete, /offers/mine, /offers/history...
 // │ SAHTESİ   : YukumTests/Support/FakeOfferService.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, String, Int, Bool
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OfferService | fonksiyonlar: create, listingOffers, decide, myOffers, unseenCount, markSeen, hide, shipperHistory | değişken/durumlar: api, action, result
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: teklif uçlarıyla konuşur. İsteğin kendisi (jeton, 401'de otomatik yenileme, hata çevirme) Networking/APIClient.swift'te;

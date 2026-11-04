@@ -14,8 +14,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Kabul et / Reddet        →  viewModel.decide(_:accept:)         →  OfferService.decide()           →  POST /api/v1/offers/{id}/accept|reject →  (yok)
 // │ Sohbet düğmesi           →  viewModel.openChat(_:)              →  chat = ChatContext.forShipperPending →  (ChatView açılır)           →  ChatContext
 // │ Kaldır (ilanı yayından)  →  viewModel.cancelListing()           →  ListingService.cancel()         →  POST /api/v1/listings/{id}/cancel →  (yok)
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, import SwiftUI, View, List, VStack, HStack, Text, Button, Spacer, ToolbarItem, .task, .refreshable, .navigationDestination, .navigationTitle, .toolbar, .alert, .padding, .buttonStyle, .listStyle, .tint, .font, .foregroundColor, dismiss, Int, .bold, .navigationBarTitleDisplayMode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingOffersView | değişken/durumlar: viewModel, dismiss, showCancelConfirm, body, errorMessage, note
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Yük Veren kendi ilanına basınca açılır. İlana gelen BEKLEYEN teklifleri listeler (Kabul Et / Reddet / Sohbet) ve ilanı yayından kaldırma düğmesi vardır.

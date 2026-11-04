@@ -12,8 +12,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Form alanları + KVKK     →  viewModel.fullName, email, phone, password, companyName, kvkkAccepted ($ bağlar)  →  (register() okur)  →  -  →  RegisterRequest
 // │ Kayıt Ol düğmesi         →  viewModel.register()                →  AuthService.register()          →  POST /api/v1/auth/register/shipper →  RegisterRequest → RegisterResponse
 // │ Hata / başarı yazıları   →  viewModel.errorMessage, isSuccess   →  (sunucunun Türkçe mesajı)       →  -                                →  APIErrorResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, await, Task, import SwiftUI, View, VStack, ScrollView, GeometryReader, Text, TextField, SecureField, Button, Toggle, #Preview, .padding, .disabled, .buttonStyle, .textFieldStyle, .keyboardType, .textInputAutocapitalization, .font, .foregroundColor, .frame, .bold
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterView | değişken/durumlar: viewModel, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Yük Veren kayıt formu. Akış: alanları doldur → kontrol et → pakete koy → AuthService ile API'ye gönder → sonucu göster

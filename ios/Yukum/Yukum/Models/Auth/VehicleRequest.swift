@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: VehicleRequest (araç) ───────────────────────────────────────
 // │ MODEL     : Taşımacı kaydındaki tek araç bilgisi
 // │ YOL       : Views/CarrierRegisterView araç alanları → CarrierRegisterViewModel.register() VehicleRequest'e çevirir → RegisterCarrierRequest.vehicles listesine konur → AuthService.registerCarrier | araç türü seçenekleri: Models/Vehicles/VehicleType.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: VehicleRequest | değişken/durumlar: type, plateNumber, capacityKg
 // └──────────────────────────────────────────────────────────────────────
 
 // Tek araç bilgisi; API'nin "vehicles" listesindeki her eleman böyle görünür.

@@ -9,8 +9,6 @@ import Foundation
 // │ MODEL     : Taşımacı kaydı için GİDEN paket (içinde VehicleRequest listesi var)
 // │ YOL       : Views/CarrierRegisterView → ViewModels/CarrierRegisterViewModel.register() → Services/AuthService.registerCarrier → POST /api/v1/auth/register/carrier
 // │ CEVAP     : RegisterResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String, Int, Bool
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterCarrierRequest | değişken/durumlar: fullName, email, password, phone, homeCityId, vehicles, kvkkAccepted
 // └──────────────────────────────────────────────────────────────────────
 
 // Taşımacı kayıt paketi.

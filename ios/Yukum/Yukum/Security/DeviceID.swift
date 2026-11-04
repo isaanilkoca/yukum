@@ -9,8 +9,6 @@ import Foundation
 // │ KULLANAN  : ViewModels/LoginViewModel (deviceId: { DeviceID.current } → LoginRequest.deviceId) | Networking/AuthSession.performRefresh (yenilemede aynı kimlik)
 // │ NEDEN SABİT: Sunucu yenileme jetonunu cihaza bağlar; her seferinde yeni kimlik olsaydı yenileme reddedilirdi
 // │ SAKLAR    : Security/KeychainStore (uygulama silinip kurulsa bile aynı kalır)
-// │ HAZIR (Swift/Apple) [SWIFT] : enum, static, UUID, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: DeviceID | değişken/durumlar: key, current, saved, new
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: bu cihaza ait SABİT bir kimlik üretir ve Keychain'de saklar.

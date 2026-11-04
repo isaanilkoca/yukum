@@ -12,8 +12,6 @@ import Foundation // Swift'in hazır ağ araçları bu kütüphanede
 // │ KULLANIR  : Networking/APIClient (authorized: false) | Networking/AuthSession.signIn (giriş başarılı olunca jetonları saklar) | MODEL: LoginRequest, LoginResponse, RegisterRequest, RegisterCarrierRequest, RegisterResponse
 // │ API       : backend AuthController: POST /api/v1/auth/login, /register/shipper, /register/carrier
 // │ SAHTESİ   : YukumTests/Support/FakeAuthService.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: AuthService | fonksiyonlar: register, registerCarrier, login | değişken/durumlar: api, response
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: kayıt ve giriş uçlarıyla konuşur. [BİZİM] = adı biz koyduk | [SWIFT] = Swift'in hazır kodu

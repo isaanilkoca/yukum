@@ -13,8 +13,6 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // │ Araç Picker + kapasite + plaka  →  viewModel.vehicleType, capacityKg, plateNumber  →  (register() VehicleRequest'e çevirir)  →  -  →  VehicleType (seçenekler), VehicleRequest
 // │ Kayıt Ol düğmesi         →  viewModel.register()                →  AuthService.registerCarrier()   →  POST /api/v1/auth/register/carrier →  RegisterCarrierRequest ([VehicleRequest]) → RegisterResponse
 // │ Hata / başarı yazıları   →  viewModel.errorMessage, isSuccess   →  (sunucunun Türkçe mesajı)       →  -                                →  APIErrorResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, await, Task, import SwiftUI, View, ForEach, VStack, ScrollView, GeometryReader, Text, TextField, SecureField, Button, Toggle, Picker, #Preview, .padding, .disabled, .buttonStyle, .pickerStyle, .textFieldStyle, .keyboardType, .textInputAutocapitalization, .font, .foregroundColor, .frame, .tag, .bold
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CarrierRegisterView | değişken/durumlar: viewModel, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Taşımacı kayıt formu. Akış: alanları doldur → kontrol et → pakete koy → AuthService ile API'ye gönder → sonucu göster

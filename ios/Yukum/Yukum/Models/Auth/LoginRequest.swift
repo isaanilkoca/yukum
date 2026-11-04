@@ -10,8 +10,6 @@ import Foundation
 // │ DOLDURAN  : ViewModels/LoginViewModel.swift → login() (alanlar: emailOrPhone, password; deviceId: Security/DeviceID.swift)
 // │ YOL       : Views/LoginView (TextField) → LoginViewModel → Services/AuthService.login(_:) → Networking/APIClient.send(.post) → JSON → POST /api/v1/auth/login
 // │ KURAL     : Alan adları API'nin JSON adlarıyla BİREBİR aynı olmalı (Encodable, adlar JSON anahtarı olur)
-// │ HAZIR (Swift/Apple) [SWIFT] : Encodable, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LoginRequest | değişken/durumlar: emailOrPhone, password, deviceId
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA NE İŞE YARAR?

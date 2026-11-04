@@ -10,8 +10,6 @@ import Foundation
 // │ ÜRETEN    : Services/CityService.cities ← GET /api/v1/cities (herkese açık)
 // │ SAKLAYAN  : ViewModels/HomeViewModel.cities (filtre Picker'ı) | ViewModels/CreateListingViewModel.cities (Kalkış/Varış İli Picker'ları)
 // │ SEÇİM     : Picker'ın tag'i city.id → filterCityId / fromCityId / toCityId değişkenine yazılır
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: City | değişken/durumlar: id, name
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA NE İŞE YARAR? API'den gelen il ve ilçe kayıtlarının kalıbı (form kağıdı). Sadece kalıp; çekme işini CityService yapar.

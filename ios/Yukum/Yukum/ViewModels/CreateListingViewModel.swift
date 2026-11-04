@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/ListingServicing → ListingService.create | CityServicing → CityService
 // │ MODEL     : CreateListingRequest (giden), ListingResponse (gelen), City, District
 // │ AKIŞ      : Alanlar $viewModel.x ile doldurulur → "İlanı Yayınla" → submit(): doğrula → CreateListingRequest → ListingService.create → true ise View kapanır
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, defer, guard, try?, static, DateFormatter, Locale, Date, String, Int, Bool, Self, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: CreateListingViewModel | fonksiyonlar: loadCities, fromCityChanged, toCityChanged, formatDate, submit | değişken/durumlar: listingService, cityService, title, details, weightKg, vehicleType, pickupDate, budget, errorMessage, isLoading …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "İlan Ver" formunun durumu ve mantığı (alanlar, il→ilçe zinciri, doğrulama, paket hazırlama, gönderme)

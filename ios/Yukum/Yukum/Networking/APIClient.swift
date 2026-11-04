@@ -11,8 +11,6 @@ import Foundation
 // │ 401       : Jeton süresi dolduysa: AuthSession.tokenAfterFailure yeni jeton verir → istek BİR KEZ tekrarlanır
 // │ HATA      : APIError fırlatır (mesaj: APIErrorResponse'tan) → ViewModel'in catch'i → Error.userMessage → ekranda kırmızı yazı
 // │ KULLANIR  : Networking/APIConfig (adres), AuthSession (jeton), HTTPMethod (GET/POST...), APIErrorResponse (hata JSON'u)
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, guard, throws, try?, static, Decodable, Encodable, URLSession, URLRequest, URLComponents, URLQueryItem, HTTPURLResponse, JSONEncoder, JSONDecoder, Data, String, Int, Bool, .contains, .decode, .encode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: APIClient | fonksiyonlar: send, sendNoContent, perform, execute | değişken/durumlar: shared, baseURL, session, auth, data, token, fresh, apiError, firstFieldError, components …
 // └──────────────────────────────────────────────────────────────────────
 
 

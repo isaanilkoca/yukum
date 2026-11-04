@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: APIConfig (adres) ───────────────────────────────────────────
 // │ NE        : API'nin ana adresi TEK YERDE (http://localhost:5054)
 // │ KULLANAN  : Networking/APIClient ve Networking/AuthSession (yenileme/çıkış istekleri) — canlıya çıkarken yalnız burası değişir
-// │ HAZIR (Swift/Apple) [SWIFT] : enum, static
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: APIConfig | değişken/durumlar: baseURL
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: API'nin ana adresi TEK YERDE. Daha önce her serviste ayrı "baseURL" yazılıydı; canlıya çıkarken hepsini tek tek değiştirmek gerekirdi.

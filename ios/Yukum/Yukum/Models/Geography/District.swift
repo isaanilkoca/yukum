@@ -10,8 +10,6 @@ import Foundation
 // │ ÜRETEN    : Services/CityService.districts(cityId:) ← GET /api/v1/cities/{id}/districts (il seçilince çekilir)
 // │ SAKLAYAN  : ViewModels/HomeViewModel.filterDistricts | ViewModels/CreateListingViewModel.fromDistricts, toDistricts
 // │ SEÇİM     : Picker'ın tag'i district.id → filterDistrictId / fromDistrictId / toDistrictId
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: District | değişken/durumlar: id, name
 // └──────────────────────────────────────────────────────────────────────
 
 // KULLANAN: Services/CityService.swift districts(cityId:) → [District] döner | ilçe listesi seçilen ile göre CreateListingView'da gösterilecek

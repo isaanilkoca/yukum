@@ -12,8 +12,6 @@ import Foundation // [SWIFT] ağ araçları (URL, JSON) bu kütüphanede
 // │ KULLANIR  : Networking/APIClient (tek kapı) | MODEL: Listing, CreateListingRequest, ListingResponse
 // │ API       : backend ListingsController: POST/GET /api/v1/listings, GET /listings/mine, POST /listings/{id}/cancel
 // │ SAHTESİ   : YukumTests/Support/FakeListingService.swift
-// │ HAZIR (Swift/Apple) [SWIFT] : async, await, throws, extension, URLQueryItem, String, Int, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingService | fonksiyonlar: create, myListings, openListings, cancel | değişken/durumlar: api, items, lat, lon
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: ilan uçlarıyla konuşur. İsteğin kendisi (zarf, jeton, 401'de otomatik yenileme, hata çevirme) Networking/APIClient.swift'te;

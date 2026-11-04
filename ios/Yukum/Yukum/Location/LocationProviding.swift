@@ -9,8 +9,6 @@ import Foundation
 // │ GERÇEK    : Location/LocationManager.swift (CoreLocation) | SAHTE (test): YukumTests/Support/FakeLocation.swift
 // │ KULLANAN  : ViewModels/HomeViewModel (konumu sözleşme üzerinden okur, iOS konum motoruna doğrudan bağlı değildir)
 // │ NEDEN     : Konum izni/GPS testte yok; sözleşme sayesinde "konum şu, izin reddedildi" gibi durumlar sahte konumla denenir
-// │ HAZIR (Swift/Apple) [SWIFT] : protocol, AnyObject, String, Bool, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: LocationProviding | fonksiyonlar: request | değişken/durumlar: latitude, longitude, isDenied, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // protocol [SWIFT]: "bu üyelere sahip olan her şey bu sözleşmeyi karşılar" | AnyObject: yalnız sınıflar (referans) karşılayabilir

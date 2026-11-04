@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/OfferServicing → OfferService.myOffers / markSeen / hide
 // │ MODEL     : CarrierOffer | sohbet için ChatContext
 // │ AKIŞ      : View .task → loadAndMarkSeen() → myOffers → offers → pending/history bölümleri | Sil → hide() → load()
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, try?, String, Bool, Observation, .contains
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: MyOffersViewModel | fonksiyonlar: canHide, canChat, load, loadAndMarkSeen, hide, openChat | değişken/durumlar: service, offers, errorMessage, chat, pendingOffers, historyOffers, message
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: "Tekliflerim" (Taşımacı) ekranının durumu ve mantığı: teklif listesi, Bekleyenler/Geçmiş bölümleri, silme ve sohbet kuralları, "görüldü" işaretleme

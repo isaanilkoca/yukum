@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: AuthServicing (sözleşme) ────────────────────────────────────
 // │ GERÇEK    : Services/AuthService.swift | SAHTE (test): YukumTests/Support/FakeAuthService.swift
 // │ KULLANAN  : ViewModels/LoginViewModel (login) | RegisterViewModel (register) | CarrierRegisterViewModel (registerCarrier)
-// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: AuthServicing | fonksiyonlar: register, registerCarrier, login
 // └──────────────────────────────────────────────────────────────────────
 
 protocol AuthServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sahip olan her şey bu sözleşmeyi karşılar"

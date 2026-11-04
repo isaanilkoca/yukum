@@ -12,8 +12,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ İlan bilgileri           →  viewModel.listing                   →  (HomeView listesinden gelir)    →  -                                →  Listing
 // │ Tutar + Not kutuları     →  viewModel.amountText, note ($ bağ)  →  (submit() okur)                 →  -                                →  CreateOfferRequest
 // │ Teklifi Gönder/Güncelle  →  viewModel.submit(), buttonTitle     →  OfferService.create()           →  POST /api/v1/listings/{id}/offers →  CreateOfferRequest → OfferResponse
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, @Environment, await, Task, import SwiftUI, View, VStack, Text, TextField, Button, Spacer, Divider, .navigationTitle, .padding, .disabled, .buttonStyle, .textFieldStyle, .keyboardType, .font, .foregroundColor, dismiss, Int, .bold, .navigationBarTitleDisplayMode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ListingDetailView | değişken/durumlar: viewModel, dismiss, body, listing, budget, offer, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Taşımacı bir ilana basınca açılan detay ekranı. İlan bilgisini gösterir + teklif formu içerir.

@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: ChatServicing (sözleşme) ────────────────────────────────────
 // │ GERÇEK    : Services/ChatService.swift | SAHTE (test): YukumTests/Support/FakeChatService.swift
 // │ KULLANAN  : ViewModels/ChatViewModel
-// │ HAZIR (Swift/Apple) [SWIFT] : async, throws, protocol, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatServicing | fonksiyonlar: messages, send, clear, complete
 // └──────────────────────────────────────────────────────────────────────
 
 protocol ChatServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sahip olan her şey bu sözleşmeyi karşılar"

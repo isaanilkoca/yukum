@@ -12,8 +12,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Teklif listesi           →  viewModel.offers ← load()           →  OfferService.shipperHistory()   →  GET /api/v1/offers/history       →  [ShipperHistoryOffer]
 // │ Sil (kaydırınca)         →  viewModel.canHide(_:) / hide(_:)    →  OfferService.hide()             →  DELETE /api/v1/offers/{id}       →  (yok)
 // │ Sohbet düğmesi           →  viewModel.openChat(_:)              →  chat = ChatContext.forShipperHistory →  (ChatView açılır)           →  ChatContext
-// │ HAZIR (Swift/Apple) [SWIFT] : @State, @Bindable, await, Task, import SwiftUI, View, List, VStack, HStack, Text, Button, Spacer, #Preview, .task, .refreshable, .navigationDestination, .navigationTitle, .swipeActions, .padding, .buttonStyle, .listStyle, .font, .foregroundColor, Int, .bold, .navigationBarTitleDisplayMode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: OldOffersView | değişken/durumlar: viewModel, body, errorMessage
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: Yük Veren'in karara bağladığı (kabul/red/tamamlanan) tüm teklifler = "Eski teklifler". Bitmiş olanları kaydırıp kendi listesinden silebilir.

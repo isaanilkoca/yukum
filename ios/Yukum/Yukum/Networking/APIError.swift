@@ -9,8 +9,6 @@ import Foundation
 // │ FIRLATAN  : Networking/APIClient (sunucu hata verdi / oturum bitti) ve Networking/AuthSession (yenileme hatası)
 // │ YAKALAYAN : ViewModels/* içindeki catch bloğu → Error+UserMessage.userMessage → ViewModel'in errorMessage / listError değişkeni → View kırmızı Text
 // │ isSessionExpired: true ise "oturum bitti, yeniden giriş" demek (şifre yanlış gibi hatalardan ayırt etmek için)
-// │ HAZIR (Swift/Apple) [SWIFT] : Error, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: APIError | değişken/durumlar: message, isSessionExpired
 // └──────────────────────────────────────────────────────────────────────
 
 // KULLANIM: hata bulunca "throw APIError(message:)" fırlatılır; ekranlar (RegisterView, CarrierRegisterView, LoginView...) catch ile yakalayıp message'ı kırmızı yazar.

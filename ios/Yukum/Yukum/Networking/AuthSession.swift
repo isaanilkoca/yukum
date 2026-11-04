@@ -10,8 +10,6 @@ import Foundation
 // │ ÇAĞIRAN   : Networking/APIClient (her istekte jeton, 401'de yenileme) | Services/AuthService.login (signIn) | LoginViewModel.restoreSession (restore) | Views/HomeView (signOut)
 // │ YAYINLAR  : Süre dolup yenileme reddedilirse .sessionExpired yayınlar → Views/HomeView dinler (.onReceive) → giriş ekranına döner
 // │ KULLANIR  : Security/KeychainStore (jeton), Security/DeviceID (cihaz kimliği), Models/Auth/LoginResponse, Models/Auth/LoginUser
-// │ HAZIR (Swift/Apple) [SWIFT] : actor, async, await, defer, guard, throws, try?, Task, extension, static, Error, URLSession, URLRequest, HTTPURLResponse, JSONEncoder, JSONDecoder, NotificationCenter, String, Bool, URL, .contains, .decode, .encode
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: AuthSession | fonksiyonlar: currentAccessToken, signIn, restore, tokenAfterFailure, refreshAccessToken, refresh, expireSession, signOut, clearLocal, performRefresh | değişken/durumlar: shared, baseURL, session, keychainService, refreshKey, accessToken, refreshTask, keychainServiceForTests, hasStoredSession, task …
 // └──────────────────────────────────────────────────────────────────────
 
 

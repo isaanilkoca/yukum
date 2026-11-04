@@ -11,8 +11,6 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ SERVİS    : Services/Protocols/ChatServicing → ChatService
 // │ MODEL     : ChatMessage, SendMessageRequest, ChatContext (açılış bilgisi)
 // │ AKIŞ      : View .task → startPolling() → 3 sn'de bir load() → messages → balonlar | Gönder → send() → servis → load()
-// │ HAZIR (Swift/Apple) [SWIFT] : @Observable, async, await, guard, try?, Task, Duration, String, Bool, Observation
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: ChatViewModel | fonksiyonlar: startPolling, load, send, clear, complete | değişken/durumlar: context, service, pollInterval, messages, draft, errorMessage, locked, canWrite, canComplete, canSend …
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: sohbet ekranının durumu ve mantığı (mesajlar, taslak, hata, kilit, gönderme, temizleme, işi bitirme, otomatik yenileme)

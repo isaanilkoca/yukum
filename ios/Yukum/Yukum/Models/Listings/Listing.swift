@@ -10,8 +10,6 @@ import Foundation
 // │ ÜRETEN    : Services/ListingService.myListings() (Yük Veren) ve openListings() (Taşımacı) ← Networking/APIClient JSON'u bu kalıba çevirir
 // │ SAKLAYAN  : ViewModels/HomeViewModel.listings (liste) | ListingOffersViewModel.listing, ListingDetailViewModel.listing (tek ilan)
 // │ GÖSTEREN  : Views/HomeView (List) → Views/ListingRow (satır) | Views/ListingDetailView | Views/ListingOffersView (başlık)
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, Identifiable, String, Int, Double
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: Listing | değişken/durumlar: id, title, weightKg, fromCityName, fromDistrictName, toCityName, toDistrictName, pickupDate, budget, myOfferAmount …
 // └──────────────────────────────────────────────────────────────────────
 
 // API'den gelen tek ilan (GET /api/v1/listings/mine listesindeki her eleman). Yalnız listede göstereceklerimizi aldık.

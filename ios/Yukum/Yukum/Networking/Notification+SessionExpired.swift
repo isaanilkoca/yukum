@@ -8,8 +8,6 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: .sessionExpired bildirimi ───────────────────────────────────
 // │ YAYINLAYAN: Networking/AuthSession.expireSession() (yenileme reddedilince)
 // │ DİNLEYEN  : Views/HomeView → .onReceive(NotificationCenter...publisher(for: .sessionExpired)) { dismiss() } → giriş ekranına dönülür
-// │ HAZIR (Swift/Apple) [SWIFT] : extension, static, Notification.Name, Notification
-// │ BİZİM (bizim yazdığımız) [BİZİM] : değişken/durumlar: sessionExpired
 // └──────────────────────────────────────────────────────────────────────
 
 // "Oturum süresi doldu, yeniden giriş gerekiyor" haberi | HomeView dinler ve giriş ekranına döner

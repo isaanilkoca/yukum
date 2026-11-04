@@ -9,8 +9,6 @@ import Security // [SWIFT] Apple'ın güvenlik çerçevesi: Keychain (anahtar zi
 // ┌─ BAĞLANTI HARİTASI: KeychainStore (güvenli depo) ────────────────────────────────
 // │ KULLANAN  : Security/DeviceID (cihaz kimliği) | Networking/AuthSession (yenileme jetonu)
 // │ NEDEN     : Jeton gibi sırlar şifresiz UserDefaults'a değil, iOS'un şifreli Keychain'ine yazılır
-// │ HAZIR (Swift/Apple) [SWIFT] : @discardableResult, guard, enum, static, AnyObject, Bundle, Data, SecItemAdd, SecItemUpdate, SecItemCopyMatching, SecItemDelete, kSecClass, String, Bool, Any, Security, CFDictionary, .merging
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: KeychainStore | fonksiyonlar: query, set, get, remove | değişken/durumlar: defaultService, data, attributes, status, item, request, result
 // └──────────────────────────────────────────────────────────────────────
 
 // BU DOSYA: Keychain'e küçük bir metin (jeton gibi) kaydetme/okuma/silme.

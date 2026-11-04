@@ -10,8 +10,6 @@ import Foundation
 // │ KULLANAN  : ViewModels/CreateListingViewModel (ilan için istenen araç) | ViewModels/CarrierRegisterViewModel (kaydedilen araç)
 // │ GÖSTEREN  : Views/CreateListingView ve Views/CarrierRegisterView araç Picker'ı → ForEach(VehicleType.allCases)
 // │ NEDEN     : Bu liste eskiden iki ayrı yerde (ilan formu, taşımacı kaydı) kopya yazılıydı; artık TEK kaynak
-// │ HAZIR (Swift/Apple) [SWIFT] : enum, Identifiable, CaseIterable, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: VehicleType | değişken/durumlar: truck, lorry, pickup, refrigerated, other, id, title
 // └──────────────────────────────────────────────────────────────────────
 
 // enum [SWIFT]: sabit seçenek listesi | String: her seçeneğin bir yazı değeri var (rawValue) → API'ye giden değer

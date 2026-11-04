@@ -9,8 +9,6 @@ import Foundation
 // │ MODEL     : Kayıt başarılı olunca sunucunun döndüğü kısa özet (id, ad, e-posta, rol)
 // │ ÜRETEN    : Sunucu JSON → Networking/APIClient → Services/AuthService.register / registerCarrier
 // │ TÜKETEN   : ViewModels/RegisterViewModel, CarrierRegisterViewModel (→ Views/RegisterView, CarrierRegisterView): yalnız "kayıt tamam" sonucunu kullanır, giriş ayrıca yapılır
-// │ HAZIR (Swift/Apple) [SWIFT] : Decodable, String
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RegisterResponse | değişken/durumlar: id, fullName, email, userType
 // └──────────────────────────────────────────────────────────────────────
 
 // API'den dönen başarılı cevap (201). Şifre ve hash asla dönmez.

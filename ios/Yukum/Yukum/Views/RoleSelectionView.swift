@@ -11,8 +11,6 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ İki düğme                →  NavigationLink → RegisterView (Yük Veren) | CarrierRegisterView (Taşımacı)   (ViewModel yok: yalnız yönlendirme)
 // │ Gelen yer                →  Views/LoginView "Kayıt ol"
-// │ HAZIR (Swift/Apple) [SWIFT] : import SwiftUI, View, NavigationLink, VStack, HStack, Text, #Preview, .padding, .buttonStyle, .font, .bold
-// │ BİZİM (bizim yazdığımız) [BİZİM] : türler: RoleSelectionView | değişken/durumlar: body
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: "Nasıl kayıt olmak istersiniz?" Yük Veren mi, Taşımacı mı seçilir.
