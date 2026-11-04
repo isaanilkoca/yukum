@@ -54,9 +54,6 @@ final class CreateListingViewModel {
     // ⮕ ZİNCİR: Views/CreateListingView: Varış İlçesi Picker'ının satırları | DOLDURAN: toCityChanged ← CityService.districts | MODEL: [District]
     var toDistricts: [District] = []
 
-    // (API'ye giden değer, ekranda görünen ad) çiftleri | kayıttaki liste ile aynı (Views/CarrierRegisterView.swift)
-    // ⮕ ZİNCİR: Views/CreateListingView: araç Picker'ının seçenekleri (API değeri, görünen ad) çiftleri
-    static let vehicleTypes = [("Truck", "Tır"), ("Lorry", "Kamyon"), ("Pickup", "Kamyonet"), ("Refrigerated", "Frigorifik"), ("Other", "Diğer")]
     // Sınırlar sunucudaki ile AYNI: aşırı büyük değer sunucuda 400 verirdi, burada daha ekranda yakalanır
     static let maxWeightKg = 1_000_000
     static let maxBudget = 100_000_000

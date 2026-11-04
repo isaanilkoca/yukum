@@ -11,6 +11,7 @@ import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenl
 // │ SERVİS    : Services/Protocols/ListingServicing → ListingService | OfferServicing → OfferService | CityServicing → CityService
 // │ MODEL     : Listing, City, District, LoginUser
 // │ AKIŞ      : View .task(id:) → load() → servis → API → Model dizisi → listings değişkeni → @Observable → View yeniden çizer
+// │ KONUM/ÇIKIŞ: Location/LocationProviding (konum) ve Services/Protocols/SessionRestoring.swift → SessionSigningOut (çıkış) sözleşmeleri; View bunlara doğrudan dokunmaz
 // └──────────────────────────────────────────────────────────────────────
 
 // ViewModel NEDİR? (MVVM = Model - View - ViewModel)
@@ -31,6 +32,8 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     private let listingService: ListingServicing
     private let offerService: OfferServicing
     private let cityService: CityServicing
+    private let session: SessionSigningOut // çıkış (Networking/AuthSession) | testte sahtesi
+    private let location: LocationProviding // telefonun konumu (Location/LocationManager) | testte sahtesi
 
     // ─── Ekranın durumu (View bunları okur; değişince ekran yenilenir) ───
     // ⮕ ZİNCİR: Views/HomeView: List(viewModel.listings) (Yük Veren ve Taşımacı için iki ayrı liste) → her satır Views/ListingRow | DOLDURAN: load() | MODEL: [Listing]
@@ -58,25 +61,47 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     init(user: LoginUser,
          listingService: ListingServicing = ListingService(),
          offerService: OfferServicing = OfferService(),
-         cityService: CityServicing = CityService()) {
+         cityService: CityServicing = CityService(),
+         session: SessionSigningOut = AuthSession.shared,
+         location: LocationProviding = LocationManager()) {
         self.user = user
         self.listingService = listingService
         self.offerService = offerService
         self.cityService = cityService
+        self.session = session
+        self.location = location
+    }
+
+    // ⮕ ZİNCİR: Views/HomeView: "Konum izni kapalı" + "Ayarları aç" satırı yalnız nearMe açıkken ve izin reddedilmişse görünür | kaynak: Location/LocationManager.isDenied
+    var isLocationDenied: Bool { nearMe && location.isDenied }
+    // ⮕ ZİNCİR: Views/HomeView: konum alınamadı gibi kırmızı küçük yazı (yalnız nearMe açıkken ve izin reddedilmemişse) | kaynak: Location/LocationManager.errorMessage
+    var locationError: String? { nearMe && !location.isDenied ? location.errorMessage : nil }
+
+    // nearMeChanged: "Yakınımdakiler" anahtarı değişince çağrılır | açıldıysa konum motoruna "izin sor ve konumu bul" der
+    // izin ya da konum gelene kadar liste eskisi gibi kalır, konum gelince reloadKey değişir ve load() listeyi sıralı yeniler
+    // ⮕ ZİNCİR: Views/HomeView: Toggle üzerindeki .onChange(of: viewModel.nearMe) → viewModel.nearMeChanged(to:) → Location/LocationManager.request() (izin penceresi / konum)
+    func nearMeChanged(to isOn: Bool) {
+        if isOn { location.request() }
+    }
+
+    // signOut: "Çıkış Yap" düğmesi | önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin)
+    // ⮕ ZİNCİR: Views/HomeView: Button("Çıkış Yap") { Task { await viewModel.signOut(); dismiss() } } → Networking/AuthSession.signOut() → POST /api/v1/auth/logout
+    func signOut() async {
+        await session.signOut()
     }
 
     // load: ana sayfanın verisini API'den çekip durum değişkenlerine yazar
-    // coordinate: telefonun konumu (nil: yok) | yalnız "Yakınımdakiler" AÇIKSA ve konum BULUNMUŞSA API'ye gönderilir
+    // Konum, ViewModel'in kendi `location`ından okunur: yalnız "Yakınımdakiler" AÇIKSA ve konum BULUNMUŞSA API'ye gönderilir
     // ÇAĞIRAN: View → .task(id:) (ekran açılınca/filtre değişince/konum bulununca) ve .refreshable (aşağı çekince)
     // ⮕ ZİNCİR: Views/HomeView: .task(id: reloadKey) ve List'lerdeki .refreshable | Yük Veren → ListingService.myListings() | Taşımacı → ListingService.openListings(...) + CityService.cities() + OfferService.unseenCount()
-    func load(coordinate: (latitude: Double, longitude: Double)?) async {
+    func load() async {
         listError = nil // eski hata yazısını temizle | NEDEN: load her yenilemede çalışır; temizlemezsek bir kez çıkan hata sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
         do {
             if isShipper { // VERİ kararı: rol hangi ucu çağıracağımızı belirler
                 listings = try await listingService.myListings() // GET /api/v1/listings/mine
             } else {
-                let lat = nearMe ? coordinate?.latitude : nil // nearMe ? A : B kısa if | konum yoksa nil kalır, liste eskisi gibi (en yeni üstte) gelir
-                let lon = nearMe ? coordinate?.longitude : nil
+                let lat = nearMe ? location.latitude : nil // nearMe ? A : B kısa if | konum yoksa nil kalır, liste eskisi gibi (en yeni üstte) gelir
+                let lon = nearMe ? location.longitude : nil
                 listings = try await listingService.openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId, lat: lat, lon: lon) // GET /api/v1/listings?...
                 if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // il listesi yalnız bir kez yüklenir | try?: hata olursa nil | ?? []: nil ise boş liste
                 unseenCount = try await offerService.unseenCount() // rozet sayısı
@@ -97,8 +122,8 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     }
 
     // reloadKey: ekranın .task(id:) değeri | bu yazı değişince liste yeniden yüklenir (filtre, anahtar ya da konum değişti)
-    // ⮕ ZİNCİR: Views/HomeView: .task(id: viewModel.reloadKey(...)) — bu yazı değişince (filtre, anahtar, konum) SwiftUI task'ı yeniden çalıştırır → load()
-    func reloadKey(coordinate: (latitude: Double, longitude: Double)?) -> String {
-        "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(coordinate.map { "\($0.latitude),\($0.longitude)" } ?? "-")"
+    // ⮕ ZİNCİR: Views/HomeView: .task(id: viewModel.reloadKey) — bu yazı değişince (filtre, anahtar, konum) SwiftUI task'ı yeniden çalıştırır → load()
+    var reloadKey: String {
+        "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(location.latitude.map { String($0) } ?? "-"),\(location.longitude.map { String($0) } ?? "-")"
     }
 }

@@ -7,7 +7,8 @@ import Foundation
 
 // ┌─ BAĞLANTI HARİTASI: RegisterRequest (Yük Veren kayıt paketi) ────────────────────
 // │ MODEL     : Yük Veren kaydı için GİDEN paket
-// │ YOL       : Views/RegisterView (form alanları, ekranın kendi @State'i: bu ekran henüz ViewModel'siz) → Services/AuthService.register → POST /api/v1/auth/register/shipper
+// │ DOLDURAN  : ViewModels/RegisterViewModel.register() (formdaki alanlardan; cityId şimdilik sabit 34)
+// │ YOL       : Views/RegisterView → RegisterViewModel → Services/AuthService.register → POST /api/v1/auth/register/shipper
 // │ CEVAP     : RegisterResponse
 // └──────────────────────────────────────────────────────────────────────
 

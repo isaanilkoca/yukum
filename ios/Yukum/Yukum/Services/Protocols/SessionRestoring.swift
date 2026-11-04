@@ -14,3 +14,8 @@ import Foundation
 protocol SessionRestoring {
     func restore() async throws -> LoginUser?
 }
+
+// SessionSigningOut: "oturumu kapat" (çıkış) | gerçeği AuthSession actor'u, testte sahtesi verilir | kullanan: ViewModels/HomeViewModel.signOut()
+protocol SessionSigningOut {
+    func signOut() async
+}

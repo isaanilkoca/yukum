@@ -8,7 +8,7 @@ import Foundation
 // ┌─ BAĞLANTI HARİTASI: RegisterResponse (kayıt cevabı) ─────────────────────────────
 // │ MODEL     : Kayıt başarılı olunca sunucunun döndüğü kısa özet (id, ad, e-posta, rol)
 // │ ÜRETEN    : Sunucu JSON → Networking/APIClient → Services/AuthService.register / registerCarrier
-// │ TÜKETEN   : Views/RegisterView, Views/CarrierRegisterView: yalnız "kayıt tamam" sonucunu kullanır, giriş ayrıca yapılır
+// │ TÜKETEN   : ViewModels/RegisterViewModel, CarrierRegisterViewModel (→ Views/RegisterView, CarrierRegisterView): yalnız "kayıt tamam" sonucunu kullanır, giriş ayrıca yapılır
 // └──────────────────────────────────────────────────────────────────────
 
 // API'den dönen başarılı cevap (201). Şifre ve hash asla dönmez.

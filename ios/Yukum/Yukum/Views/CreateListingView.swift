@@ -90,8 +90,8 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
 
                     Text("Araç Türünü Seçiniz !").tag("") // tag(""): hiçbir şey seçilmemişken bu yazı görünür
 
-                    ForEach(CreateListingViewModel.vehicleTypes, id: \.0) { type in // id: \.0 = benzersiz anahtar olarak çiftin 1. elemanı (Truck, Lorry...) | type: o anki çift (adı bizim)
-                        Text(type.1).tag(type.0) // type.1: ekranda görünen Türkçe ad | type.0 = tag: değişkene yazılacak API değeri
+                    ForEach(VehicleType.allCases) { type in // VehicleType.allCases: bütün araç türleri (Models/Vehicles/VehicleType.swift) | type: o anki tür (adı bizim)
+                        Text(type.title).tag(type.rawValue) // type.title: ekranda görünen Türkçe ad | type.rawValue = tag: değişkene yazılacak API değeri ("Truck"...)
                     }
 
                 }.pickerStyle(.menu)

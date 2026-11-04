@@ -7,7 +7,7 @@ import Foundation
 
 // ┌─ BAĞLANTI HARİTASI: RegisterCarrierRequest (Taşımacı kayıt paketi) ──────────────
 // │ MODEL     : Taşımacı kaydı için GİDEN paket (içinde VehicleRequest listesi var)
-// │ YOL       : Views/CarrierRegisterView → Services/AuthService.registerCarrier → POST /api/v1/auth/register/carrier
+// │ YOL       : Views/CarrierRegisterView → ViewModels/CarrierRegisterViewModel.register() → Services/AuthService.registerCarrier → POST /api/v1/auth/register/carrier
 // │ CEVAP     : RegisterResponse
 // └──────────────────────────────────────────────────────────────────────
 

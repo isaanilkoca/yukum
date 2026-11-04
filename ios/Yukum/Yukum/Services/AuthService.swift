@@ -8,7 +8,7 @@
 import Foundation // Swift'in hazır ağ araçları bu kütüphanede
 
 // ┌─ BAĞLANTI HARİTASI: AuthService (kayıt ve giriş uçları) ─────────────────────────
-// │ ÇAĞIRAN   : ViewModels/LoginViewModel (login) | Views/RegisterView, CarrierRegisterView (register, registerCarrier; bu iki ekran henüz ViewModel'siz)
+// │ ÇAĞIRAN   : ViewModels/LoginViewModel (login) | ViewModels/RegisterViewModel (register) | CarrierRegisterViewModel (registerCarrier)
 // │ KULLANIR  : Networking/APIClient (authorized: false) | Networking/AuthSession.signIn (giriş başarılı olunca jetonları saklar) | MODEL: LoginRequest, LoginResponse, RegisterRequest, RegisterCarrierRequest, RegisterResponse
 // │ API       : backend AuthController: POST /api/v1/auth/login, /register/shipper, /register/carrier
 // │ SAHTESİ   : YukumTests/Support/FakeAuthService.swift
@@ -25,14 +25,14 @@ struct AuthService {
 
     // register: Yük Veren kaydı | _ body: dolu form kağıdı | async: cevabı bekler | throws: hata fırlatabilir | -> RegisterResponse: başarılıysa bu döner
     // ÇAĞIRAN: Views/RegisterView.swift → AuthService().register(body) | body'nin kalıbı: Models/Auth/ → struct RegisterRequest
-    // ⮕ ZİNCİR: Views/RegisterView (henüz ViewModel'siz, servisi doğrudan çağırır) | API: POST /api/v1/auth/register/shipper | GİDEN: RegisterRequest | DÖNEN: RegisterResponse
+    // ⮕ ZİNCİR: ViewModels/RegisterViewModel.register() ← Views/RegisterView "Kayıt Ol" | API: POST /api/v1/auth/register/shipper | GİDEN: RegisterRequest | DÖNEN: RegisterResponse
     func register(_ body: RegisterRequest) async throws -> RegisterResponse {
         try await api.send(.post, "/api/v1/auth/register/shipper", body: body, authorized: false) // "/api/..." = sunucudaki oda | authorized: false → jeton yok
     }
 
     // ÇAĞIRAN: Views/CarrierRegisterView.swift (Taşımacı ekranı) → AuthService().registerCarrier(body)
     // body'nin kalıbı: Models/Auth/ → struct RegisterCarrierRequest (içinde VehicleRequest listesi var)
-    // ⮕ ZİNCİR: Views/CarrierRegisterView (henüz ViewModel'siz) | API: POST /api/v1/auth/register/carrier | GİDEN: RegisterCarrierRequest | DÖNEN: RegisterResponse
+    // ⮕ ZİNCİR: ViewModels/CarrierRegisterViewModel.register() ← Views/CarrierRegisterView "Kayıt Ol" | API: POST /api/v1/auth/register/carrier | GİDEN: RegisterCarrierRequest | DÖNEN: RegisterResponse
     func registerCarrier(_ body: RegisterCarrierRequest) async throws -> RegisterResponse {
         try await api.send(.post, "/api/v1/auth/register/carrier", body: body, authorized: false) // aynısı, Taşımacı odası
     }

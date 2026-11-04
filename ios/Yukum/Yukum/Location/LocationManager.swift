@@ -10,15 +10,15 @@ import CoreLocation // [SWIFT] Apple'ın konum çerçevesi: enlem/boylam alma, i
 import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişkenler değişince ekranın kendini yenilemesini sağlar
 
 // ┌─ BAĞLANTI HARİTASI: LocationManager (telefonun konumu) ──────────────────────────
-// │ SAHİBİ    : Views/HomeView (@State locationManager) — izin penceresi ve Ayarlar yönlendirmesi arayüz işidir
-// │ AKIŞ      : Toggle "Yakınımdakiler" açılır → HomeView .onChange → locationManager.request() → izin/konum → coordinate dolar
-// │ ÇIKIŞ     : HomeView coordinate'i HomeViewModel.load(coordinate:)'e verir → ListingService.openListings(lat:lon:) → sunucu mesafeye göre sıralar
+// │ SAHİBİ    : ViewModels/HomeViewModel (Location/LocationProviding sözleşmesi üzerinden) — View konumu doğrudan tutmaz
+// │ AKIŞ      : Toggle "Yakınımdakiler" açılır → HomeView .onChange → HomeViewModel.nearMeChanged → location.request() → izin/konum → coordinate dolar
+// │ ÇIKIŞ     : HomeViewModel.load() konumu okur → ListingService.openListings(lat:lon:) → sunucu mesafeye göre sıralar
 // │ DELEGATE  : CLLocationManagerDelegate: iOS konum olayı olunca aşağıdaki 3 fonksiyonu KENDİSİ çağırır (biz çağırmayız)
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: telefonun konumunu bulur ve kullanıcıdan konum izni ister.
 // NEDEN ayrı sınıf: konum özelliği (izin, hata, sonuç) ekran koduyla karışmasın | ileride başka ekranlar da aynı sınıfı kullanabilir
-// BAĞLANTI: Views/HomeView.swift (Taşımacı) bunu @State ile tutar → "Yakınımdakiler" düğmesi request() çağırır → konum gelince coordinate dolar → HomeView API'ye lat/lon gönderir
+// BAĞLANTI: ViewModels/HomeViewModel (Taşımacı) bunu LocationProviding sözleşmesi üzerinden tutar → "Yakınımdakiler" açılınca request() çağrılır → konum gelince coordinate dolar → HomeViewModel API'ye lat/lon gönderir
 // @Observable [SWIFT]: bu sınıftaki değişkenler değişince onları okuyan ekranlar kendiliğinden yenilenir | struct'taki @State'in sınıf (class) karşılığı gibi düşün
 // NSObject [SWIFT]: Apple'ın eski çerçeveleri (CoreLocation) bu temel sınıfı ister | CLLocationManagerDelegate: "konum olayları olunca beni ara" sözleşmesi
 
@@ -114,3 +114,9 @@ final class LocationManager : NSObject,CLLocationManagerDelegate {
     
 }
 
+// LocationManager, LocationProviding sözleşmesini karşılar: ViewModel'ler CoreLocation türlerini (CLLocationCoordinate2D, CLAuthorizationStatus) bilmesin, sade değerler görsün
+extension LocationManager: LocationProviding {
+    var latitude: Double? { coordinate?.latitude }
+    var longitude: Double? { coordinate?.longitude }
+    var isDenied: Bool { status == .denied }
+}

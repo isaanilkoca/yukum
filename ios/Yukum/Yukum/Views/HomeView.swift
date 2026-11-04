@@ -6,7 +6,6 @@
 //
 
 import SwiftUI // [SWIFT] ekran çizim kütüphanesi
-import CoreLocation // [SWIFT] konum çerçevesi | burada yalnız izin durumunu (.denied) karşılaştırmak için gerekli
 
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
@@ -14,9 +13,9 @@ import CoreLocation // [SWIFT] konum çerçevesi | burada yalnız izin durumunu 
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
 // │ Taşımacı ilan listesi    →  viewModel.listings ← load()         →  ListingService.openListings()   →  GET /api/v1/listings?...         →  [Listing]
 // │ İl / İlçe Picker'ları    →  cities, filterDistricts, filterCityId, filterDistrictId  →  CityService.cities() / districts()  →  GET /cities, /cities/{id}/districts  →  [City] / [District]
-// │ Yakınımdakiler anahtarı  →  viewModel.nearMe + @State locationManager (konum)  →  load(coordinate:) → openListings(lat,lon)  →  ...?lat=&lon=  →  Listing.distanceKm
+// │ Yakınımdakiler anahtarı  →  viewModel.nearMe, nearMeChanged(to:) (konum izni/konumu ViewModel'in Location sözleşmesinden)  →  load() → ListingService.openListings(lat,lon)  →  GET ...?lat=&lon=  →  Listing.distanceKm
 // │ Kutu ikonundaki rozet    →  viewModel.unseenCount ← load()     →  OfferService.unseenCount()      →  GET /api/v1/offers/mine/unseen-count  →  UnseenCount
-// │ Çıkış Yap                →  (ViewModel yok)                     →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
+// │ Çıkış Yap                →  viewModel.signOut()                 →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
 // │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
 // │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | CreateListingView, OldOffersView, MyOffersView
 // └──────────────────────────────────────────────────────────────────────
@@ -30,9 +29,6 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // @Observable olduğu için viewModel içindeki değişkenler değişince bu ekran kendiliğinden yenilenir
     @State private var viewModel: HomeViewModel
 
-    // locationManager: konum motorumuz | NE İŞE YARAR: izin ister, konumu bulur, coordinate/status/errorMessage değişince ekran yenilenir (@Observable)
-    // NEDEN burada (ViewModel'de değil): izin penceresi ve Ayarlar'a gitme gibi iOS'a özgü arayüz işleridir | ViewModel yalnız bulunan konumu parametre olarak alır, böylece testte sahte konum verilebilir | BAĞLANTI: Location/LocationManager.swift
-    @State private var locationManager = LocationManager()
 
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır
@@ -41,11 +37,6 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // State(initialValue:): @State'i elle başlatma yolu | kalıbı: Models/Auth/ → struct LoginUser
     init(user: LoginUser) {
         _viewModel = State(initialValue: HomeViewModel(user: user))
-    }
-
-    // coordinate: telefonun bulunan konumu (enlem, boylam) ya da nil | NEDEN ayrı: CLLocationCoordinate2D karşılaştırılamaz/Equatable değil, ViewModel'e sade bir çift olarak veriyoruz
-    private var coordinate: (latitude: Double, longitude: Double)? {
-        locationManager.coordinate.map { (latitude: $0.latitude, longitude: $0.longitude) } // .map: nil değilse dönüştür
     }
 
     var body: some View { // ekranın içeriği
@@ -82,7 +73,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 ListingRow(listing: listing) // BAĞLANTI: Views/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
                             }
                         }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi
-                        .refreshable { await viewModel.load(coordinate: coordinate) } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister
+                        .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister
                     }
 
                 } else { // Shipper değilse (Carrier)
@@ -123,17 +114,17 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         // .onChange: nearMe değişince BİR KEZ çalışır | on: yeni değer
                         // açıldıysa konum motoruna "izin sor ve konumu bul" deriz (izin ya da konum gelene kadar liste eskisi gibi kalır, gelince .task(id:) listeyi yeniler)
                         .onChange(of: viewModel.nearMe) { _, on in
-                            if on { locationManager.request() }
+                            viewModel.nearMeChanged(to: on) // konum isteme kararı ViewModel'de | ⮕ HomeViewModel.nearMeChanged → Location/LocationManager.request()
                         } // NOT: ekrana bir şey ÇİZEN kod (Text, HStack) .onChange'in içine yazılmaz, çünkü orası "olunca çalışacak iş" bloğu, çizim bloğu değil | mesajlar aşağıda, dışarıda
 
-                    // izin/konum mesajları: locationManager.status ve errorMessage @Observable olduğu için değişince bu bloklar kendiliğinden yeniden değerlendirilir
-                    if viewModel.nearMe && locationManager.status == .denied { // izin reddedilmişse (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
+                    // izin/konum mesajları: viewModel.isLocationDenied ve locationError (kaynak Location/LocationManager, @Observable) değişince bu bloklar kendiliğinden yeniden değerlendirilir
+                    if viewModel.isLocationDenied { // izin reddedilmişse (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
                         HStack {
                             Text("Konum izni kapalı").font(.caption).foregroundColor(.red)
                             // Button: basınca iOS Ayarlar uygulamasında bu uygulamanın sayfasını açar | UIApplication.openSettingsURLString: Apple'ın hazır "ayarlar" adresi
                             Button("Ayarları aç") { openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption)
                         }
-                    } else if viewModel.nearMe, let message = locationManager.errorMessage { // else if: ya da | konum alınamadıysa (GPS yok vb.) hata yazısı
+                    } else if let message = viewModel.locationError { // else if: ya da | konum alınamadıysa (GPS yok vb.) hata yazısı
                         Text(message).font(.caption).foregroundColor(.red)
                     }
 
@@ -147,14 +138,14 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                                 ListingRow(listing: listing) // eski satır aynen kalır
                             }
                         }.listStyle(.plain)
-                        .refreshable { await viewModel.load(coordinate: coordinate) } // aşağı çekince yenile
+                        .refreshable { await viewModel.load() } // aşağı çekince yenile
                     }
                 }
 
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
                     // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin) | BAĞLANTI: Networking/AuthSession.swift → signOut
                     Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar
-                        await AuthSession.shared.signOut() // ⮕ Networking/AuthSession.signOut() → Keychain silinir + POST /api/v1/auth/logout
+                        await viewModel.signOut() // ⮕ HomeViewModel.signOut() → Networking/AuthSession.signOut() → Keychain silinir + POST /api/v1/auth/logout
                         dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
                     }
                 }.buttonStyle(.borderedProminent)
@@ -202,8 +193,8 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .task(id:) [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
             // NE İŞE YARAR: il/ilçe Picker'ı, "Yakınımdakiler" anahtarı ya da konum değişince liste kendiliğinden yeniden çekilir, ayrı "Ara" düğmesi gerekmez | teklif verip/karar verip dönünce de liste ve rozet yenilenir
             // id: ViewModel.reloadKey → filtre + anahtar + konumu birleştiren yazı | bu yazı değişince blok yeniden çalışır
-            .task(id: viewModel.reloadKey(coordinate: coordinate)) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
-                await viewModel.load(coordinate: coordinate) // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
+            .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
+                await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
             }
         }
     }

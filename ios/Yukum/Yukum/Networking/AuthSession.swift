@@ -139,4 +139,4 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 }
 
 // AuthSession, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
-extension AuthSession: SessionRestoring {}
+extension AuthSession: SessionRestoring, SessionSigningOut {}

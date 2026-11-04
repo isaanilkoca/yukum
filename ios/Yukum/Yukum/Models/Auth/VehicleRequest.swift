@@ -7,7 +7,7 @@ import Foundation
 
 // ┌─ BAĞLANTI HARİTASI: VehicleRequest (araç) ───────────────────────────────────────
 // │ MODEL     : Taşımacı kaydındaki tek araç bilgisi
-// │ YOL       : Views/CarrierRegisterView araç alanları → RegisterCarrierRequest.vehicles listesine konur → AuthService.registerCarrier
+// │ YOL       : Views/CarrierRegisterView araç alanları → CarrierRegisterViewModel.register() VehicleRequest'e çevirir → RegisterCarrierRequest.vehicles listesine konur → AuthService.registerCarrier | araç türü seçenekleri: Models/Vehicles/VehicleType.swift
 // └──────────────────────────────────────────────────────────────────────
 
 // Tek araç bilgisi; API'nin "vehicles" listesindeki her eleman böyle görünür.
