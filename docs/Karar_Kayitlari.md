@@ -75,3 +75,9 @@
 - **Neden:** (2) Kayıtlı e-posta/telefon yoklamasını (kullanıcı numaralandırma) ve zamanlama saldırısını zorlaştırmak; rapor 6.2. (3) Kaba kuvvet denemesini yavaşlatmak; rapor 6.2. (4) Jeton şifreli değil imzalıdır, içeriği herkes okur: kişisel veri yazılmaz; algoritma kısıtı "alg" değiştirme saldırısını keser. (5) Anahtar sızarsa sahte giriş jetonu üretilebilir: repoya girmez, zayıf anahtarla sessizce başlamaz.
 - **Eklenmeyenler (kapsam):** yenileme jetonu (D4), `/me` ve yetki politikaları, hız sınırı (D5), şifre sıfırlama, e-posta/telefon doğrulama.
 - **Geri dönüş maliyeti:** Düşük. Jeton ömrü ve kilit kuralı sabit ayarlardır; yeni claim eklemek uyumludur.
+
+## K-019 — Kayıtta il sorulmaz (4 Kasım 2026)
+- **Karar:** `ShipperProfiles.CityId` ve `CarrierProfiles.HomeCityId` boş geçilebilir (`int?`); kayıt isteğinde `cityId` / `homeCityId` opsiyoneldir, verilirse geçerli bir il olmalıdır. iOS kayıt ekranları göndermez. **K-017 madde 4'ün "Yük Veren'de il zorunlu" kısmı bununla değişti.**
+- **Neden:** Yük Veren'in ilanları kendi kalkış/varış ilini taşır, Taşımacı her yere gidebilir; profildeki il hiçbir sorguda kullanılmıyordu ve iOS sahte bir değer (34) gönderiyordu. Taşımacının çalıştığı iller zaten isteğe bağlı `CarrierServiceCities` tablosunda.
+- **Uygulama:** migration `MakeProfileCityOptional`, doğrulama `OptionalExistingCity`, entegrasyon testi "ilsiz kayıt".
+- **Geri dönüş maliyeti:** Düşük (sütunlar yeniden `NOT NULL` yapılırsa boş satırlar önce doldurulmalı).
