@@ -11,34 +11,26 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi: View, Text, VStack, Button
 // ║  PROJE HARİTASI — buradan başla: bir ekrandaki satırdan Model'e kadar nasıl iz sürülür      ║
 // ╚══════════════════════════════════════════════════════════════════════════════════════════╝
 //
-// KLASÖRLER: ÖZELLİĞE GÖRE (bir özelliğin bütün dosyaları yan yana) + ortak Core
+// KLASÖRLER (her klasörün ilk dosyası 00_Rehber_<klasör>.swift: o klasörde ne var, kim kimi çağırır)
 //
-//   Features/Auth/       giriş, rol seçimi, iki kayıt ekranı, AuthService, giriş/kayıt modelleri
-//   Features/Listings/   ana sayfa, ilan detayı, ilan açma, ListingService, CityService, Listing/City modelleri
-//   Features/Offers/     tekliflerim, ilana gelen teklifler, geçmiş, OfferService, teklif modelleri
-//   Features/Chat/       sohbet ekranı, ChatService, mesaj modelleri
-//   Core/Networking/     APIClient (tek kapı), AuthSession (jeton), hata türleri
-//   Core/Security/       Keychain, cihaz kimliği   |   Core/Location/  telefonun konumu   |   Core/Shared/  ortak VehicleType
-//   App/                 bu dosya + ContentView
-//
-// KATMANLAR (her özelliğin içinde aynı sıra; dosya adı soneki katmanı söyler)
-//
-//   ...View        GÖRÜNÜM       ekranı çizer, dokunuşu alır                    (mantık YOK)
+//   Views/        GÖRÜNÜM       ekranı çizer, dokunuşu alır                    (mantık YOK, istek YOK)
 //      ↓  viewModel.x okur, viewModel.f() çağırır
-//   ...ViewModel   DURUM + MANTIK  değişkenler, kurallar, hata yazısı           (çizim YOK, istek YOK)
+//   ViewModels/   DURUM + KURAL   değişkenler, kontroller, hata yazısı          (çizim YOK, istek YOK)
 //      ↓  servis.f() çağırır (somut sınıfa değil ...Servicing sözleşmesine bağlı)
-//   ...Service     VERİ ERİŞİMİ  "hangi adres, hangi paket, ne döner"           (API'ye giden tek yer)
-//      ↓  api.send(...) çağırır
-//   Core/Networking jeton ekleme, 401'de yenileme, hata çevirme, JSON ↔ Model
+//   Models/       VERİ TARAFI   altında:
+//      Services/    "hangi adres, hangi paket, ne döner"  → API'ye giden yer
+//      Networking/  APIClient: jeton ekle, gönder, 401'de yenile, cevabı Model'e çevir
+//      Auth/ Listings/ Offers/ Chat/ Geography/ Vehicles/   JSON'un Swift hâli (Request/Response)
+//      Security/ (Keychain, cihaz kimliği) · Location/ (telefonun konumu)
 //      ↓  URLSession → sunucu (backend API) → JSON
-//   Model (Request/Response struct'ları, her özelliğin klasöründe): Listing, CarrierOffer, ChatMessage...
+//   App/          bu dosya + ContentView
 //
 // NASIL İZ SÜRÜLÜR? (örnek: Eski Teklifler ekranında "Sil" düğmesi)
-//   1) Features/Offers/OldOffersView.swift         → Button("Sil") { Task { await viewModel.hide(offer) } }
-//   2) Features/Offers/OldOffersViewModel.swift → func hide(_:) → service.hide(offerId:) çağırır, sonra load()
-//   3) Features/Offers/OfferService.swift       → func hide(offerId:) → api.sendNoContent(.delete, "/api/v1/offers/{id}")
-//   4) Core/Networking/APIClient.swift        → perform → execute: jetonu ekler, URLSession ile gönderir, hata olursa APIError
-//   5) Features/Offers/ShipperHistoryOffer.swift → load() ile dönen liste bu kalıptadır, ekranda List'e girer
+//   1) Views/OldOffersView.swift         → Button("Sil") { Task { await viewModel.hide(offer) } }
+//   2) ViewModels/OldOffersViewModel.swift → func hide(_:) → service.hide(offerId:) çağırır, sonra load()
+//   3) Models/Services/OfferService.swift       → func hide(offerId:) → api.sendNoContent(.delete, "/api/v1/offers/{id}")
+//   4) Models/Networking/APIClient.swift        → perform → execute: jetonu ekler, URLSession ile gönderir, hata olursa APIError
+//   5) Models/Offers/ShipperHistoryOffer.swift → load() ile dönen liste bu kalıptadır, ekranda List'e girer
 //   Her dosyanın başındaki "BAĞLANTI HARİTASI" kutusu o dosyanın kimi çağırdığını ve kimin onu çağırdığını yazar;
 //   ViewModel'deki her değişkenin ve servisteki her fonksiyonun üstünde "⮕ ZİNCİR:" satırı bir sonraki halkayı gösterir.
 //
@@ -57,7 +49,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi: View, Text, VStack, Button
 //   $viewModel.x  ekranla ViewModel arasında İKİ YÖNLÜ bağ (yazılan ViewModel'e gider)  |  Task { await ... }  düğmede bekleyen iş
 //
 // BU DOSYA: uygulamanın giriş noktası. Uygulama açılınca Swift ilk buradan başlar.
-// BAĞLANTI: WindowGroup → ContentView.swift'teki ContentView'ı açar → o da Features/Auth/LoginView.swift'i gösterir.
+// BAĞLANTI: WindowGroup → ContentView.swift'teki ContentView'ı açar → o da Views/LoginView.swift'i gösterir.
 // ⮕ KULLANIM [YukumApp]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
 @main // [SWIFT] "program buradan başlar" işareti | projede yalnız bir tane olabilir | @main [SWIFT]: program buradan başlar işareti
 struct YukumApp: App { // YukumApp [BİZİM] ad | App [SWIFT]: "bu struct bir uygulamadır" sözleşmesi

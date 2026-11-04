@@ -6,7 +6,7 @@
 import Foundation
 @testable import Yukum
 
-// Sahte konum: GPS/izin penceresi olmadan "konum şu, izin reddedildi, hata" durumlarını denemek için (Core/Location/LocationProviding sözleşmesini karşılar)
+// Sahte konum: GPS/izin penceresi olmadan "konum şu, izin reddedildi, hata" durumlarını denemek için (Models/Location/LocationProviding sözleşmesini karşılar)
 final class FakeLocation: LocationProviding {
     var latitude: Double?
     var longitude: Double?
