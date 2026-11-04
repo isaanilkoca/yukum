@@ -1,76 +1,71 @@
 //
 //  ListingOffersView.swift
 //  Yukum
-//  Created by İsa Anıl Koca on 31.10.2026.
+//
+//  Created by İsa Anıl Koca on 2.11.2026.
+//
 
+import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 
-import SwiftUI
-
-// BU EKRAN: Yük Veren kendi ilanına basınca açılır. Gelen teklifleri listeler, Kabul Et / Reddet düğmeleri vardır.
-// BAĞLANTI: View/HomeView.swift → Yük Veren listesindeki NavigationLink bu ekranı açar ve ilanı verir
-// Teklifleri getirir/karar yollar: Network/OfferService.swift → listingOffers, decide | kalıbı: Network/OfferRequest.swift → ListingOffer
-
+// BU EKRAN: Yük Veren kendi ilanına basınca açılır. İlana gelen BEKLEYEN teklifleri listeler (Kabul Et / Reddet / Sohbet) ve ilanı yayından kaldırma düğmesi vardır.
+// Karar verilen teklifler buradan kalkıp "Eski Teklifler"e gider.
+// MVVM: bu dosya yalnız GÖRÜNÜM. Teklif listesi, karar, ilanı kaldırma ViewModel/OfferListViewModels.swift → ListingOffersViewModel'de.
+// BAĞLANTI: View/HomeView.swift → Yük Veren listesindeki NavigationLink bu ekranı açar ve ilanı verir | kalıp: Network/OfferRequest.swift → ListingOffer
 struct ListingOffersView: View {
-    
-    let listing : Listing // dısarıdan verilir : hOMEVİWDAKİ SATIR | HANGİ İLAN OLDUGU
-    @State private var offers : [ListingOffer] = []  // @State [SWIFT]: ekranın hafızası | gelen teklifler, başta boş
-    @State private var errorMessage : String? // nil hata yok dolu : kırmızı yazılır
-    
-    // chatOffer: sohbeti açılacak teklif | NE İŞE YARAR: "Sohbet" düğmesi buraya teklifi yazar → aşağıdaki .navigationDestination dolunca ChatView'ı açar, nil olunca kapatır
-    // NEDEN ayrı değişken: düğme doğrudan sayfa açamaz (List satırında NavigationLink sorun çıkarır); "hangi teklifin sohbeti açık" bilgisini bu tutar, ChatView'a da buradan verilir
-    // NEREDE DOLAR: satırdaki Sohbet düğmeleri | başta nil: sohbet açık değil | ? = boş olabilir demek, nil ile "hiçbiri seçili değil" anlatılır
-    
-    @State private var chatOffer: ListingOffer? // ? = boş olabilir
+
+    // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    @State private var viewModel: ListingOffersViewModel
 
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | ilan kaldırılınca bu ekrandan geri dönmek için
-    // showCancelConfirm: "İlanı yayından kaldır" onay penceresi açık mı | true olunca pencere çıkar, seçim yapılınca SwiftUI kendisi false yapar
+    // showCancelConfirm: "İlanı yayından kaldır" onay penceresi açık mı | yalnız GÖRÜNÜM bilgisi
     // NEDEN onay penceresi: işlem geri alınamaz ve bekleyen tekliflerin hepsini iptal eder, yanlışlıkla basılmasın
     @State private var showCancelConfirm = false
 
+    // init: ilan dışarıdan verilir (HomeView'daki satır), ViewModel burada oluşturulur
+    init(listing: Listing) {
+        _viewModel = State(initialValue: ListingOffersViewModel(listing: listing))
+    }
+
     var body: some View {
 
-        VStack(spacing: 16){
-            Text(listing.title).font(.title3).bold() // hangi ilan oldugu
-            
-            if let errorMessage {Text(errorMessage).foregroundColor(.red)}  // doluysa kırmızı yaz, nil ise çizilmez
-            if offers.isEmpty { // liste boş mu
-                Text("Henüz Teklif gelmedi.").foregroundColor(.secondary)// .secondary [SWIFT]: gri yazı
+        @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar
+
+        VStack(spacing: 16) {
+            Text(viewModel.listing.title).font(.title3).bold() // hangi ilan olduğu
+
+            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+            if viewModel.offers.isEmpty { // liste boş mu
+                Text("Henüz teklif gelmedi.").foregroundColor(.secondary) // .secondary [SWIFT]: gri yazı
             } else {
-                List(offers) { offer in // List [SWIFT]: kaydırılabilir satır listesi | offer: o anki teklif
-                    VStack(alignment: .leading, spacing: 8) {  // bir teklifin satırı: alt alta, sola yaslı
-                        HStack{
+                List(viewModel.offers) { offer in // List [SWIFT]: kaydırılabilir satır listesi | offer: o anki teklif
+                    VStack(alignment: .leading, spacing: 8) { // bir teklifin satırı: alt alta, sola yaslı
+                        HStack {
                             Text(offer.carrierName).font(.headline) // teklifi veren taşımacı
                             Spacer()
-                            Text("\(Int(offer.amount))₺") .bold() // Int(): 48000.0 yerine 48000
+                            Text("\(Int(offer.amount))₺").bold() // Int(): 48000.0 yerine 48000
                         }
-                        
+
                         if let note = offer.note {
                             Text(note).font(.caption).foregroundColor(.secondary) // küçük gri not
                         }
-                        if offer.status == "Pending" { // bekleyen teklif: karar düğmeleri + sohbet | API durumu yazı gönderir
-                            HStack {
-                                // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
-                                Button("Reddet"){ decide(offer,accept: false) }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu
-                                Button("Kabul et"){ decide(offer,accept: true) }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu
-                                Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered) // chatOffer'ı doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
-                            }
-                        } else { // karar verilmişse durum yazısı
-                            Text(offer.status == "Accepted" ? "Kabul Edildi" : "Reddedildi") // ?: kısa if
-                                .font(.subheadline).foregroundColor(offer.status == "Accepted" ? .green : .secondary)
-                            if offer.status == "Accepted" { // yalnız kabul edilende sohbet kalır, reddedilende yok
-                                Button("Sohbet") { chatOffer = offer }.buttonStyle(.bordered)
-                            }
+
+                        // Bu ekranda yalnız BEKLEYEN teklifler var (sunucu yalnız onları gönderir); kabul/red verilenler "Eski Teklifler"e gider
+                        HStack {
+                            // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
+                            Button("Reddet") { Task { await viewModel.decide(offer, accept: false) } }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu
+                            Button("Kabul et") { Task { await viewModel.decide(offer, accept: true) } }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu
+                            Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
                         }
-                    } // VStack (bir teklifin satırı) burada biter
-                    .padding(.vertical,4)
+                    }
+                    .padding(.vertical, 4)
                 }.listStyle(.plain)
-                .refreshable { await loadOffers() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince süslü parantezdeki iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | await: bitene kadar bekle | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister (her uygulamada bulunan standart davranış)
+                .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır | NE İŞE YARAR: kullanıcı güncel veriyi kendisi ister
             }
         }
         .padding()
-        .navigationTitle("Gelen Teklifler") // üst cubuk baslıgı
+        .navigationTitle("Gelen Teklifler") // üst çubuk başlığı
         .navigationBarTitleDisplayMode(.inline)
-        // .toolbar [SWIFT]: üst çubuğa eleman koyar | sağ üstte "İlanı Yayından Kaldır": iptal olan, vazgeçilen, yanlış açılan ilanlar için
+        // .toolbar [SWIFT]: üst çubuğa eleman koyar | sağ üstte "Kaldır": iptal olan, vazgeçilen, yanlış açılan ilanlar için
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
                 Button("Kaldır", role: .destructive) { showCancelConfirm = true } // role: .destructive: kırmızı | basınca onay penceresi açılır
@@ -78,71 +73,16 @@ struct ListingOffersView: View {
         }
         // .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | isPresented: $showCancelConfirm → true olunca açılır
         .alert("İlan yayından kaldırılsın mı?", isPresented: $showCancelConfirm) {
-            Button("Yayından Kaldır", role: .destructive) { cancelListing() } // seçilince aşağıdaki cancelListing() çalışır
+            Button("Yayından Kaldır", role: .destructive) { // seçilince ViewModel ilanı kaldırır; başarılıysa ilan listemizde olmadığı için geri dönülür
+                Task { if await viewModel.cancelListing() { dismiss() } } // önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler
+            }
             Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
         } message: {
             Text("İlan herkesin listesinden kalkar. Gelen teklifler iptal edilir, Taşımacılar bilgilendirilir ve sohbetler kapanır.")
         }
-        .task {
-            await loadOffers() // .task [SWIFT]: ekran açılınca bir kez çalışır | teklifleri yükler
-        }
-        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil?
-        //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki Reddet/Kabul/Sohbet düğmeleri çalışmaz (hepsi sayfaya götürür).
-        //   Çözüm: düğme sayfa AÇMAZ, sadece chatOffer değişkenine teklifi YAZAR. Buradaki kural "chatOffer dolunca ChatView'a geç" der.
-        //   Akış: Sohbet düğmesi → chatOffer = offer → ekran bunu görür → ChatView açılır | geri okuna basınca SwiftUI chatOffer'ı tekrar nil yapar.
-        // item: $chatOffer → "bu değişkeni izle" ($ = bağ, SwiftUI değişkeni hem okur hem sıfırlar) | dolu = geç, nil = kapat
-        // Bu çalışsın diye ListingOffer'ın Hashable olması gerekir (Network/OfferRequest.swift): SwiftUI hangi öğenin seçili olduğunu bununla takip eder.
-        // Çalışması için bu ekranın HomeView'daki NavigationStack'in içinde olması yeterli, buraya ayrıca NavigationStack KONMAZ.
-        .navigationDestination(item: $chatOffer) { offer in // $ = bağ | offer: dolan teklif (adı bizim)
-            // BAĞLANTI: View/ChatView.swift | offerId: hangi sohbet | title: karşı tarafın adı (Taşımacı) | canWrite: reddedilmemişse yazılabilir
-            ChatView(offerId: offer.id, title: offer.carrierName, canComplete: false, canWrite: true) // bu ekranda yalnız BEKLEYEN teklifler var: yazılabilir, henüz bitirilemez
-        }
-    } // body burada biter: aşağıdakiler ekranın yardımcı fonksiyonları
-
-    // loadOffers: teklifleri API'den çekip @State'e yazar | hem açılışta hem karardan sonra çağrılır (liste yenilensin)
-    // private [SWIFT]: yalnız bu ekran görür | async: içinde await var | ÇAĞIRAN: yukarıdaki .task ve decide
-    private func loadOffers() async {
-        do { // do: dene | hata olursa catch'lere geç
-            // BAĞLANTI: Network/OfferService.swift → listingOffers → GET /api/v1/listings/{id}/offers
-            offers = try await OfferService().listingOffers(listingId: listing.id) // dönen liste @State'e yazılır, ekran yenilenir
-        } catch let error as AuthError { // API hayır dedi (404 vb.) | AuthError: Network/AuthService.swift
-            errorMessage = error.message // kırmızı yazıyı doldurur
-        } catch { // başka her hata: API kapalı, internet yok
-            if Task.isCancelled || (error as? URLError)?.code == .cancelled { return } // İPTAL ≠ HATA: SwiftUI ekran yenilenirken/çıkılırken çalışan .task'ı iptal eder, o işin internet isteği "cancelled" hatası fırlatır | bunu kullanıcıya "Sunucuya ulaşılamadı." diye göstermeyiz | Task.isCancelled: bu iş iptal edildi mi | (error as? URLError): hata internet hatası türüne çevrilebiliyorsa | .code == .cancelled: sebebi iptal | return: sessizce çık
-            errorMessage = "Sunucuya ulaşılamadı."
-        }
-    }
-
-    // decide: Kabul Et / Reddet düğmesi | offer: hangi teklif | accept: true kabul, false red
-    // Task [SWIFT]: düğme (normal fonksiyon) içinde await kullanmamızı sağlar
-    private func decide(_ offer: ListingOffer, accept: Bool) {
-        Task {
-            errorMessage = nil // eski hatayı temizle
-            do {
-                // BAĞLANTI: Network/OfferService.swift → decide → POST /api/v1/offers/{id}/accept veya /reject
-                try await OfferService().decide(offerId: offer.id, accept: accept)
-                await loadOffers() // karar verildi, listeyi yeniden çek (durumlar güncellensin; kabulde diğerleri "Reddedildi" olur)
-            } catch let error as AuthError {
-                errorMessage = error.message // örn. "Bu teklif için karar zaten verilmiş."
-            } catch {
-                errorMessage = "Sunucuya ulaşılamadı."
-            }
-        }
-    }
-
-    // cancelListing: onay penceresinde "Yayından Kaldır" seçilince çalışır | ilanı yayından kaldırır
-    // ÇAĞIRAN: yukarıdaki .alert | BAĞLANTI: Network/ListingService.swift → cancel → POST /api/v1/listings/{id}/cancel
-    private func cancelListing() {
-        Task { // Task [SWIFT]: normal fonksiyon içinde await kullanmamızı sağlar
-            errorMessage = nil // eski hatayı temizle
-            do {
-                try await ListingService().cancel(listingId: listing.id) // sunucuda ilan Kaldırıldı olur, teklifler iptal olur
-                dismiss() // ilan artık listemizde yok, bu ekrandan geri dön | önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler
-            } catch let error as AuthError {
-                errorMessage = error.message // örn. "Bu ilan zaten tamamlanmış ya da kaldırılmış."
-            } catch {
-                errorMessage = "Sunucuya ulaşılamadı."
-            }
-        }
+        .task { await viewModel.load() } // .task [SWIFT]: ekran HER göründüğünde çalışır | teklifleri yükler
+        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil? List satırının içindeki NavigationLink, satırdaki Reddet/Kabul/Sohbet düğmelerini bozar (hepsi sayfaya götürür).
+        // Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat'i doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat"
+        .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: View/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te
     }
 }
