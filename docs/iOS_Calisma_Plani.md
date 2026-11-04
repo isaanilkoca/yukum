@@ -6,7 +6,7 @@ Kural: **alttan üste** oku. Her adım bir öncekine yaslanır. Her dosyanın ba
 
 | # | Katman | Aç | Bağlantı | Kendine sor |
 |---|--------|----|----------|-------------|
-| 1 | **Model** (veri kalıbı) | `Models/Listings/Listing`, `CreateListingRequest`, `Models/Offers/*`, `Models/Auth/*`, `VehicleType` | Codable struct; JSON ↔ Swift | Request ile Response neden ayrı? `VehicleType` neden tek kaynak? |
+| 1 | **Model** (veri kalıbı) | `Features/*/` içindeki model dosyaları (`Listing`, `CreateOfferRequest`, `LoginRequest`…), `Core/Shared/VehicleType` | Codable struct; JSON ↔ Swift | Request ile Response neden ayrı? `VehicleType` neden tek kaynak? |
 | 2 | **Güvenlik** | `Security/KeychainStore`, `DeviceID` | AuthSession kullanır | Refresh token neden Keychain'de, erişim jetonu neden bellekte? |
 | 3 | **Networking** | `HTTPMethod` → `APIConfig` → `APIError`/`APIErrorResponse` → `Error+UserMessage` → `AuthSession` → `APIClient` | Servisler yalnız `APIClient`'a konuşur | 401'de ne olur? Tek uçuş (single-flight) neden gerekli? |
 | 4 | **Services** | `Services/Protocols/*Servicing` sonra `ListingService`, `OfferService`, `ChatService`, `CityService`, `AuthService` | Protokol = sözleşme; gerçek servis `extension X: Xing {}` ile bağlanır | Protokol neden var? (test için sahte servis) |

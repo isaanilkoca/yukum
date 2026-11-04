@@ -21,9 +21,10 @@ for e in g['links']:
     if a and b and a != b: agg[(a, b)] = agg.get((a, b), 0) + 1
 def layer(n):
     f = n['source_file']
-    if '/ViewModels/' in f: return 'viewmodel'
-    if '/Views/' in f or '/App/' in f: return 'view'
-    if '/Services/' in f or '/Networking/' in f or '/Security/' in f or '/Location/' in f: return 'service'
+    b = f.rsplit('/', 1)[-1]
+    if b.endswith('ViewModel.swift') or b == 'ChatContext.swift': return 'viewmodel'
+    if b.endswith('View.swift') or b == 'ListingRow.swift' or '/App/' in f: return 'view'
+    if b.endswith(('Service.swift', 'Servicing.swift')) or '/Core/Networking/' in f or '/Core/Security/' in f or '/Core/Location/' in f: return 'service'
     return 'model'
 COL = {'view': '#4C8BF5', 'viewmodel': '#9B59B6', 'service': '#F5A623', 'model': '#2EB67D'}
 nodes = [{'id': i, 'label': n['label'], 'color': COL[layer(n)], 'shape': 'box', 'font': {'color': '#fff'}, 'group': layer(n)} for i, n in classes.items()]
