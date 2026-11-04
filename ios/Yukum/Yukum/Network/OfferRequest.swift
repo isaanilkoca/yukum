@@ -13,7 +13,7 @@ import Foundation
 
 // Giden paket. Encodable [SWIFT]: struct → JSON'a çevrilebilir.
 // FONKSİYON ROLÜ: GİDEN paket kalıbı | ListingDetailView düğmesi doldurur, OfferService.create JSON'a çevirip API'ye yollar
-struct CreatOfferRequest : Encodable {
+struct CreateOfferRequest : Encodable {
     
     let amount: Int // teklif tutarı TL | API'deki "amount" ile aynı ad olmalı    l
     let note: String? // isteğe bağlı not | ?: boş olabilir, nil ise JSON'a yazılmaz
@@ -22,7 +22,7 @@ struct CreatOfferRequest : Encodable {
 
 // Gelen cevap. Decodable [SWIFT]: JSON → struct'a çevrilebilir. Yalnız ihtiyacımız olan alanı aldık.
 // FONKSİYON ROLÜ: GELEN cevap kalıbı | OfferService.create API cevabını (JSON) buna çevirip ListingDetailView'a döner
-struct offerResponse : Decodable {
+struct OfferResponse : Decodable {
     let amount : Double // API tutarı 1200.0 gibi ondalıklı gönderir, Int değil Double okunur
 }
 

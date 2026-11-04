@@ -30,8 +30,8 @@ final class FakeListingService: ListingServicing {
 }
 
 final class FakeOfferService: OfferServicing {
-    var createResult: Result<offerResponse, Error> = .success(offerResponse(amount: 1000))
-    private(set) var createCalls: [(listingId: String, body: CreatOfferRequest)] = []
+    var createResult: Result<OfferResponse, Error> = .success(OfferResponse(amount: 1000))
+    private(set) var createCalls: [(listingId: String, body: CreateOfferRequest)] = []
     var listingOffersResult: Result<[ListingOffer], Error> = .success([])
     var decideResult: Result<Void, Error> = .success(())
     private(set) var decisions: [(id: String, accept: Bool)] = []
@@ -43,7 +43,7 @@ final class FakeOfferService: OfferServicing {
     private(set) var hiddenIds: [String] = []
     var historyResult: Result<[ShipperHistoryOffer], Error> = .success([])
 
-    func create(listingId: String, _ body: CreatOfferRequest) async throws -> offerResponse { createCalls.append((listingId, body)); return try createResult.get() }
+    func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse { createCalls.append((listingId, body)); return try createResult.get() }
     func listingOffers(listingId: String) async throws -> [ListingOffer] { try listingOffersResult.get() }
     func decide(offerId: String, accept: Bool) async throws { decisions.append((offerId, accept)); try decideResult.get() }
     func myOffers() async throws -> [CarrierOffer] { try myOffersResult.get() }
@@ -108,4 +108,10 @@ enum Sample {
     static func message(_ id: String = "m1", text: String = "Merhaba", mine: Bool = true) -> ChatMessage {
         ChatMessage(id: id, text: text, createdAt: "2026-11-04T10:00:00Z", isMine: mine)
     }
+}
+
+final class FakeSession: SessionRestoring {
+    var result: Result<LoginUser?, Error> = .success(nil)
+    private(set) var restoreCalls = 0
+    func restore() async throws -> LoginUser? { restoreCalls += 1; return try result.get() }
 }

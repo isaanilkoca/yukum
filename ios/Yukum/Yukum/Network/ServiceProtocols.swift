@@ -19,7 +19,7 @@ protocol ListingServicing {
 }
 
 protocol OfferServicing {
-    func create(listingId: String, _ body: CreatOfferRequest) async throws -> offerResponse
+    func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse
     func listingOffers(listingId: String) async throws -> [ListingOffer]
     func decide(offerId: String, accept: Bool) async throws
     func myOffers() async throws -> [CarrierOffer]
@@ -45,9 +45,15 @@ protocol AuthServicing {
     func login(_ body: LoginRequest) async throws -> LoginResponse
 }
 
+// SessionRestoring: "kayıtlı oturum varsa kullanıcıyı geri getir" (otomatik giriş) | gerçeği AuthSession actor'u, testte sahtesi verilir
+protocol SessionRestoring {
+    func restore() async throws -> LoginUser?
+}
+
 // Gerçek servisler zaten bu fonksiyonlara sahip; "sen de bu sözleşmeyi karşılıyorsun" demek için boş extension yeter
 extension ListingService: ListingServicing {}
 extension OfferService: OfferServicing {}
 extension ChatService: ChatServicing {}
 extension CityService: CityServicing {}
 extension AuthService: AuthServicing {}
+extension AuthSession: SessionRestoring {}

@@ -18,9 +18,9 @@ struct OfferService { // OfferService [BİZİM] ad
     private let api = APIClient.shared
 
     // create: teklif verir (aynı ilana tekrar verilirse eski teklifin tutarı güncellenir)
-    // listingId: hangi ilan | _ body: tutar+not paketi | -> offerResponse: kaydedilen teklif
+    // listingId: hangi ilan | _ body: tutar+not paketi | -> OfferResponse: kaydedilen teklif
     // ÇAĞIRAN: View/ListingDetailView.swift "Teklifi Gönder" | API: POST /api/v1/listings/{id}/offers (yalnız Taşımacı)
-    func create(listingId: String, _ body: CreatOfferRequest) async throws -> offerResponse {
+    func create(listingId: String, _ body: CreateOfferRequest) async throws -> OfferResponse {
         try await api.send(.post, "/api/v1/listings/\(listingId)/offers", body: body, fallback: "Teklif gönderilemedi.")
     }
 
