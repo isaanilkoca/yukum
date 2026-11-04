@@ -45,10 +45,6 @@ final class RegisterViewModel {
     // ⮕ KULLANIM [isSuccess]: YAZAR: RegisterViewModel › register() | okur: RegisterView › body, RegisterViewModelTests (test)
     var isSuccess = false
 
-    // GEÇİCİ BORÇ: kayıtta il seçimi henüz yok, API il numarası ister → şimdilik sabit İstanbul (34). İl seçimi eklenince bu sabit kalkar.
-    // ⮕ KULLANIM [defaultCityId]: okur: CarrierRegisterViewModelTests (test), RegisterViewModelTests (test)
-    static let defaultCityId = 34 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
-
     init(auth: AuthServicing = AuthService()) { self.auth = auth }
 
     // register: "Kayıt Ol" düğmesi | ⮕ ZİNCİR: Views/RegisterView: Button { Task { await viewModel.register() } } → AuthService.register(RegisterRequest) → RegisterResponse (kullanılmaz, yalnız başarı)
@@ -66,7 +62,7 @@ final class RegisterViewModel {
         }
 
         // ---- 2) PAKETİ HAZIRLA ---- (parametre sırası RegisterRequest'teki alan sırasıyla aynı olmalı)
-        let body = RegisterRequest(fullName: name, email: mail, password: password, phone: tel, cityId: Self.defaultCityId,
+        let body = RegisterRequest(fullName: name, email: mail, password: password, phone: tel,
                                    companyName: companyName.isEmpty ? nil : companyName, // boşsa nil: JSON'a hiç yazılmaz
                                    kvkkAccepted: kvkkAccepted)
 

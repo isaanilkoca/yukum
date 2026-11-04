@@ -49,10 +49,6 @@ final class CarrierRegisterViewModel {
     // ⮕ KULLANIM [isSuccess]: YAZAR: CarrierRegisterViewModel › register() | okur: CarrierRegisterView › body, CarrierRegisterViewModelTests (test)
     var isSuccess = false
 
-    // GEÇİCİ BORÇ: merkez il seçimi henüz yok → şimdilik sabit İstanbul (34)
-    // ⮕ KULLANIM [defaultCityId]: okur: CarrierRegisterViewModelTests (test)
-    static let defaultCityId = 34 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
-
     init(auth: AuthServicing = AuthService()) { self.auth = auth }
 
     // register: "Kayıt Ol" düğmesi | ⮕ ZİNCİR: Views/CarrierRegisterView: Button { Task { await viewModel.register() } } → AuthService.registerCarrier(RegisterCarrierRequest) → RegisterResponse
@@ -87,7 +83,7 @@ final class CarrierRegisterViewModel {
                                      plateNumber: plateNumber.isEmpty ? nil : plateNumber, // boşsa nil: JSON'a hiç yazılmaz
                                      capacityKg: capacity)
         let body = RegisterCarrierRequest(fullName: name, email: mail, password: password, phone: tel,
-                                          homeCityId: Self.defaultCityId, vehicles: [vehicle], kvkkAccepted: kvkkAccepted)
+                                          vehicles: [vehicle], kvkkAccepted: kvkkAccepted)
 
         // ---- 3) GÖNDER ----
         isLoading = true

@@ -11,8 +11,8 @@ public class CarrierProfile
     /// <summary>Kısa tanıtım yazısı.</summary>
     public string? About { get; set; }
 
-    /// <summary>Merkez aldığı ilin plaka kodu (<c>Cities.Id</c>).</summary>
-    public int HomeCityId { get; set; }
+    /// <summary>Merkez aldığı ilin plaka kodu (<c>Cities.Id</c>). İsteğe bağlı: kayıtta sorulmaz, Taşımacı her yere gidebilir.</summary>
+    public int? HomeCityId { get; set; }
 
     /// <summary>Puan ortalaması (0–5). Hız için burada saklanır; yorum eklenince aynı işlemde güncellenir (ileriki aşama).</summary>
     public decimal AverageRating { get; set; }

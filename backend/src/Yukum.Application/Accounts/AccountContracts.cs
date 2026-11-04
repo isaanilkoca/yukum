@@ -17,7 +17,7 @@ public sealed record VehicleInput(VehicleType? Type, string? PlateNumber, int? C
 /// <param name="Email">E-posta.</param>
 /// <param name="Phone">Cep telefonu (0532…, +90 532… gibi biçimler kabul edilir).</param>
 /// <param name="Password">Şifre.</param>
-/// <param name="CityId">Bulunduğu ilin plaka kodu.</param>
+/// <param name="CityId">Bulunduğu ilin plaka kodu (opsiyonel; kayıtta sorulmaz).</param>
 /// <param name="CompanyName">Firma adı (opsiyonel).</param>
 /// <param name="TaxNumber">Vergi numarası (opsiyonel, 10 veya 11 haneli).</param>
 /// <param name="TaxOffice">Vergi dairesi (opsiyonel).</param>
@@ -38,7 +38,7 @@ public sealed record RegisterShipperCommand(
 /// <param name="Email">E-posta.</param>
 /// <param name="Phone">Cep telefonu.</param>
 /// <param name="Password">Şifre.</param>
-/// <param name="HomeCityId">Merkez ilinin plaka kodu.</param>
+/// <param name="HomeCityId">Merkez ilinin plaka kodu (opsiyonel; kayıtta sorulmaz).</param>
 /// <param name="ServiceCityIds">Çalıştığı illerin plaka kodları (opsiyonel).</param>
 /// <param name="Vehicles">Araçlar (en az 1).</param>
 /// <param name="KvkkAccepted">KVKK aydınlatma metni onaylandı mı? Zorunlu: true olmalı.</param>

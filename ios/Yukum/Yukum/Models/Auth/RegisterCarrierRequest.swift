@@ -24,8 +24,6 @@ struct RegisterCarrierRequest: Encodable { // Encodable [SWIFT]: bu türdeki de�
     let password: String
     // ⮕ KULLANIM [phone]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let phone: String
-    // ⮕ KULLANIM [homeCityId]: okur: CarrierRegisterViewModelTests (test)
-    let homeCityId: Int              // merkez il (şimdilik sabit 34)
     // ⮕ KULLANIM [vehicles]: okur: CarrierRegisterViewModelTests (test)
     let vehicles: [VehicleRequest]   // [ ] = liste; en az 1 araç zorunlu
     // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)

@@ -192,7 +192,7 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Property<int>("CompletedJobCount")
                         .HasColumnType("int");
 
-                    b.Property<int>("HomeCityId")
+                    b.Property<int?>("HomeCityId")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsAvailable")
@@ -285,7 +285,7 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int>("CityId")
+                    b.Property<int?>("CityId")
                         .HasColumnType("int");
 
                     b.Property<string>("CompanyName")
@@ -9093,8 +9093,7 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.HasOne("Yukum.Domain.Geography.City", null)
                         .WithMany()
                         .HasForeignKey("HomeCityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Yukum.Infrastructure.Identity.AppUser", null)
                         .WithOne()
@@ -9132,8 +9131,7 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.HasOne("Yukum.Domain.Geography.City", null)
                         .WithMany()
                         .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Yukum.Infrastructure.Identity.AppUser", null)
                         .WithOne()

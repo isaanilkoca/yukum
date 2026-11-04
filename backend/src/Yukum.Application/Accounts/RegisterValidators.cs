@@ -56,12 +56,10 @@ internal static partial class AccountRules
         // bool alan true olmalı (KVKK onayı verilmeden kayıt olunamaz).
         rule.Equal(true).WithMessage("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
 
-    /// <summary>İl: seçilmiş ve veritabanında var olmalı.</summary>
-    public static IRuleBuilderOptions<T, int?> ExistingCity<T>(this IRuleBuilderInitial<T, int?> rule, IGeographyRepository geography) =>
-        rule.Cascade(CascadeMode.Stop)
-            .NotNull().WithMessage("İl seçin.")
-            // MustAsync: veritabanı/önbellek gerektiren kural (il listesi önbellekten gelir). 'id!.Value': NotNull'dan geçtiği için dolu.
-            .MustAsync((id, cancellationToken) => geography.CityExistsAsync(id!.Value, cancellationToken))
+    /// <summary>İl isteğe bağlı: boş bırakılabilir; verilmişse veritabanında var olmalı.</summary>
+    public static IRuleBuilderOptions<T, int?> OptionalExistingCity<T>(this IRuleBuilder<T, int?> rule, IGeographyRepository geography) =>
+        // Boş (null) geçerlidir: kayıtta il sorulmaz. Dolu ise il veritabanında/önbellekte var olmalı.
+        rule.MustAsync(async (id, cancellationToken) => id is null || await geography.CityExistsAsync(id.Value, cancellationToken))
             .WithMessage("Geçerli bir il seçin.");
 
     // Küçük yardımcı: iki biçim denetimi birlikte.
@@ -81,7 +79,7 @@ public sealed class RegisterShipperValidator : AbstractValidator<RegisterShipper
         RuleFor(c => c.Phone).Phone();
         RuleFor(c => c.Password).Password();
         RuleFor(c => c.KvkkAccepted).KvkkAccepted();
-        RuleFor(c => c.CityId).ExistingCity(geography);
+        RuleFor(c => c.CityId).OptionalExistingCity(geography);
 
         RuleFor(c => c.CompanyName).Must(v => v!.Trim().Length <= 200)
             .When(c => c.CompanyName is not null).WithMessage("Firma adı en fazla 200 karakter olabilir.");
@@ -106,7 +104,7 @@ public sealed class RegisterCarrierValidator : AbstractValidator<RegisterCarrier
         RuleFor(c => c.Phone).Phone();
         RuleFor(c => c.Password).Password();
         RuleFor(c => c.KvkkAccepted).KvkkAccepted();
-        RuleFor(c => c.HomeCityId).ExistingCity(geography);
+        RuleFor(c => c.HomeCityId).OptionalExistingCity(geography);
 
         // Çalışma illeri opsiyoneldir; verilmişse her biri geçerli, hiçbiri tekrarlı olmamalı.
         // RuleForEach: listedeki HER eleman için ayrı denetim; hata 'ServiceCityIds[1]' gibi dizinle bildirilir.

@@ -20,6 +20,6 @@ public class ShipperProfile
     /// <summary>Kısa tanıtım yazısı.</summary>
     public string? About { get; set; }
 
-    /// <summary>Bulunduğu ilin plaka kodu (<c>Cities.Id</c>).</summary>
-    public int CityId { get; set; }
+    /// <summary>Bulunduğu ilin plaka kodu (<c>Cities.Id</c>). İsteğe bağlı: kayıtta sorulmaz, ilanın kendi kalkış ili vardır.</summary>
+    public int? CityId { get; set; }
 }

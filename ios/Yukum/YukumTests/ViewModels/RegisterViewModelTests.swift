@@ -44,7 +44,6 @@ struct RegisterViewModelTests {
         #expect(body.fullName == "Ali Veli" && body.email == "ali@x.com" && body.phone == "0532 123 45 67") // baş/son boşluklar temizlendi
         #expect(body.password == "Abcdefg1") // şifreye dokunulmaz
         #expect(body.companyName == nil) // boş isteğe bağlı alan JSON'a yazılmaz
-        #expect(body.cityId == RegisterViewModel.defaultCityId)
         #expect(vm.isSuccess == true && vm.errorMessage == nil && vm.isLoading == false)
     }
 

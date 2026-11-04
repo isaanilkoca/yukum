@@ -66,6 +66,25 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     }
 
     [Fact]
+    public async Task Registration_works_without_a_city_for_both_roles()
+    {
+        // Kayıtta il sorulmaz: iki rol de cityId/homeCityId göndermeden kaydolabilir.
+        var (client, _) = await StartAsync();
+
+        var shipper = await client.PostAsJsonAsync("/api/v1/auth/register/shipper",
+            new { fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = "Abcdefg1", kvkkAccepted = true });
+        var carrier = await client.PostAsJsonAsync("/api/v1/auth/register/carrier",
+            new
+            {
+                fullName = "Veli Nakliyat", email = "veli@x.com", phone = "0533 222 11 00", password = "Abcdefg1",
+                vehicles = new object[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true
+            });
+
+        Assert.Equal(HttpStatusCode.Created, shipper.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, carrier.StatusCode);
+    }
+
+    [Fact]
     public async Task Phone_is_stored_in_plus90_format_and_email_in_lower_case()
     {
         var (client, db) = await StartAsync();
@@ -111,7 +130,6 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
         Assert.Equal("E-posta boş olamaz.", errors.GetProperty("email")[0].GetString());
         Assert.Equal("Telefon numarası boş olamaz.", errors.GetProperty("phone")[0].GetString());
         Assert.Equal("Şifre boş olamaz.", errors.GetProperty("password")[0].GetString());
-        Assert.Equal("İl seçin.", errors.GetProperty("cityId")[0].GetString());
         Assert.Equal("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.", errors.GetProperty("kvkkAccepted")[0].GetString());
     }
 

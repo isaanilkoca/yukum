@@ -45,7 +45,6 @@ struct CarrierRegisterViewModelTests {
         let body = auth.registerCarrierBodies[0]
         #expect(body.vehicles.count == 1) // araç, kayıt paketinin İÇİNDE liste olarak gider
         #expect(body.vehicles[0].type == "Truck" && body.vehicles[0].capacityKg == 24000 && body.vehicles[0].plateNumber == "33 ABC 123")
-        #expect(body.homeCityId == CarrierRegisterViewModel.defaultCityId)
         #expect(vm.isSuccess == true)
     }
 

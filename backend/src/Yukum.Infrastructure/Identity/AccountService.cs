@@ -34,7 +34,7 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
                 CompanyName = command.CompanyName,
                 TaxNumber = command.TaxNumber,
                 TaxOffice = command.TaxOffice,
-                CityId = command.CityId!.Value
+                CityId = command.CityId
             }),
             cancellationToken);
 
@@ -44,7 +44,7 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
             user =>
             {
                 // Taşımacı profili.
-                context.CarrierProfiles.Add(new CarrierProfile { UserId = user.Id, HomeCityId = command.HomeCityId!.Value });
+                context.CarrierProfiles.Add(new CarrierProfile { UserId = user.Id, HomeCityId = command.HomeCityId });
 
                 // Her araç için bir satır.
                 context.Vehicles.AddRange(command.Vehicles!.Select(v => new Vehicle

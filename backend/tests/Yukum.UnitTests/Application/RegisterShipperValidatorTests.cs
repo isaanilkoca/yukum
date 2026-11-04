@@ -124,10 +124,11 @@ public class RegisterShipperValidatorTests
 
     // ---------- Yük Veren'e özel ----------
     [Fact]
-    public async Task City_is_required()
+    public async Task City_is_optional()
     {
+        // İl kayıtta sorulmaz: boş bırakılabilir.
         var result = await _validator.TestValidateAsync(Valid() with { CityId = null });
-        result.ShouldHaveValidationErrorFor(c => c.CityId).WithErrorMessage("İl seçin.");
+        result.ShouldNotHaveValidationErrorFor(c => c.CityId);
     }
 
     [Theory]

@@ -57,10 +57,10 @@ public class RegisterCarrierValidatorTests
 
     // ---------- merkez il ve çalışma illeri ----------
     [Fact]
-    public async Task Home_city_is_required_and_must_exist()
+    public async Task Home_city_is_optional_but_must_exist_when_given()
     {
         (await _validator.TestValidateAsync(Valid() with { HomeCityId = null }))
-            .ShouldHaveValidationErrorFor(c => c.HomeCityId).WithErrorMessage("İl seçin.");
+            .ShouldNotHaveValidationErrorFor(c => c.HomeCityId);
         (await _validator.TestValidateAsync(Valid() with { HomeCityId = 999 }))
             .ShouldHaveValidationErrorFor(c => c.HomeCityId).WithErrorMessage("Geçerli bir il seçin.");
     }

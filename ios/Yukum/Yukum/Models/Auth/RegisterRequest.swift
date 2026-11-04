@@ -7,7 +7,7 @@ import Foundation
 
 // ┌─ BAĞLANTI HARİTASI: RegisterRequest (Yük Veren kayıt paketi) ────────────────────
 // │ MODEL     : Yük Veren kaydı için GİDEN paket
-// │ DOLDURAN  : ViewModels/RegisterViewModel.register() (formdaki alanlardan; cityId şimdilik sabit 34)
+// │ DOLDURAN  : ViewModels/RegisterViewModel.register() (formdaki alanlardan)
 // │ YOL       : Views/RegisterView → RegisterViewModel → Models/Services/AuthService.register → POST /api/v1/auth/register/shipper
 // │ CEVAP     : RegisterResponse
 // └──────────────────────────────────────────────────────────────────────
@@ -34,8 +34,6 @@ struct RegisterRequest: Encodable { // Encodable [SWIFT]: bu türdeki değer JSO
     let password: String
     // ⮕ KULLANIM [phone]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let phone : String
-    // ⮕ KULLANIM [cityId]: okur: RegisterViewModelTests (test)
-    let cityId : Int           // API il numarası ister (zorunlu); Int = sayı, metin değil
     // ⮕ KULLANIM [companyName]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let companyName : String?  // ? = boş olabilir (isteğe bağlı); nil ise JSON'a hiç yazılmaz
     // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
