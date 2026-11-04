@@ -16,7 +16,9 @@ struct ListingDetailViewModelTests {
         let base = Sample.listing("L1")
         let listing = Listing(id: base.id, title: base.title, weightKg: base.weightKg, fromCityName: base.fromCityName, fromDistrictName: base.fromDistrictName,
                               toCityName: base.toCityName, toDistrictName: base.toDistrictName, pickupDate: base.pickupDate, budget: base.budget,
-                              myOfferAmount: myOffer, myOfferStatus: nil, distanceKm: nil)
+                              myOfferAmount: myOffer, myOfferStatus: nil, distanceKm: nil,
+                              description: base.description, vehicleType: base.vehicleType, fromCityId: base.fromCityId,
+                              fromDistrictId: base.fromDistrictId, toCityId: base.toCityId, toDistrictId: base.toDistrictId)
         return (ListingDetailViewModel(listing: listing, service: service), service)
     }
 

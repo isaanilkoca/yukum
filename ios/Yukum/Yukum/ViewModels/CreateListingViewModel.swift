@@ -48,6 +48,15 @@ final class CreateListingViewModel {
     // ⮕ ZİNCİR: Views/CreateListingView: "İlanı Yayınla" düğmesi .disabled(viewModel.isLoading) — çift tıklamayı engeller
     // ⮕ KULLANIM [isLoading]: YAZAR: CreateListingViewModel › submit() | okur: CreateListingView › body, CreateListingViewModelTests (test)
     var isLoading = false // istek sürerken true → düğmeyi kilitlemekte kullanılır (çift tıklama olmasın)
+    
+    
+    // Düzenleme modu: nil = yeni ilan, dolu = o ilan düzenleniyor | DOLDURAN: init(editing:) ← ListingOffersView (Düzenle düğmesi) Listing'i verir
+     // let [SWIFT]: bir kez atanır, sonra değişmez | String?: ilan numarası, yoksa nil | KULLANAN: submit() hangi servisi çağıracağına buna bakar
+     private let editingId: String?
+     // Türetilmiş değerler: View yazıları bunlardan okur, "düzenleme mi" kararı tek yerde kalır | KULLANAN: Views/CreateListingView (adım 5'te bağlayacağız)
+     var isEditing: Bool { editingId != nil }
+     var screenTitle: String { isEditing ? "İlanı Düzenle" : "İlan Ver" } // a ? b : c [SWIFT]: a doğruysa b, değilse c
+     var submitTitle: String { isEditing ? "İlanı Güncelle" : "İlanı Yayınla" }
 
     // ⮕ ZİNCİR: Views/CreateListingView: Kalkış İli ve Varış İli Picker'ları | DOLDURAN: loadCities() ← CityService.cities() | MODEL: [City]
     // ⮕ KULLANIM [cities]: YAZAR: CreateListingViewModel › loadCities() | okur: CreateListingView › body
@@ -78,18 +87,39 @@ final class CreateListingViewModel {
     // ⮕ KULLANIM [maxBudget]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     static let maxBudget = 100_000_000
 
-    init(listingService: ListingServicing = ListingService(), cityService: CityServicing = CityService()) {
-        self.listingService = listingService
-        self.cityService = cityService
-    }
+    // editing: düzenlenecek ilan | Listing: Models/Listings/Listing.swift (adım 1'de eklediğimiz alanlar burada kullanılır) | = nil: verilmezse yeni ilan, eski çağrılar bozulmaz
+        // Alanlar ekran açılmadan DOLDURULUR; sonra kullanıcı değiştirir, submit() olduğu gibi gönderir
+        init(editing listing: Listing? = nil, listingService: ListingServicing = ListingService(), cityService: CityServicing = CityService()) {
+            self.listingService = listingService
+            self.cityService = cityService
+            editingId = listing?.id // listing?.id [SWIFT]: listing nil ise nil, doluysa id'yi verir (optional chaining)
+            guard let listing else { return } // [SWIFT]: yeni ilan ise doldurulacak bir şey yok | guard let listing: aynı adla paketi açar
+            title = listing.title
+            details = listing.description ?? "" // ??: nil ise "" (TextField String ister, nil tutamaz)
+            weightKg = String(listing.weightKg) // TextField yazı tutar: Int → String
+            vehicleType = listing.vehicleType
+            budget = listing.budget.map { String(Int($0)) } ?? "" // Optional.map [SWIFT]: doluysa içini çevirir | API Double (5000.0) verir, forma "5000" yazılır
+            fromCityId = listing.fromCityId; fromDistrictId = listing.fromDistrictId
+            toCityId = listing.toCityId; toDistrictId = listing.toDistrictId
+            pickupDate = Self.parseDate(listing.pickupDate) ?? Date() // API yazısı "2026-12-01" → Date | çevrilemezse bugün
+        }
 
     // loadCities: ekran açılınca il listesini çeker | try?: hata olursa nil | ?? []: nil ise boş liste
     // ⮕ ZİNCİR: Views/CreateListingView: .task { await viewModel.loadCities() } | CityService.cities()
     // ⮕ KULLANIM [loadCities]: çağırır: CreateListingView › body, CreateListingViewModelTests (test)
-    func loadCities() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
-        if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder) | try? [SWIFT]: hata olursa çökme, nil ver
-    }
-
+  
+    // ⮕ ZİNCİR: Views/CreateListingView: .task { await viewModel.loadCities() } | CityService.cities() ve (düzenlemede) CityService.districts(cityId:)
+      func loadCities() async {
+          if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] }
+          // Düzenlemede ilçe listeleri de dolmalı, yoksa ilçe Picker'ı boş kalır.
+          // NEDEN fromCityChanged çağırmıyoruz: o fonksiyon ilçe seçimini SIFIRLAR; biz kayıtlı ilçeyi korumak istiyoruz.
+          // NEDEN burada: View'daki .onChange yalnız DEĞİŞİNCE tetiklenir; init'te atanan ilk değer için hiç çalışmaz.
+          guard isEditing, fromDistricts.isEmpty else { return } // guard [SWIFT]: düzenleme değilse ya da zaten yüklüyse çık (.task ekran her göründüğünde çalışır)
+          fromDistricts = (try? await cityService.districts(cityId: fromCityId)) ?? []
+          toDistricts = (try? await cityService.districts(cityId: toCityId)) ?? []
+      }
+    
+    
     // fromCityChanged / toCityChanged: il Picker'ı değişince | ilçe seçimini sıfırlar (eski ilin ilçesi yeni ile ait değil, kalırsa yanlış ilan gider) ve yeni ilin ilçelerini çeker
     // ⮕ ZİNCİR: Views/CreateListingView: kalkış il Picker .onChange | CityService.districts(cityId:) → fromDistricts
     // ⮕ KULLANIM [fromCityChanged]: çağırır: CreateListingView › body, CreateListingViewModelTests (test)
@@ -113,13 +143,19 @@ final class CreateListingViewModel {
     // en_US_POSIX: telefonun diline göre rakamlar/ay adları bozulmasın | static: testte doğrudan çağrılabilsin
     // ⮕ ZİNCİR: submit() içinde pickupDate'i API'nin istediği "2026-11-05" yazısına çevirir (testte doğrudan denenir)
     // ⮕ KULLANIM [formatDate]: çağırır: CreateListingViewModel › submit()
-    static func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter() // DateFormatter [SWIFT]: tarih ↔ yazı çevirici
+  
+    // Tek formatter ayarı iki yönde kullanılır: Date → yazı (formatDate) ve yazı → Date (parseDate)
+    // static let yerine fonksiyon: DateFormatter thread-safe (Sendable) değil, Swift 6 paylaşımlı sabiti reddeder
+    private static func makeDateFormatter() -> DateFormatter { // DateFormatter [SWIFT, Foundation]: tarih ↔ yazı çevirici
+        let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX") // Locale [SWIFT]: dil/bölge ayarı
-        return formatter.string(from: date)
+        formatter.locale = Locale(identifier: "en_US_POSIX") // Locale [SWIFT]: telefonun diline göre rakam/ay bozulmasın
+        return formatter
     }
-
+    static func formatDate(_ date: Date) -> String { makeDateFormatter().string(from: date) } // ÇAĞIRAN: submit(), testler
+    // parseDate: "2026-12-01" → Date | -> Date?: tarih geçersizse nil | ÇAĞIRAN: init(editing:)
+    static func parseDate(_ text: String) -> Date? { makeDateFormatter().date(from: text) }
+    
     // submit: "İlanı Yayınla" | -> Bool: başarılı mı (ekran başarılıysa HomeView'a döner)
     // ⮕ ZİNCİR: Views/CreateListingView: Button("İlanı Yayınla") { Task { if await viewModel.submit() { dismiss() } } } | ListingService.create(CreateListingRequest) → ListingResponse
     // ⮕ KULLANIM [submit]: çağırır: CreateListingView › body, CreateListingViewModelTests (test)
@@ -159,12 +195,23 @@ final class CreateListingViewModel {
                                            pickupDate: Self.formatDate(pickupDate),
                                            budget: budgetValue)
 
-        isLoading = true // düğme kilitlenir
+        isLoading = true // düğme kilitlenir¨¨
         defer { isLoading = false } // defer [SWIFT]: fonksiyondan çıkarken çalışacak kod
-        do {
-            _ = try await listingService.create(request) // POST /api/v1/listings
-            return true
-        } catch {
+        
+                 do {
+                  // Aynı form, iki farklı uç: düzenlemede PUT (var olanı değiştir), yeni ilanda POST (oluştur)
+                  // listingService: ListingServicing sözleşmesi (Models/Services/Protocols) → gerçekte ListingService.update / create → APIClient
+                  if let editingId { // if let [SWIFT]: editingId doluysa içini aynı adla aç
+                      _ = try await listingService.update(listingId: editingId, request) // PUT /api/v1/listings/{id}
+                  } else {
+                      _ = try await listingService.create(request) // POST /api/v1/listings
+                  }
+                  return true
+              }
+        catch {
+                  if let message = error.userMessage { errorMessage = message } // Core hata çevirici: Models/Networking/Error+UserMessage → "Teklif kabul edilmiş ilan güncellenemez." gibi
+                  return false
+              } catch {
             if let message = error.userMessage { errorMessage = message } // API'nin Türkçe mesajı kırmızı yazılır
             return false
         }

@@ -13,7 +13,8 @@ enum Sample {
 
     static func listing(_ id: String = "l1", title: String = "İlan") -> Listing {
         Listing(id: id, title: title, weightKg: 1000, fromCityName: "Mersin", fromDistrictName: "Mezitli", toCityName: "İstanbul", toDistrictName: "Kadıköy",
-                pickupDate: "2026-12-01", budget: 5000, myOfferAmount: nil, myOfferStatus: nil, distanceKm: nil)
+                pickupDate: "2026-12-01", budget: 5000, myOfferAmount: nil, myOfferStatus: nil, distanceKm: nil,
+                description: nil, vehicleType: "Truck", fromCityId: 33, fromDistrictId: 1, toCityId: 34, toDistrictId: 2)
     }
     static func listingOffer(_ id: String = "o1", status: String = "Pending") -> ListingOffer {
         ListingOffer(id: id, carrierName: "Taşımacı", amount: 1000, note: nil, status: status)

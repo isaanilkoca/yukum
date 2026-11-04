@@ -26,4 +26,7 @@ protocol ListingServicing {
     func openListings(fromCityId: Int, fromDistrictId: Int, lat: Double?, lon: Double?) async throws -> [Listing]
     // ⮕ KULLANIM [cancel]: çağırır: ListingOffersViewModel › cancelListing(), ChatViewModelTests (test)
     func cancel(listingId: String) async throws
+    // İlanı günceller | body: ilan açmayla aynı paket (aynı kurallar) | API: PUT /api/v1/listings/{id}
+    // ZİNCİR: CreateListingViewModel.submit() (düzenleme modu) → bu sözleşme → ListingService.update
+    func update(listingId: String, _ body: CreateListingRequest) async throws -> ListingResponse
 }

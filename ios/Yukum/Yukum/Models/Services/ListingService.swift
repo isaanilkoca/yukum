@@ -31,6 +31,15 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     func create(_ body: CreateListingRequest) async throws -> ListingResponse { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         try await api.send(.post, "/api/v1/listings", body: body, fallback: "İlan açılamadı.") // fallback: sunucu açıklama vermezse gösterilecek yazı | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
+    
+    // PUT = kaydı bütünüyle değiştir (POST yeni kayıt açar) | \(listingId) adrese id'yi koyar
+    // Sunucu hatası (404 başkasının, 409 kabul edilmiş, 400 doğrulama) APIClient'ta APIError olur, mesaj Türkçe gelir
+    // ZİNCİR: CreateListingViewModel.submit() → PUT /api/v1/listings/{id} → ListingResponse
+    func update(listingId: String, _ body: CreateListingRequest) async throws -> ListingResponse {
+        try await api.send(.put, "/api/v1/listings/\(listingId)", body: body, fallback: "İlan güncellenemedi.")
+    }
+    
+    
 
     // myListings: Yük Veren'in kendi AÇIK ilanları | -> [Listing]: ilan listesi (kalıbı: Models/Listings/)
     // ÇAĞIRAN: Views/HomeView.swift (Yük Veren için, ekran her göründüğünde) | API: GET /api/v1/listings/mine

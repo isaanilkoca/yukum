@@ -40,5 +40,15 @@ struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan �
     let myOfferStatus: String? // bu Taşımacı'nın teklifinin durumu: "Pending" / "Rejected" | ?: teklif vermediyse nil | API'deki "myOfferStatus" ile aynı ad    
     // ⮕ KULLANIM [distanceKm]: okur: ListingRow › body
     let distanceKm: Double? // Taşımacı'nın konumu ile ilanın kalkış noktası arası kuş uçuşu mesafe (km) | ? = konum gönderilmediyse API null verir, nil olur | NE İŞE YARAR: satırda "12 km" yazmak | NEREDE: Views/ListingRow.swift | API'deki "distanceKm" ile aynı ad
+    
+    // Düzenleme formunu doldurmak için. Backend zaten gönderiyordu; Decodable JSON'daki fazla alanı yok sayar, struct'taki eksik alanı hata sayar.
+    // Adlar JSON'daki camelCase adlarla birebir aynı olmalı | KULLANAN: CreateListingViewModel.init(editing:)
+    let description: String? // nil olabilir (ilan açarken boş bırakılır)
+    let vehicleType: String // "Truck"... = VehicleType.rawValue
+    let fromCityId: Int
+    let fromDistrictId: Int
+    let toCityId: Int
+    let toDistrictId: Int
+
 
 }
