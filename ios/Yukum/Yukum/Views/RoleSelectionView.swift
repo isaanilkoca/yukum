@@ -17,8 +17,10 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BAĞLANTI: Views/LoginView.swift'teki "Kayıt ol" NavigationLink'i bu ekranı açar.
 //           Buradan: "Yük Veren" → Views/RegisterView.swift | "Taşımacı" → Views/CarrierRegisterView.swift
 // NOT: Bu ekranda kendi NavigationStack'i yok; LoginView'daki NavigationStack'i kullanır (geri oku oradan gelir).
+// ⮕ KULLANIM [RoleSelectionView]: kullanır: LoginView › body
 struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         VStack(spacing: 24) { // VStack [SWIFT]: elemanları alt alta dizer | spacing: elemanlar arası 24 nokta boşluk

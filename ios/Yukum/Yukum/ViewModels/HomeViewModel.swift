@@ -22,40 +22,56 @@ import Observation // [SWIFT] @Observable özelliği: bu sınıftaki değişkenl
 //   servisler dışarıdan verilir (bağımlılık enjeksiyonu) → testte sahte servis verip mantığı sunucusuz doğrularız (YukumTests/HomeViewModelTests.swift).
 // BU SINIF: ana sayfanın durumu. İki role de hizmet eder: Yük Veren (kendi açık ilanları) ve Taşımacı (açık ilanlar + filtre + yakınımdakiler + rozet).
 // BAĞLANTI: Views/HomeView.swift bunu @State ile tutar ve okur | servisler: Services/Protocols/
+// ⮕ KULLANIM [HomeViewModel]: kullanır: HomeView › viewModel, HomeView › init(), HomeViewModelTests (test)
 @Observable
 final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebilir" yapar (eski adıyla ObservableObject + @Published yerine)
 
     // ⮕ ZİNCİR: Views/HomeView: "Hoş Geldin \(viewModel.user.displayName)" | rol kararı isShipper | MODEL: Models/Auth/LoginUser | GELDİĞİ YER: LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → HomeView(user:)
+    // ⮕ KULLANIM [user]: okur: HomeViewModel › isShipper, HomeView › body
     let user: LoginUser // giriş yapan kişi (ad, rol)
 
     // Bağımlılıklar: gerçek uygulamada varsayılan gerçek servisler, testte sahteleri verilir
+    // ⮕ KULLANIM [listingService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load()
     private let listingService: ListingServicing
+    // ⮕ KULLANIM [offerService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load()
     private let offerService: OfferServicing
+    // ⮕ KULLANIM [cityService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load(), HomeViewModel › cityFilterChanged()
     private let cityService: CityServicing
+    // ⮕ KULLANIM [session]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › signOut()
     private let session: SessionSigningOut // çıkış (Networking/AuthSession) | testte sahtesi
+    // ⮕ KULLANIM [location]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError, HomeViewModel › nearMeChanged(), HomeViewModel › load(), HomeViewModel › reloadKey
     private let location: LocationProviding // telefonun konumu (Location/LocationManager) | testte sahtesi
 
     // ─── Ekranın durumu (View bunları okur; değişince ekran yenilenir) ───
     // ⮕ ZİNCİR: Views/HomeView: List(viewModel.listings) (Yük Veren ve Taşımacı için iki ayrı liste) → her satır Views/ListingRow | DOLDURAN: load() | MODEL: [Listing]
+    // ⮕ KULLANIM [listings]: YAZAR: HomeViewModel › load() | okur: HomeView › body, HomeViewModelTests (test)
     var listings: [Listing] = [] // ekrandaki ilan listesi (Yük Veren: kendi açık ilanları, Taşımacı: teklif vermediği açık ilanlar)
     // ⮕ ZİNCİR: Views/HomeView: if let listError → kırmızı Text | DOLDURAN: load()'un catch'i (error.userMessage)
+    // ⮕ KULLANIM [listError]: YAZAR: HomeViewModel › load() | okur: HomeViewModelTests (test)
     var listError: String? // liste yüklenemezse kırmızı yazılacak mesaj | nil: hata yok
     // ⮕ ZİNCİR: Views/HomeView toolbar: kutu ikonundaki kırmızı rozet (> 0 ise çizilir) | DOLDURAN: load() ← OfferService.unseenCount()
+    // ⮕ KULLANIM [unseenCount]: YAZAR: HomeViewModel › load() | okur: HomeView › body, HomeViewModelTests (test)
     var unseenCount = 0 // Taşımacı'nın görmediği karar sayısı (kutu ikonundaki rozet) | 0: rozet çizilmez
 
     // Taşımacı filtresi: kalkış ili / ilçesi | 0 = "Tümü" (filtre yok) | hem Picker seçimini tutar hem API'ye giden filtredir
     // ⮕ ZİNCİR: Views/HomeView: il Picker'ının satırları (ForEach) | DOLDURAN: load() (yalnız bir kez) ← CityService.cities() | MODEL: [City]
+    // ⮕ KULLANIM [cities]: YAZAR: HomeViewModel › load() | okur: HomeView › body
     var cities: [City] = [] // il Picker'ının listesi (bir kez yüklenir)
     // ⮕ ZİNCİR: Views/HomeView: ilçe Picker'ının satırları | DOLDURAN: cityFilterChanged(to:) ← CityService.districts(cityId:) | MODEL: [District]
+    // ⮕ KULLANIM [filterDistricts]: YAZAR: HomeViewModel › cityFilterChanged() | okur: HomeView › body, HomeViewModelTests (test)
     var filterDistricts: [District] = [] // seçilen ilin ilçeleri
     // ⮕ ZİNCİR: Views/HomeView: Picker("İl", selection: $viewModel.filterCityId) — seçim doğrudan buraya yazılır (@Bindable) | load()'da openListings(fromCityId:) filtresi olarak API'ye gider
+    // ⮕ KULLANIM [filterCityId]: okur: HomeViewModel › load(), HomeViewModel › reloadKey, HomeView › body | bağlar(okur+yazar): HomeView › body | YAZAR: HomeViewModelTests (test)
     var filterCityId = 0
     // ⮕ ZİNCİR: Views/HomeView: Picker("İlçe", selection: $viewModel.filterDistrictId) | load()'da openListings(fromDistrictId:) filtresi olarak API'ye gider
+    // ⮕ KULLANIM [filterDistrictId]: okur: HomeViewModel › load(), HomeViewModel › reloadKey, HomeViewModelTests (test) | YAZAR: HomeViewModel › cityFilterChanged(), HomeViewModelTests (test) | bağlar(okur+yazar): HomeView › body
     var filterDistrictId = 0
     // ⮕ ZİNCİR: Views/HomeView: Toggle("Yakınımdakiler", isOn: $viewModel.nearMe) | true iken load() konumu API'ye gönderir (lat/lon) ve sunucu en yakından uzağa sıralar
+    // ⮕ KULLANIM [nearMe]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError, HomeViewModel › load(), HomeViewModel › reloadKey, HomeView › body | bağlar(okur+yazar): HomeView › body | YAZAR: HomeViewModelTests (test)
     var nearMe = false // "Yakınımdakiler" anahtarı: true iken liste telefonun konumuna göre yakından uzağa sıralanır
 
     // ⮕ ZİNCİR: Views/HomeView: if viewModel.isShipper { Yük Veren ekranı } else { Taşımacı ekranı } ve toolbar düğmeleri | kaynak: user.role
+    // ⮕ KULLANIM [isShipper]: okur: HomeViewModel › load(), HomeView › body
     var isShipper: Bool { user.role == "Shipper" } // türetilmiş değer: rol kararı tek yerde (ekran ve mantık aynı tanımı kullanır)
 
     init(user: LoginUser,
@@ -73,19 +89,23 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     }
 
     // ⮕ ZİNCİR: Views/HomeView: "Konum izni kapalı" + "Ayarları aç" satırı yalnız nearMe açıkken ve izin reddedilmişse görünür | kaynak: Location/LocationManager.isDenied
+    // ⮕ KULLANIM [isLocationDenied]: okur: HomeView › body, HomeViewModelTests (test)
     var isLocationDenied: Bool { nearMe && location.isDenied }
     // ⮕ ZİNCİR: Views/HomeView: konum alınamadı gibi kırmızı küçük yazı (yalnız nearMe açıkken ve izin reddedilmemişse) | kaynak: Location/LocationManager.errorMessage
+    // ⮕ KULLANIM [locationError]: okur: HomeView › body, HomeViewModelTests (test)
     var locationError: String? { nearMe && !location.isDenied ? location.errorMessage : nil }
 
     // nearMeChanged: "Yakınımdakiler" anahtarı değişince çağrılır | açıldıysa konum motoruna "izin sor ve konumu bul" der
     // izin ya da konum gelene kadar liste eskisi gibi kalır, konum gelince reloadKey değişir ve load() listeyi sıralı yeniler
     // ⮕ ZİNCİR: Views/HomeView: Toggle üzerindeki .onChange(of: viewModel.nearMe) → viewModel.nearMeChanged(to:) → Location/LocationManager.request() (izin penceresi / konum)
+    // ⮕ KULLANIM [nearMeChanged]: çağırır: HomeView › body, HomeViewModelTests (test)
     func nearMeChanged(to isOn: Bool) {
         if isOn { location.request() }
     }
 
     // signOut: "Çıkış Yap" düğmesi | önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin)
     // ⮕ ZİNCİR: Views/HomeView: Button("Çıkış Yap") { Task { await viewModel.signOut(); dismiss() } } → Networking/AuthSession.signOut() → POST /api/v1/auth/logout
+    // ⮕ KULLANIM [signOut]: çağırır: HomeViewModel › signOut(), HomeView › body, HomeViewModelTests (test)
     func signOut() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         await session.signOut() // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
@@ -94,6 +114,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // Konum, ViewModel'in kendi `location`ından okunur: yalnız "Yakınımdakiler" AÇIKSA ve konum BULUNMUŞSA API'ye gönderilir
     // ÇAĞIRAN: View → .task(id:) (ekran açılınca/filtre değişince/konum bulununca) ve .refreshable (aşağı çekince)
     // ⮕ ZİNCİR: Views/HomeView: .task(id: reloadKey) ve List'lerdeki .refreshable | Yük Veren → ListingService.myListings() | Taşımacı → ListingService.openListings(...) + CityService.cities() + OfferService.unseenCount()
+    // ⮕ KULLANIM [load]: çağırır: HomeView › body, HomeViewModelTests (test)
     func load() async {
         listError = nil // eski hata yazısını temizle | NEDEN: load her yenilemede çalışır; temizlemezsek bir kez çıkan hata sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
         do {
@@ -114,6 +135,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // cityFilterChanged: il Picker'ı değişince çağrılır | ilçe seçimi sıfırlanır ve yeni ilin ilçeleri çekilir
     // NEDEN sıfırlama: eski ilin ilçesi yeni ile ait değildir, kalırsa yanlış filtre gider
     // ⮕ ZİNCİR: Views/HomeView: il Picker'ındaki .onChange(of: viewModel.filterCityId) → Task { await viewModel.cityFilterChanged(to:) } | CityService.districts(cityId:)
+    // ⮕ KULLANIM [cityFilterChanged]: çağırır: HomeView › body, HomeViewModelTests (test)
     func cityFilterChanged(to cityId: Int) async {
         filterDistrictId = 0
         filterDistricts = []
@@ -123,6 +145,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
 
     // reloadKey: ekranın .task(id:) değeri | bu yazı değişince liste yeniden yüklenir (filtre, anahtar ya da konum değişti)
     // ⮕ ZİNCİR: Views/HomeView: .task(id: viewModel.reloadKey) — bu yazı değişince (filtre, anahtar, konum) SwiftUI task'ı yeniden çalıştırır → load()
+    // ⮕ KULLANIM [reloadKey]: okur: HomeView › body, HomeViewModelTests (test)
     var reloadKey: String {
         "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(location.latitude.map { String($0) } ?? "-"),\(location.longitude.map { String($0) } ?? "-")"
     }

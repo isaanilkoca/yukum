@@ -12,10 +12,16 @@ import Foundation
 // └──────────────────────────────────────────────────────────────────────
 
 // protocol [SWIFT]: "bu üyelere sahip olan her şey bu sözleşmeyi karşılar" | AnyObject: yalnız sınıflar (referans) karşılayabilir
+// ⮕ KULLANIM [LocationProviding]: kullanır: HomeViewModel › location, HomeViewModel › init(), LocationManager › locationManager(), FakeLocation (test)
 protocol LocationProviding: AnyObject {
+    // ⮕ KULLANIM [latitude]: okur: HomeViewModel › load(), HomeViewModel › reloadKey | YAZAR: HomeViewModelTests (test)
     var latitude: Double? { get }      // bulunan konumun enlemi, konum yoksa nil
+    // ⮕ KULLANIM [longitude]: okur: HomeViewModel › load(), HomeViewModel › reloadKey | YAZAR: HomeViewModelTests (test)
     var longitude: Double? { get }     // boylamı
+    // ⮕ KULLANIM [isDenied]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError | YAZAR: HomeViewModelTests (test)
     var isDenied: Bool { get }         // kullanıcı konum iznini reddetti mi (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
+    // ⮕ KULLANIM [errorMessage]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var errorMessage: String? { get }  // konum alınamadı gibi hata yazısı, yoksa nil
+    // ⮕ KULLANIM [request]: çağırır: HomeViewModel › nearMeChanged()
     func request()                     // izin sor / konumu iste
 }

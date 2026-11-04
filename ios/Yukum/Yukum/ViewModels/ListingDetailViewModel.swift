@@ -15,28 +15,38 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 
 // BU SINIF: ilan detay ekranındaki TEKLİF formunun durumu ve mantığı (tutar, not, doğrulama, gönderme, hata)
 // BAĞLANTI: Views/ListingDetailView.swift kullanır | servis: Services/OfferService.swift (OfferServicing) | paket kalıbı: Models/Offers/ → CreateOfferRequest
+// ⮕ KULLANIM [ListingDetailViewModel]: kullanır: ListingDetailView › viewModel, ListingDetailView › init(), ListingDetailViewModelTests (test)
 @Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class ListingDetailViewModel {
 
     // ⮕ ZİNCİR: Views/ListingDetailView: başlık, rota, ağırlık, tarih, bütçe satırları | gelen: Views/HomeView Taşımacı listesi NavigationLink → ListingDetailView(listing:) | MODEL: Listing
+    // ⮕ KULLANIM [listing]: okur: ListingDetailViewModel › hasExistingOffer, ListingDetailViewModel › submit()
     let listing: Listing // teklif verilen ilan
+    // ⮕ KULLANIM [service]: okur: ListingDetailViewModel › submit()
     private let service: OfferServicing
 
     // ⮕ ZİNCİR: Views/ListingDetailView: TextField("Teklif tutarı", text: $viewModel.amountText) | submit() Int'e çevirip CreateOfferRequest.amount'a koyar
+    // ⮕ KULLANIM [amountText]: okur: ListingDetailViewModel › submit() | bağlar(okur+yazar): ListingDetailView › body | YAZAR: ListingDetailViewModelTests (test)
     var amountText = "" // kullanıcının yazdığı tutar | TextField yazıyla çalıştığı için String, göndermeden önce Int'e çevrilir
     // ⮕ ZİNCİR: Views/ListingDetailView: TextField("Not") | CreateOfferRequest.note (boşsa nil)
+    // ⮕ KULLANIM [note]: okur: ListingDetailViewModel › submit(), ListingDetailViewModelTests (test) | bağlar(okur+yazar): ListingDetailView › body | YAZAR: ListingDetailViewModelTests (test)
     var note = "" // isteğe bağlı not
     // ⮕ ZİNCİR: Views/ListingDetailView: if let errorMessage → kırmızı yazı ("Geçerli bir tutar gir." ya da sunucu mesajı)
+    // ⮕ KULLANIM [errorMessage]: YAZAR: ListingDetailViewModel › submit() | okur: ListingDetailViewModelTests (test)
     var errorMessage: String?
     // ⮕ ZİNCİR: Views/ListingDetailView: "Teklifi Gönder" düğmesi .disabled(viewModel.isLoading)
+    // ⮕ KULLANIM [isLoading]: YAZAR: ListingDetailViewModel › submit() | okur: ListingDetailView › body
     var isLoading = false
 
     // Bu sınır sunucudaki sınırla AYNI (en fazla 100.000.000 ₺): aşırı büyük değer sunucuda 400 verirdi, burada daha ekranda yakalanır
+    // ⮕ KULLANIM [maxAmount]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     static let maxAmount = 100_000_000 // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
     // ⮕ ZİNCİR: listing.myOfferAmount dolu mu | Views/ListingDetailView "Mevcut Teklifin" satırı ve buttonTitle
+    // ⮕ KULLANIM [hasExistingOffer]: okur: ListingDetailViewModel › buttonTitle
     var hasExistingOffer: Bool { listing.myOfferAmount != nil } // daha önce teklif verdiyse düğme "Güncelle" der
     // ⮕ ZİNCİR: Views/ListingDetailView: Button(viewModel.buttonTitle) — "Teklifi Gönder" ya da "Teklifi Güncelle"
+    // ⮕ KULLANIM [buttonTitle]: okur: ListingDetailView › body, ListingDetailViewModelTests (test)
     var buttonTitle: String { hasExistingOffer ? "Teklifi Güncelle" : "Teklifi Gönder" }
 
     init(listing: Listing, service: OfferServicing = OfferService()) {
@@ -46,6 +56,7 @@ final class ListingDetailViewModel {
 
     // submit: Teklifi Gönder | -> Bool: başarılı mı (ekran başarılıysa ana sayfaya döner)
     // ⮕ ZİNCİR: Views/ListingDetailView: Button { Task { if await viewModel.submit() { dismiss() } } } | OfferService.create(listingId:_:) ← CreateOfferRequest
+    // ⮕ KULLANIM [submit]: çağırır: ListingDetailView › body, ListingDetailViewModelTests (test)
     func submit() async -> Bool { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         // 1) Kontrol: Int(amountText) yazıyı sayıya çevirir, çeviremezse nil
         guard let amount = Int(amountText.trimmingCharacters(in: .whitespaces)), amount > 0 else { // guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık

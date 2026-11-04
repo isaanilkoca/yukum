@@ -19,9 +19,12 @@ import Foundation
 // BAĞLANTI (akış): CityService.cities() API'den JSON çeker → bu dosyadaki City dizisine çevirir → CreateListingView'daki "cities" değişkenine yazar → açılır listede gösterilir.
 
 // KULLANAN: Services/CityService.swift ([City] döner) | Views/CreateListingView.swift (@State cities: [City], Picker'da gösterilir)
+// ⮕ KULLANIM [City]: kullanır: CreateListingViewModel › cities, HomeViewModel › cities, CityService › cities(), CityServicing › cities(), CreateListingViewModelTests (test), HomeViewModelTests (test) … +1
 struct City: Decodable,Identifiable {
 
+    // ⮕ KULLANIM [id]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let id : Int // plaka kodu (İstanbul = 34); ilan ve kayıt bunu API'ye cityId olarak gönderir
+    // ⮕ KULLANIM [name]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let name : String  // ekranda görünen ad
 
 }

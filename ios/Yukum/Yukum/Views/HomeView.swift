@@ -23,13 +23,17 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
 // MVVM: bu dosya yalnız GÖRÜNÜM (ne çizilecek). Durum ve iş mantığı (hangi liste, hangi filtre, ne zaman yüklenir, hata yazısı) ViewModels/HomeViewModel.swift'te.
 // BAĞLANTI: Views/LoginView.swift giriş başarılı olunca .fullScreenCover ile bu ekranı açar ve giriş yapan kullanıcıyı verir.
+// ⮕ KULLANIM [HomeView]: kullanır: LoginView › body
 struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (her yenilemede yeni ViewModel oluşmaz)
     // @Observable olduğu için viewModel içindeki değişkenler değişince bu ekran kendiliğinden yenilenir
+    // ⮕ KULLANIM [viewModel]: okur: HomeView › body | bağlar(okur+yazar): HomeView › body
     @State private var viewModel: HomeViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
 
+    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [openURL]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
@@ -39,6 +43,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
         _viewModel = State(initialValue: HomeViewModel(user: user))
     }
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable bir sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (Picker/Toggle seçimi doğrudan ViewModel'e yazılsın diye)

@@ -23,13 +23,21 @@ import Foundation
 // Gönderdiğimiz paket (form kağıdı).
 // Encodable = Swift'in hazır sözü: "bu struct JSON'a çevrilebilir" (JSONEncoder bunu kullanır).
 // KULLANAN: Views/RegisterView.swift paketi doldurur → AuthService.register gönderir.
+// ⮕ KULLANIM [RegisterRequest]: kullanır: RegisterViewModel › register(), AuthService › register(), AuthServicing › register(), FakeAuthService (test)
 struct RegisterRequest: Encodable { // Encodable [SWIFT]: bu türdeki değer JSON'a çevrilebilir
 
+    // ⮕ KULLANIM [fullName]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let fullName : String      // ad soyad
+    // ⮕ KULLANIM [email]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let email: String
+    // ⮕ KULLANIM [password]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let password: String
+    // ⮕ KULLANIM [phone]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let phone : String
+    // ⮕ KULLANIM [cityId]: okur: RegisterViewModelTests (test)
     let cityId : Int           // API il numarası ister (zorunlu); Int = sayı, metin değil
+    // ⮕ KULLANIM [companyName]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let companyName : String?  // ? = boş olabilir (isteğe bağlı); nil ise JSON'a hiç yazılmaz
+    // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let kvkkAccepted : Bool    // KVKK onayı; true olmalı
 }

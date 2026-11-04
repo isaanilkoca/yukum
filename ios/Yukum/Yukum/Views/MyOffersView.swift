@@ -19,11 +19,14 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BU EKRAN: Taşımacı'nın tüm teklifleri = "Tekliflerim". İki bölüm: BEKLEYENLER (karar bekleyen) ve GEÇMİŞ (kabul/red/tamamlanan/iptal). Bitmiş olanları silebilir.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Liste, bölümler, silme kuralları, sohbet bilgisi ViewModels/OfferListViewModels.swift → MyOffersViewModel'de.
 // BAĞLANTI: Views/HomeView.swift → Taşımacı'nın sağ üst kutu ikonu (rozetli) bu ekranı açar | kalıp: Models/Offers/ → CarrierOffer
+// ⮕ KULLANIM [MyOffersView]: kullanır: HomeView › body
 struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [viewModel]: okur: MyOffersView › body, MyOffersView › offerRow() | bağlar(okur+yazar): MyOffersView › body
     @State private var viewModel = MyOffersViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar (.navigationDestination(item: $viewModel.chat) için)
@@ -65,6 +68,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
 
     // offerRow: tek bir teklifin satırı | @ViewBuilder [SWIFT]: fonksiyon birden çok görünüm döndürebilir
     // NEDEN fonksiyon: aynı satır iki bölümde (Bekleyenler, Geçmiş) tekrar kullanılıyor
+    // ⮕ KULLANIM [offerRow]: çağırır: MyOffersView › body
     @ViewBuilder
     private func offerRow(_ offer: CarrierOffer) -> some View {
         VStack(alignment: .leading, spacing: 6) { // bir teklifin satırı: alt alta | .leading: sola yasla

@@ -18,11 +18,14 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // Kabul edilen teklifin sohbetine buradan ulaşılır (aktif iş: silinemez, sohbet açık, "İşi Bitir ve Sil" sohbetin menüsünde).
 // MVVM: bu dosya yalnız GÖRÜNÜM. Liste, silme kuralı, sohbet bilgisi ViewModels/OfferListViewModels.swift → OldOffersViewModel'de.
 // BAĞLANTI: Views/HomeView.swift → Yük Veren'in sol üst saat ikonu bu ekranı açar | kalıp: Models/Offers/ → ShipperHistoryOffer
+// ⮕ KULLANIM [OldOffersView]: kullanır: HomeView › body
 struct OldOffersView: View {
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [viewModel]: okur: OldOffersView › body | bağlar(okur+yazar): OldOffersView › body
     @State private var viewModel = OldOffersViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View {
 
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar

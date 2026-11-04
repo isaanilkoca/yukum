@@ -20,14 +20,18 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // Karar verilen teklifler buradan kalkıp "Eski Teklifler"e gider.
 // MVVM: bu dosya yalnız GÖRÜNÜM. Teklif listesi, karar, ilanı kaldırma ViewModels/OfferListViewModels.swift → ListingOffersViewModel'de.
 // BAĞLANTI: Views/HomeView.swift → Yük Veren listesindeki NavigationLink bu ekranı açar ve ilanı verir | kalıp: Models/Offers/ → ListingOffer
+// ⮕ KULLANIM [ListingOffersView]: kullanır: HomeView › body
 struct ListingOffersView: View {
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [viewModel]: okur: ListingOffersView › body | bağlar(okur+yazar): ListingOffersView › body
     @State private var viewModel: ListingOffersViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | ilan kaldırılınca bu ekrandan geri dönmek için
     // showCancelConfirm: "İlanı yayından kaldır" onay penceresi açık mı | yalnız GÖRÜNÜM bilgisi
     // NEDEN onay penceresi: işlem geri alınamaz ve bekleyen tekliflerin hepsini iptal eder, yanlışlıkla basılmasın
+    // ⮕ KULLANIM [showCancelConfirm]: YAZAR: ListingOffersView › body | bağlar(okur+yazar): ListingOffersView › body
     @State private var showCancelConfirm = false
 
     // init: ilan dışarıdan verilir (HomeView'daki satır), ViewModel burada oluşturulur
@@ -35,6 +39,7 @@ struct ListingOffersView: View {
         _viewModel = State(initialValue: ListingOffersViewModel(listing: listing))
     }
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View {
 
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar

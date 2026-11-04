@@ -18,11 +18,14 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // MVVM: bu dosya yalnız GÖRÜNÜM. Alanlar, doğrulama, paket hazırlama, gönderme ViewModels/RegisterViewModel.swift'te.
 // BAĞLANTI: Views/RoleSelectionView.swift'teki "Yük Veren" NavigationLink'i bu ekranı açar.
 //           Paket kalıbı: Models/Auth/RegisterRequest.swift | gönderen: Services/AuthService.swift → register
+// ⮕ KULLANIM [RegisterView]: kullanır: RoleSelectionView › body
 struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
+    // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): RegisterView › body | okur: RegisterView › body
     @State private var viewModel = RegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Toggle doğrudan ViewModel'e yazsın diye)

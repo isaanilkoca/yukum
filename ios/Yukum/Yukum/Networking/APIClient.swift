@@ -20,12 +20,17 @@ import Foundation
 // OTOMATİK YENİLEME: istek 401 (jeton süresi doldu) alırsa AuthSession'dan yeni jeton alınır ve istek BİR KEZ tekrarlanır. Kullanıcı bunu fark etmez.
 // GENERIC: send<Response: Decodable> → dönen tür çağrıdan anlaşılır ([Listing], Int, LoginResponse...) | tek fonksiyon her cevap türünü çevirir
 // BAĞLANTI: Services/*Service.swift hepsi bunu kullanır | jeton işleri: Networking/AuthSession.swift | adres: Networking/APIConfig.swift | hata türü: Networking/APIError.swift
+// ⮕ KULLANIM [APIClient]: kullanır: AuthService › api, ChatService › api, CityService › api, ListingService › api, OfferService › api, AuthSessionTests (test)
 struct APIClient {
 
+    // ⮕ KULLANIM [shared]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     static let shared = APIClient() // ortak örnek | servisler bunu kullanır | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
+    // ⮕ KULLANIM [baseURL]: okur: APIClient › execute()
     private let baseURL: String
+    // ⮕ KULLANIM [session]: okur: APIClient › execute()
     private let session: URLSession // dışarıdan verilebilir: testlerde sahte postacı takılır | URLSession [SWIFT]: internet isteklerini gönderen postacı
+    // ⮕ KULLANIM [auth]: okur: APIClient › perform()
     private let auth: AuthSession
 
     init(baseURL: String = APIConfig.baseURL, session: URLSession = .shared, auth: AuthSession = .shared) {
@@ -38,6 +43,7 @@ struct APIClient {
     // method: GET/POST... | path: adresin devamı | query: ?ad=değer çiftleri | body: gönderilecek paket (Encodable: JSON'a çevrilebilir)
     // authorized: true ise istekte jeton gider ve 401'de yenileme denenir | false: giriş/kayıt/il listesi gibi herkese açık uçlar
     // fallback: sunucu hata açıklaması vermezse ekranda gösterilecek sabit yazı
+    // ⮕ KULLANIM [send]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     func send<Response: Decodable>(_ method: HTTPMethod = .get, _ path: String, query: [URLQueryItem] = [], body: (any Encodable)? = nil, // Decodable [SWIFT]: JSON'dan bu türde değer üretilebilir | Encodable [SWIFT]: bu türdeki değer JSON'a çevrilebilir | URLQueryItem [SWIFT]: adreste ?ad=değer çifti
                                    authorized: Bool = true, fallback: String = "Bir hata oluştu.") async throws -> Response { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         let data = try await perform(method, path, query: query, body: body, authorized: authorized, fallback: fallback) // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
@@ -45,12 +51,14 @@ struct APIClient {
     }
 
     // sendNoContent: cevabında veri olmayan istekler (204) | örn. silme, "görüldü" işaretleme
+    // ⮕ KULLANIM [sendNoContent]: çağırır: ChatService › send(), ChatService › clear(), ChatService › complete(), ListingService › cancel(), OfferService › decide(), OfferService › markSeen() … +1
     func sendNoContent(_ method: HTTPMethod, _ path: String, body: (any Encodable)? = nil,
                        authorized: Bool = true, fallback: String = "Bir hata oluştu.") async throws {
         _ = try await perform(method, path, query: [], body: body, authorized: authorized, fallback: fallback)
     }
 
     // ─── Asıl iş ───
+    // ⮕ KULLANIM [perform]: çağırır: APIClient › send(), APIClient › sendNoContent()
     private func perform(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], body: (any Encodable)?,
                          authorized: Bool, fallback: String) async throws -> Data { // Data [SWIFT]: ham bayt dizisi
         // 1) Jeton hazırla. Uygulama yeni açıldıysa bellekte jeton yoktur ama Keychain'de yenileme jetonu olabilir: önce yenile.
@@ -87,6 +95,7 @@ struct APIClient {
     }
 
     // execute: tek bir HTTP isteğini kurar ve gönderir | -> (cevap içeriği, durum kodu)
+    // ⮕ KULLANIM [execute]: çağırır: APIClient › perform()
     private func execute(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], body: (any Encodable)?,
                          token: String?) async throws -> (Data, Int) {
         // URLComponents [SWIFT]: adresi parça parça kurar (boşluk/Türkçe karakter kodlamasını kendisi yapar)

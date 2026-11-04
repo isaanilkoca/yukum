@@ -13,13 +13,16 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // │ Gösterdikleri            →  başlık, "Mersin → İstanbul", kg · tarih, Taşımacı için "Teklifin: ... Beklemede", "📍 X km uzaklıkta" (Listing.distanceKm)
 // └──────────────────────────────────────────────────────────────────────
 
+// ⮕ KULLANIM [ListingRow]: kullanır: HomeView › body
 struct ListingRow: View { // View [SWIFT]: bu bir ekran/görünüm
     
     // BU EKRAN PARÇASI: listedeki TEK ilan satırı. Yük Veren ve Taşımacı listeleri aynı satırı kullanır (kod tekrarı olmasın).
     // BAĞLANTI: Views/HomeView.swift, List içinde ListingRow(listing: listing) diye çağırır | kalıp: Models/Listings/ → struct Listing
     
+    // ⮕ KULLANIM [listing]: okur: ListingRow › body
     let listing : Listing
     
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View {
         VStack(alignment:.leading ,spacing: 6) { // alt alta, sola hizalı | spacing: satırlar arası boşluk | VStack [SWIFT]: elemanları alt alta dizer
             Text(listing.title).font(.headline)  // başlık: kalın ve büyük | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili

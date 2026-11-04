@@ -19,13 +19,17 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // MVVM: bu dosya yalnız GÖRÜNÜM. Alanlar, il→ilçe zinciri, doğrulama, paket hazırlama, gönderme ViewModels/CreateListingViewModel.swift'te.
 // BAĞLANTI: HomeView.swift'teki "İlan Ver" NavigationLink'i bu ekranı açar (yalnız Shipper rolünde) | il/ilçe listesi Services/CityService.swift'ten gelir
 //           Paket kalıbı: Models/Listings/ → CreateListingRequest | gönderecek servis: Services/ListingService.swift
+// ⮕ KULLANIM [CreateListingView]: kullanır: HomeView › body
 struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (form alanları kaybolmaz)
+    // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CreateListingView › body | okur: CreateListingView › body
     @State private var viewModel = CreateListingViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemin hazır değerini al | dismiss: "bu ekranı kapat" komutu | ilan açılınca HomeView'a dönmek için
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Picker doğrudan ViewModel'e yazsın diye)

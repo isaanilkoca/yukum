@@ -48,22 +48,27 @@ import Observation // [SWIFT] @Observable özelliği için: sınıftaki değişk
 //   .restricted          : cihaz kısıtlı (ebeveyn denetimi/kurumsal) → kullanıcı açamaz
 // NEDEN "yalnız bir kez sor": iOS aynı uygulamanın izin penceresini bir kez gösterir; reddedilince kodla tekrar açılamaz, bu yüzden kullanıcıya Ayarlar'a gitmesi söylenir.
 
+// ⮕ KULLANIM [LocationManager]: kullanır: HomeViewModel › init()
 @Observable
 final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSObject, CLLocationManagerDelegate (import CoreLocation) | BİZİM: LocationManager bu dosya
 
     // status: konum izninin şu anki durumu | NE İŞE YARAR: izin verilmiş mi, reddedilmiş mi, hiç sorulmamış mı | değerler: .notDetermined (sorulmadı), .authorizedWhenInUse (uygulama açıkken izin var), .denied (reddetti), .restricted (cihaz kısıtlı, örn. ebeveyn denetimi)
     // NEREDE KULLANILIR: HomeView reddedilmişse "Ayarlardan izin ver" uyarısı gösterir | başlangıç değeri init içinde atanır
+    // ⮕ KULLANIM [status]: YAZAR: LocationManager › init(), LocationManager › locationManagerDidChangeAuthorization() | okur: LocationManager › locationManagerDidChangeAuthorization(), LocationManager › isDenied
     var status : CLAuthorizationStatus // CLAuthorizationStatus [SWIFT]: konum izni durumu
     
     //coordinate: bulunan konum (enlem + boylam) | CLLocationCoordinate2D [SWIFT]: latitude (enlem) ve longitude (boylam) taşıyan hazır tip | ? = henüz konum yoksa nil
     // NEREDE KULLANILIR: HomeView dolunca openListings(lat:lon:) ile API'ye gönderir
+    // ⮕ KULLANIM [coordinate]: YAZAR: LocationManager › locationManager() | okur: LocationManager › latitude, LocationManager › longitude
     var coordinate : CLLocationCoordinate2D?
     
     // errorMessage: kullanıcıya gösterilecek hata yazısı | NE İŞE YARAR: izin kapalı ya da konum alınamadı | nil: hata yok
+    // ⮕ KULLANIM [errorMessage]: YAZAR: LocationManager › request(), LocationManager › locationManager()
     var errorMessage : String?
     
     //manager: Apple'ın hazır konum motoru | CLLocationManager [SWIFT]: izin isteme ve konum alma işini yapan asıl nesne, biz onu yönetiyoruz
     // @ObservationIgnored: bu değişken değişse bile ekran yenilenmesin (ekranın ilgilendiği şey manager değil, sonuçlar) | private: yalnız bu sınıf görür
+    // ⮕ KULLANIM [manager]: okur: LocationManager › request()
     @ObservationIgnored private let manager = CLLocationManager() // @ObservationIgnored [SWIFT]: bu değişken değişse bile ekran yenilenmesin | HAZIR: CLLocationManager (import CoreLocation) = Apple'ın konum motoru
     
     // init: sınıf oluşturulurken bir kez çalışır | override: NSObject'in init'ini ezeriz
@@ -76,6 +81,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSO
     
     
     // request: "Yakınımdakiler" düğmesi bunu çağırır | NE İŞE YARAR: izin yoksa izin sorar, izin varsa konumu ister
+    // ⮕ KULLANIM [request]: çağırır: HomeViewModel › nearMeChanged()
     func request (){
         switch manager.authorizationStatus { // switch [SWIFT]: değere göre dallanır
         case.notDetermined: // henüz hiç sorulmadı
@@ -92,6 +98,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSO
     // ─── Aşağıdakiler DELEGATE fonksiyonları: biz çağırmayız, iOS konum olayı olunca bizi çağırır ───
     // izin durumu DEĞİŞİNCE (kullanıcı pencerede "İzin ver"e bastığında) iOS bunu çağırır
     
+    // ⮕ KULLANIM [locationManagerDidChangeAuthorization]: iOS çağırır (delegate: adı Apple belirler, biz çağırmayız)
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) { // _ manager: çağıran motor (bizim manager ile aynı) | HAZIR ad (CLLocationManagerDelegate, import CoreLocation) | içi BİZİM | çağıran iOS
         status = manager.authorizationStatus // yeni durumu sakla ekran yenilenir
         if status == .authorizedWhenInUse || status == .authorizedAlways { // || veya | izin yeni verildiyse
@@ -100,6 +107,7 @@ final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSO
     }
     
     // konum bulununca ios bunun cagırır | locations : bulunan konumlar listesi ( genelde tek eleman)
+    // ⮕ KULLANIM [locationManager]: iOS çağırır (delegate: adı Apple belirler, biz çağırmayız)
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) { // HAZIR ad (CLLocationManagerDelegate) | içi BİZİM | çağıran iOS → coordinate dolar → HomeViewModel.reloadKey değişir → load() sıralı listeyi çeker
         coordinate = locations.last?.coordinate // last: listedeki son (en güncel) konum | ?. nil olabilir, boş listede nil kalır | .coordinate: konumdan yalnız enlem/boylamı al
         errorMessage = nil // önceki hata varsa temizle
@@ -116,7 +124,10 @@ final class LocationManager : NSObject,CLLocationManagerDelegate { // HAZIR: NSO
 
 // LocationManager, LocationProviding sözleşmesini karşılar: ViewModel'ler CoreLocation türlerini (CLLocationCoordinate2D, CLAuthorizationStatus) bilmesin, sade değerler görsün
 extension LocationManager: LocationProviding { // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler | BİZİM: LocationProviding (Location/LocationProviding.swift) → HomeViewModel konumu yalnız bu sözleşmeyle görür, CoreLocation'ı bilmez
+    // ⮕ KULLANIM [latitude]: okur: HomeViewModel › load(), HomeViewModel › reloadKey | YAZAR: HomeViewModelTests (test)
     var latitude: Double? { coordinate?.latitude }
+    // ⮕ KULLANIM [longitude]: okur: HomeViewModel › load(), HomeViewModel › reloadKey | YAZAR: HomeViewModelTests (test)
     var longitude: Double? { coordinate?.longitude }
+    // ⮕ KULLANIM [isDenied]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError | YAZAR: HomeViewModelTests (test)
     var isDenied: Bool { status == .denied }
 }

@@ -18,9 +18,12 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // MVVM: bu dosya yalnız GÖRÜNÜM. Tutar/not alanları, doğrulama, gönderme, hata ViewModels/ListingDetailViewModel.swift'te.
 // BAĞLANTI: Views/HomeView.swift → Taşımacı listesindeki NavigationLink bu ekranı açar ve ilanı verir
 //           Teklif gönderimi: Services/OfferService.swift → create | paket kalıbı: Models/Offers/
+// ⮕ KULLANIM [ListingDetailView]: kullanır: HomeView › body
 struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: teklif formunun durumu ve mantığı (ilan da içinde: viewModel.listing) | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    // ⮕ KULLANIM [viewModel]: okur: ListingDetailView › body | bağlar(okur+yazar): ListingDetailView › body
     @State private var viewModel: ListingDetailViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | teklif gidince ana sayfaya dönmek için
 
@@ -29,6 +32,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
         _viewModel = State(initialValue: ListingDetailViewModel(listing: listing))
     }
 
+    // ⮕ KULLANIM [body]: okur: ListingDetailViewModelTests (test)
     var body: some View { // ekranın içeriği
 
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar (TextField doğrudan ViewModel'e yazsın diye)

@@ -20,17 +20,25 @@ import Foundation
 //   Yenileme jetonu TEK KULLANIMLIK (sunucu rotasyon yapar): iki istek aynı jetonla ayrı ayrı yenileme yapsaydı ikincisi "çalıntı" sayılır ve oturum düşerdi.
 //   Çözüm "tek uçuş" (single-flight): ilk istek yenilemeyi başlatır, diğerleri AYNI yenilemenin bitmesini bekler.
 // BAĞLANTI: Networking/APIClient.swift (her istekte jeton ister, 401'de yenileme ister) | Services/AuthService.swift (girişte signIn) | Views/LoginView.swift (açılışta restore) | Views/HomeView.swift (çıkışta signOut)
+// ⮕ KULLANIM [AuthSession]: kullanır: HomeViewModel › init(), LoginViewModel › init(), APIClient › auth, APIClient › init(), AuthService › login(), AuthSessionTests (test)
 actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | adı [BİZİM]
 
+    // ⮕ KULLANIM [shared]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     static let shared = AuthSession() // uygulamanın tek oturumu | testlerde kendi örneğimizi oluştururuz (aşağıdaki init) | static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
 
+    // ⮕ KULLANIM [baseURL]: okur: AuthSession › signOut(), AuthSession › performRefresh()
     private let baseURL: String
+    // ⮕ KULLANIM [session]: okur: AuthSession › signOut(), AuthSession › performRefresh()
     private let session: URLSession // URLSession [SWIFT]: postacı | dışarıdan verilebilir ki testlerde sahte postacı takılsın
+    // ⮕ KULLANIM [keychainService]: okur: AuthSession › signIn(), AuthSession › signOut(), AuthSession › clearLocal(), AuthSession › performRefresh()
     private let keychainService: String // testler gerçek Keychain kaydına dokunmasın diye ayrı kutu adı verilebilir
+    // ⮕ KULLANIM [refreshKey]: okur: AuthSession › hasStoredSession, AuthSession › signIn(), AuthSession › signOut(), AuthSession › clearLocal(), AuthSession › performRefresh()
     private let refreshKey = "refreshToken" // Keychain'deki kaydın adı
 
+    // ⮕ KULLANIM [accessToken]: okur: AuthSession › currentAccessToken(), AuthSession › tokenAfterFailure() | YAZAR: AuthSession › signIn(), AuthSession › clearLocal()
     private var accessToken: String? // bellekteki erişim jetonu | nil: henüz yok (uygulama yeni açıldı ya da çıkış yapıldı)
     // refreshTask: şu an devam eden yenileme işi | nil: yenileme yok | "tek uçuş"un anahtarı: varsa yenisini başlatma, bunu bekle
+    // ⮕ KULLANIM [refreshTask]: okur: AuthSession › tokenAfterFailure(), AuthSession › refresh() | YAZAR: AuthSession › refresh()
     private var refreshTask: Task<LoginResponse, Error>? // Error [SWIFT]: fırlatılabilir hata türü
 
     init(baseURL: String = APIConfig.baseURL, session: URLSession = .shared, keychainService: String = KeychainStore.defaultService) {
@@ -40,16 +48,20 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     }
 
     // keychainServiceForTests: yalnız TESTLER için | testin kendi Keychain kutusunun adını söyler (rotasyonla kaydedilen jetonu doğrulamak için)
+    // ⮕ KULLANIM [keychainServiceForTests]: okur: AuthSessionTests (test)
     var keychainServiceForTests: String { keychainService }
 
     // hasStoredSession: Keychain'de yenileme jetonu var mı | NE İŞE YARAR: açılışta "otomatik giriş yapılabilir mi" kararı
+    // ⮕ KULLANIM [hasStoredSession]: okur: APIClient › perform(), AuthSession › restore(), AuthSessionTests (test)
     var hasStoredSession: Bool { KeychainStore.get(key: refreshKey, service: keychainService) != nil }
 
     // currentAccessToken: istek atarken kullanılacak jeton (yoksa nil)
+    // ⮕ KULLANIM [currentAccessToken]: çağırır: APIClient › perform(), AuthSessionTests (test)
     func currentAccessToken() -> String? { accessToken }
 
     // signIn: giriş/yenileme başarılı olunca çağrılır | jetonları yerine koyar
     // ÖNEMLİ: yeni yenileme jetonu HEMEN Keychain'e yazılır; sunucu eskisini iptal etti, kaydetmezsek bir sonraki yenileme başarısız olur
+    // ⮕ KULLANIM [signIn]: çağırır: AuthSession › performRefresh(), AuthService › login(), AuthSessionTests (test)
     func signIn(_ response: LoginResponse) {
         accessToken = response.accessToken // bellekte
         KeychainStore.set(response.refreshToken, key: refreshKey, service: keychainService) // Keychain'de
@@ -58,6 +70,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     // restore: OTOMATİK GİRİŞ | uygulama açılırken çağrılır | -> LoginUser?: oturum varsa kullanıcı, yoksa nil
     // Keychain'de yenileme jetonu varsa sunucudan yeni jeton ister; başarılıysa kullanıcı şifre yazmadan içeri girer
     // İnternet yoksa (hata fırlar) oturum SİLİNMEZ: kullanıcı sonra tekrar deneyebilir | sunucu "geçersiz" derse silinir (aşağıda)
+    // ⮕ KULLANIM [restore]: çağırır: AuthSessionTests (test)
     func restore() async throws -> LoginUser? { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
         guard hasStoredSession else { return nil } // hiç oturum yok → giriş ekranı | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
         return try await refresh().user // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
@@ -65,6 +78,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 
     // tokenAfterFailure: bir istek 401 alınca APIClient bunu çağırır | -> yeni geçerli erişim jetonu
     // failed: 401 alan isteğin kullandığı jeton | NEDEN karşılaştırma: iki istek aynı eski jetonla 401 aldıysa ilki yeniler, ikincisi gelince jeton ZATEN değişmiştir; tekrar yenilemeye gerek yok, yenisini kullanır
+    // ⮕ KULLANIM [tokenAfterFailure]: çağırır: APIClient › perform()
     func tokenAfterFailure(of failed: String?) async throws -> String {
         if let task = refreshTask { return try await task.value.accessToken } // yenileme sürüyor → onu bekle (tek uçuş)
         if let current = accessToken, current != failed { return current } // başkası çoktan yeniledi → yeni jetonu kullan
@@ -72,9 +86,11 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     }
 
     // refreshAccessToken: bellekte jeton yokken (uygulama yeni açıldı) ilk istekten önce çağrılır
+    // ⮕ KULLANIM [refreshAccessToken]: çağırır: APIClient › perform()
     func refreshAccessToken() async throws -> String { try await refresh().accessToken }
 
     // refresh: yenilemenin kendisi | TEK UÇUŞ: devam eden varsa onu bekler, yoksa yenisini başlatır
+    // ⮕ KULLANIM [refresh]: çağırır: AuthSession › restore(), AuthSession › tokenAfterFailure(), AuthSession › refreshAccessToken()
     func refresh() async throws -> LoginResponse {
         if let task = refreshTask { return try await task.value } // zaten yenileniyor → aynı işe bağlan
         let task = Task { try await performRefresh() } // yenileme işini başlat | Task [SWIFT]: arka planda çalışan iş
@@ -84,6 +100,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
     }
 
     // expireSession: yenileme artık mümkün değil (sunucu reddetti) → yerel oturumu sil ve ekranlara haber ver
+    // ⮕ KULLANIM [expireSession]: çağırır: APIClient › perform(), AuthSession › performRefresh()
     func expireSession() {
         clearLocal()
         NotificationCenter.default.post(name: .sessionExpired, object: nil) // "yayınla": HomeView dinler, giriş ekranına döner | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
@@ -91,6 +108,7 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 
     // signOut: kullanıcı "Çıkış Yap"a bastı
     // ÖNCE yerel oturum silinir (ekran hemen kapansın), SONRA sunucuya haber verilir (jeton orada da iptal edilsin) | sunucu cevap vermese bile çıkış tamamdır (best-effort)
+    // ⮕ KULLANIM [signOut]: çağırır: AuthSessionTests (test)
     func signOut() async {
         let stored = KeychainStore.get(key: refreshKey, service: keychainService)
         clearLocal()
@@ -104,12 +122,14 @@ actor AuthSession { // actor [SWIFT]: kendi verisini kendi koruyan sınıf | ad�
 
     // ─── Aşağısı yalnız bu sınıfın içi ───
 
+    // ⮕ KULLANIM [clearLocal]: çağırır: AuthSession › expireSession(), AuthSession › signOut()
     private func clearLocal() {
         accessToken = nil
         KeychainStore.remove(key: refreshKey, service: keychainService)
     }
 
     // performRefresh: yenileme isteğini atar | yenileme için APIClient KULLANILMAZ (sonsuz döngü olurdu: APIClient 401'de buraya gelir)
+    // ⮕ KULLANIM [performRefresh]: çağırır: AuthSession › refresh()
     private func performRefresh() async throws -> LoginResponse {
         guard let stored = KeychainStore.get(key: refreshKey, service: keychainService) else {
             throw APIError(message: "Oturum bulunamadı, tekrar giriş yapın.", isSessionExpired: true)

@@ -17,6 +17,8 @@ import Foundation
 // SendMessageRequest: giden paket (yazdığımız mesaj).
 // NE İŞE YARAR: POST'un gövdesi, JSON'a çevrilip yollanır {"text":"..."} | Encodable [SWIFT]: struct → JSON
 // NEREDE KULLANILIR: Views/ChatView.swift "Gönder" düğmesi paketi hazırlar → ChatService.send
+// ⮕ KULLANIM [SendMessageRequest]: kullanır: ChatViewModel › send(), ChatService › send(), ChatServicing › send(), FakeChatService (test)
 struct SendMessageRequest: Encodable {
+    // ⮕ KULLANIM [text]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let text: String // mesaj metni | API'deki "text" ile aynı ad olmalı
 }

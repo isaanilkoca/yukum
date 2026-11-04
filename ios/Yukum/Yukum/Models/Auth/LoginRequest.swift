@@ -21,9 +21,13 @@ import Foundation
 
 // Gönderdiğimiz paket (form kağıdı). Encodable [SWIFT]: "bu struct JSON'a çevrilebilir"
 // KULLANAN: Views/LoginView.swift paketi doldurur → AuthService.login gönderir.
+// ⮕ KULLANIM [LoginRequest]: kullanır: LoginViewModel › login(), AuthService › login(), AuthServicing › login(), FakeAuthService (test)
 struct LoginRequest: Encodable { // LoginRequest [BİZİM]: paketin adı
 
+    // ⮕ KULLANIM [emailOrPhone]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let emailOrPhone: String // kullanıcı e-posta ya da telefon yazar; API içinde @ varsa e-posta sayar
+    // ⮕ KULLANIM [password]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let password: String // şifre; giriş ekranında karmaşıklık denetlenmez, sunucu karar verir
+    // ⮕ KULLANIM [deviceId]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let deviceId: String // API cihaz kimliği ister (zorunlu) | Security/DeviceID.swift → DeviceID.current: bu cihaza ait SABİT kimlik (Keychain'de) | sunucu yenileme jetonunu bu kimliğe bağlar
 }

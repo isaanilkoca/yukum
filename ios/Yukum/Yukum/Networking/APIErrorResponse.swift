@@ -12,9 +12,12 @@ import Foundation
 
 // API hata verince (400, 409...) gelen cevabın kalıbı; ekranda göstereceğimiz mesajı buradan okuruz.
 // KULLANAN: AuthService.post, hata cevabını buna çevirip mesajı APIError içine koyar; ekran o mesajı gösterir.
+// ⮕ KULLANIM [APIErrorResponse]: kullanır: APIClient › perform()
 nonisolated struct APIErrorResponse : Decodable { // Decodable [SWIFT]: JSON'dan bu türde değer üretilebilir
 
+    // ⮕ KULLANIM [detail]: okur: APIClient › perform()
     let detail : String?              // genel Türkçe mesaj (örn. "Bu e-posta zaten kayıtlı")
+    // ⮕ KULLANIM [errors]: okur: APIClient › perform()
     let errors: [String: [String]]?   // alan adı → o alanın hata mesajları (örn. "password": ["Şifre en az 8 karakter olmalı"])
 }
 

@@ -18,6 +18,7 @@ extension Error { // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekle
     // userMessage: ekranda gösterilecek yazı | nil: GÖSTERME (iş iptal edilmiş, hata değil)
     // İPTAL ≠ HATA: SwiftUI ekran yenilenirken/çıkılırken çalışan işi (.task) iptal eder; iptal edilen internet isteği "cancelled" hatası fırlatır.
     // Bunu kullanıcıya "Sunucuya ulaşılamadı." diye göstermek yanlış olur (daha önce ekranda yanlış hata yazısı kalmasının sebebi buydu).
+    // ⮕ KULLANIM [userMessage]: okur: CarrierRegisterViewModel › register(), ChatViewModel › load(), ChatViewModel › send(), ChatViewModel › clear(), ChatViewModel › complete(), CreateListingViewModel › submit() … +11
     var userMessage: String? {
         if let error = self as? APIError { return error.message } // sunucunun ya da APIClient'ın hazırladığı Türkçe mesaj
         if self is CancellationError || (self as? URLError)?.code == .cancelled { return nil } // iptal: sessiz geç | URLError [SWIFT]: ağ hatası türü (internet yok, iptal vb.) | CancellationError [SWIFT]: görev iptal edildi hatası

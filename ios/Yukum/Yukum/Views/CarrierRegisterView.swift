@@ -20,11 +20,14 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // [BİZİM] = adı biz koyduk | [SWIFT] = Swift/SwiftUI'nin hazır kodu
 // BAĞLANTI: Views/RoleSelectionView.swift'teki "Taşımacı" NavigationLink'i bu ekranı açar | gönderen: Services/AuthService.swift → registerCarrier
 
+// ⮕ KULLANIM [CarrierRegisterView]: kullanır: RoleSelectionView › body
 struct CarrierRegisterView: View {
 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
+    // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CarrierRegisterView › body | okur: CarrierRegisterView › body
     @State private var viewModel = CarrierRegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View {
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField/Picker/Toggle doğrudan ViewModel'e yazsın diye)

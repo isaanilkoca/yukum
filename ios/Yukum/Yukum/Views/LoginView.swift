@@ -20,11 +20,14 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // MVVM: bu dosya yalnız GÖRÜNÜM. Alanlar, doğrulama, giriş isteği, otomatik giriş, hata ViewModels/LoginViewModel.swift'te.
 // BAĞLANTI: ContentView.swift bu ekranı açar | "Kayıt ol" → RoleSelectionView.swift | giriş başarılı → HomeView.swift
 //           Paket kalıbı: Models/Auth/ | gönderen: Services/AuthService.swift → login | jetonlar: Networking/AuthSession.swift
+// ⮕ KULLANIM [LoginView]: kullanır: ContentView › body
 struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): LoginView › body | okur: LoginView › body
     @State private var viewModel = LoginViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'e yazsın diye)

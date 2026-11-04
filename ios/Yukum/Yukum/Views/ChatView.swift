@@ -28,17 +28,22 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 //   3) KARŞI TARAFIN MESAJI → sunucu "push" yapmaz; ViewModel 3 sn'de bir tekrar sorar (polling) | canlı bağlantı yok, basit yöntem
 //   4) ÇİZİM           → her mesaj isMine'a bakılıp sağa (benim) ya da sola (karşı taraf) yaslı balon olur
 
+// ⮕ KULLANIM [ChatView]: kullanır: ListingOffersView › body, MyOffersView › body, OldOffersView › body
 struct ChatView: View {
 
     // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
+    // ⮕ KULLANIM [viewModel]: okur: ChatView › body | bağlar(okur+yazar): ChatView › body
     @State private var viewModel: ChatViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | iş bitirilince sohbetten geri dönmek için
 
     // Onay pencerelerinin açık/kapalı durumu: yalnız GÖRÜNÜM bilgisi (hangi pencere açık), iş mantığı değil, bu yüzden ViewModel'de değil burada
     // showClearConfirm: "Mesajları Temizle" onay penceresi | NEDEN onay: silme geri alınamaz, yanlışlıkla basılmasın
+    // ⮕ KULLANIM [showClearConfirm]: YAZAR: ChatView › body | bağlar(okur+yazar): ChatView › body
     @State private var showClearConfirm = false
     // showCompleteConfirm: "İşi Bitir ve Sil" onay penceresi | bu işlem daha ağır (iki tarafta durumu değiştirir), ayrı ve daha açıklayıcı bir pencereyle sorulur
+    // ⮕ KULLANIM [showCompleteConfirm]: YAZAR: ChatView › body | bağlar(okur+yazar): ChatView › body
     @State private var showCompleteConfirm = false
 
     // init: açılış bilgisi (ChatContext) dışarıdan verilir, ViewModel burada oluşturulur
@@ -46,6 +51,7 @@ struct ChatView: View {
         _viewModel = State(initialValue: ChatViewModel(context: context))
     }
 
+    // ⮕ KULLANIM [body]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     var body: some View {
 
         // @Bindable [SWIFT]: @Observable bir sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'deki taslağa yazsın diye)

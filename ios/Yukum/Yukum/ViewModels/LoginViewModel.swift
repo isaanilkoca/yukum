@@ -15,25 +15,35 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 
 // BU SINIF: giriş ekranının durumu ve mantığı (alanlar, doğrulama, giriş isteği, otomatik giriş, hata)
 // BAĞLANTI: Views/LoginView.swift kullanır | servisler: Services/AuthService.swift (AuthServicing), Networking/AuthSession.swift (SessionRestoring), Security/DeviceID.swift
+// ⮕ KULLANIM [LoginViewModel]: kullanır: LoginView › viewModel, LoginViewModelTests (test)
 @Observable // @Observable [SWIFT]: sınıfı gözlemlenebilir yapar: değişkenleri değişince onları okuyan ekranlar kendiliğinden yenilenir
 final class LoginViewModel {
 
+    // ⮕ KULLANIM [auth]: okur: LoginViewModel › login()
     private let auth: AuthServicing
+    // ⮕ KULLANIM [session]: okur: LoginViewModel › restoreSession()
     private let session: SessionRestoring
+    // ⮕ KULLANIM [deviceId]: okur: LoginViewModel › login(), LoginViewModelTests (test)
     private let deviceId: () -> String // () -> String: "çağrılınca metin veren fonksiyon" | gerçekte DeviceID.current, testte sabit değer
 
     // ⮕ ZİNCİR: Views/LoginView: TextField("Email veya Telefon", text: $viewModel.emailOrPhone) | login() baş/son boşluğu temizleyip LoginRequest.emailOrPhone'a koyar
+    // ⮕ KULLANIM [emailOrPhone]: okur: LoginViewModel › login(), LoginViewModelTests (test) | bağlar(okur+yazar): LoginView › body | YAZAR: LoginViewModelTests (test)
     var emailOrPhone = "" // kullanıcının yazdığı e-posta ya da telefon
     // ⮕ ZİNCİR: Views/LoginView: SecureField("Şifre", text: $viewModel.password) | LoginRequest.password | başarılı girişten sonra boşaltılır
+    // ⮕ KULLANIM [password]: okur: LoginViewModel › login(), LoginViewModelTests (test) | YAZAR: LoginViewModel › login(), LoginViewModelTests (test) | bağlar(okur+yazar): LoginView › body
     var password = ""
     // ⮕ ZİNCİR: Views/LoginView: if let errorMessage → kırmızı yazı | "E-posta veya şifre hatalı." gibi sunucu mesajı
+    // ⮕ KULLANIM [errorMessage]: YAZAR: LoginViewModel › login() | okur: LoginViewModelTests (test)
     var errorMessage: String? // nil: hata yok
     // ⮕ ZİNCİR: Views/LoginView: "Giriş yap" düğmesi .disabled(viewModel.isLoading)
+    // ⮕ KULLANIM [isLoading]: YAZAR: LoginViewModel › login() | okur: LoginView › body, LoginViewModelTests (test)
     var isLoading = false // istek sürerken true → düğme kilitlenir
     // isRestoring: uygulama yeni açıldı, kayıtlı oturum aranıyor | true iken giriş formu yerine "Oturum açılıyor" gösterilir (form bir anlığına yanıp sönmesin)
     // ⮕ ZİNCİR: Views/LoginView: true iken .overlay ile "Oturum açılıyor..." çarkı gösterilir (form bir an görünmesin) | restoreSession() bitince false
+    // ⮕ KULLANIM [isRestoring]: YAZAR: LoginViewModel › restoreSession() | okur: LoginView › body, LoginViewModelTests (test)
     var isRestoring = true
     // ⮕ ZİNCİR: Views/LoginView: .fullScreenCover(item: $viewModel.loggedInUser) { user in HomeView(user: user) } — dolunca ana sayfa açılır, HomeView'ın dismiss()'i nil yapar | MODEL: LoginUser
+    // ⮕ KULLANIM [loggedInUser]: YAZAR: LoginViewModel › restoreSession(), LoginViewModel › login() | bağlar(okur+yazar): LoginView › body | okur: LoginViewModelTests (test)
     var loggedInUser: LoginUser? // giriş başarılıysa dolar → ekran HomeView'ı tam ekran açar | çıkışta ekran nil yapar
 
     init(auth: AuthServicing = AuthService(), session: SessionRestoring = AuthSession.shared, deviceId: @escaping () -> String = { DeviceID.current }) { // @escaping [SWIFT]: closure fonksiyon bittikten sonra da saklanıp çağrılabilir
@@ -46,6 +56,7 @@ final class LoginViewModel {
     // Keychain'de yenileme jetonu varsa sunucudan yeni jeton alınır; başarılıysa kullanıcı şifre yazmadan doğrudan ana sayfaya girer
     // Hata olursa (sunucu "geçersiz" dedi ya da internet yok) giriş formu görünür | internet yoksa jeton SİLİNMEZ (AuthSession karar verir)
     // ⮕ ZİNCİR: Views/LoginView: .task { await viewModel.restoreSession() } | Networking/AuthSession.restore() — Keychain'de yenileme jetonu varsa şifresiz giriş
+    // ⮕ KULLANIM [restoreSession]: çağırır: LoginView › body, LoginViewModelTests (test)
     func restoreSession() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
         if let user = try? await session.restore() { loggedInUser = user } // try?: hata olursa nil | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder) | try? [SWIFT]: hata olursa çökme, nil ver
         isRestoring = false
@@ -53,6 +64,7 @@ final class LoginViewModel {
 
     // login: "Giriş yap" düğmesi
     // ⮕ ZİNCİR: Views/LoginView: Button("Giriş yap") { Task { await viewModel.login() } } | AuthService.login(LoginRequest) → LoginResponse (jetonlar AuthSession'a verilir)
+    // ⮕ KULLANIM [login]: çağırır: LoginViewModel › login(), LoginView › body, LoginViewModelTests (test)
     func login() async {
         // 1) Kontrol: boşsa API'ye gitme
         guard !emailOrPhone.isEmpty, !password.isEmpty else { // guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
