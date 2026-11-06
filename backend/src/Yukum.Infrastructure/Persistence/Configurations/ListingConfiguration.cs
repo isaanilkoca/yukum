@@ -25,5 +25,9 @@ public class ListingConfiguration : IEntityTypeConfiguration<Listing>
 
         // "İlanlarım" sorgusu için.
         builder.HasIndex(l => l.ShipperId);
+
+        // Taşımacı listesi (açık ilanlar, en yeni üstte; varış ili filtresiyle) için bileşik indeksler: Status eşitlik, CreatedAt sıralama.
+        builder.HasIndex(l => new { l.Status, l.CreatedAt });
+        builder.HasIndex(l => new { l.Status, l.ToCityId, l.CreatedAt });
     }
 }

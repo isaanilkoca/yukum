@@ -8832,6 +8832,10 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ToDistrictId");
 
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.HasIndex("Status", "ToCityId", "CreatedAt");
+
                     b.ToTable("Listings", (string)null);
                 });
 

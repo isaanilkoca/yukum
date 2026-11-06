@@ -55,8 +55,38 @@ public sealed record ListingDto(
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);
 
-/// <summary>Sorgu: tüm açık ilanlar (Taşımacı'nın göreceği liste).</summary>
-public sealed record GetOpenListingsQuery(Guid CarrierId, int? FromCityId = null, int? FromDistrictId = null, double? Lat = null, double? Lon = null); // int? = boş olabilir: null ise o filtre uygulanmaz
+/// <summary>Açık ilan listesinin sıralama seçenekleri.</summary>
+public enum ListingSort
+{
+    /// <summary>En yeni ilan üstte (varsayılan).</summary>
+    Newest,
+    /// <summary>Bütçe artan (bütçesi belli olmayanlar en sonda).</summary>
+    PriceAsc,
+    /// <summary>Bütçe azalan (bütçesi belli olmayanlar en sonda).</summary>
+    PriceDesc,
+    /// <summary>Taşımacı'nın konumuna en yakın üstte (lat+lon gerekir).</summary>
+    Nearest
+}
+
+/// <summary>
+/// Sorgu: Taşımacı'nın göreceği açık ilanlar. Tüm filtreler isteğe bağlıdır (null = o koşul yok), sonuç sayfalıdır.
+/// Sort verilmezse: konum varsa en yakın, yoksa en yeni.
+/// </summary>
+public sealed record GetOpenListingsQuery(
+    Guid CarrierId,
+    int? FromCityId = null,
+    int? FromDistrictId = null,
+    double? Lat = null,
+    double? Lon = null,
+    int? ToCityId = null,
+    decimal? MinBudget = null,
+    decimal? MaxBudget = null,
+    VehicleType? VehicleType = null,
+    DateOnly? PickupFrom = null,
+    DateOnly? PickupTo = null,
+    ListingSort? Sort = null,
+    int Page = 1,
+    int PageSize = 20);
 
 /// <summary>Komut: ilan sahibi ilanı yayından kaldırır (açık ilan, ya da atanmış iş iptali).</summary>
 public sealed record CancelListingCommand(Guid ListingId, Guid ShipperId);

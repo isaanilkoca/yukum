@@ -56,6 +56,7 @@ public static class DependencyInjection
         // IMemoryCache: bellek içi önbellek servisi (il/ilçe listeleri için).
         services.AddMemoryCache();
         services.AddScoped<IGeographyRepository, GeographyRepository>();
+        services.AddScoped<IListingSearchRepository, ListingSearchRepository>();
         // Kullanıcı adı okuyucu (teklif listesinde taşımacı adı).
         services.AddScoped<IUserDirectory, UserDirectory>();
         return services;

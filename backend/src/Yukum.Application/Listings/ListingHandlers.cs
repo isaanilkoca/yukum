@@ -55,16 +55,6 @@ public sealed class CreateListingHandler(
         return result;
     }
 
-    /// <summary>İlanlardaki kalkış illerinin ilçe koordinatları: ilçe numarası → (enlem, boylam). Mesafe hesabı için (ilçe listeleri il başına önbellekli).</summary>
-    internal static async Task<Dictionary<int, (double Lat, double Lon)>> DistrictPointsAsync(IGeographyRepository geography, IEnumerable<Listing> items, CancellationToken ct)
-    {
-        var result = new Dictionary<int, (double, double)>();
-        foreach (var cityId in items.Select(l => l.FromCityId).Distinct())
-            foreach (var d in await geography.ListDistrictsAsync(cityId, ct))
-                result[d.Id] = (d.Latitude, d.Longitude);
-        return result;
-    }
-
     /// <summary>İlanı istemciye giden modele çevirir; il ve ilçe adlarını sözlüklerden alır.</summary>
     internal static ListingDto ToDto(Listing l, IReadOnlyDictionary<int, string> cityNames, IReadOnlyDictionary<int, string> districtNames) => new(l.Id, l.Title, l.Description,
         l.WeightKg, l.VehicleType, l.FromCityId, cityNames[l.FromCityId], l.FromDistrictId, districtNames[l.FromDistrictId],
@@ -86,49 +76,71 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
     }
 }
 
-/// <summary>Taşımacı için açık ilanları yeniden eskiye sıralı getirir.</summary>
-public sealed class GetOpenListingsHandler(IRepository<Listing> listings, IRepository<Offer> offers, IGeographyRepository geography)
-    : IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>>
+/// <summary>Taşımacı için açık ilanları filtreleyip sıralayıp sayfalayarak getirir.</summary>
+public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRepository<Listing> listings, IGeographyRepository geography)
+    : IQueryHandler<GetOpenListingsQuery, PagedResult<ListingDto>>
 {
-    /// <summary>Yalnız durumu Open olan ilanlar döner; kalkış ili/ilçesi verilmişse yalnız onlar (filtre).</summary>
-    public async Task<IReadOnlyList<ListingDto>> HandleAsync(GetOpenListingsQuery query, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Yalnız Open ilanlar, bu taşımacının teklif vermediği olanlar. Filtre/sıralama/sayfalama veritabanında yapılır;
+    /// yalnız "en yakın" sıralamasında mesafe bellekte hesaplanır (önce hafif özet, sonra yalnız sayfanın ilanları okunur).
+    /// </summary>
+    public async Task<PagedResult<ListingDto>> HandleAsync(GetOpenListingsQuery query, CancellationToken cancellationToken = default)
     {
-        // Filtre SQL'de yapılır (WHERE): "filtre boşsa (null) o koşul geçerli sayılır, doluysa eşleşme aranır".
-        // Değişkenleri dışarıda alıyoruz ki EF Core bunları SQL parametresine çevirebilsin.
-        var cityId = query.FromCityId;
-        var districtId = query.FromDistrictId;
-        var open = await listings.ListAsync(
-            l => l.Status == ListingStatus.Open
-                 && (cityId == null || l.FromCityId == cityId)
-                 && (districtId == null || l.FromDistrictId == districtId),
-            asNoTracking: true, cancellationToken);
-        var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
-        var districts = await CreateListingHandler.DistrictNamesAsync(geography, open, cancellationToken);
-        // Bu taşımacının verdiği teklifler: ilan numarası → tutar (listede "Teklif verildi" göstermek için).
-        // Geçmişinden sildiği teklifler listede de görünmez (HiddenByCarrier).
-        var allMine = await offers.ListAsync(o => o.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken);
-        var myOffers = allMine.Where(o => !o.HiddenByCarrier).ToDictionary(o => o.ListingId);
-        // Ana liste = yalnız DOKUNULMAMIŞ ilanlar: taşımacının teklif verdiği ilan, durumu ne olursa olsun (bekleyen/kabul/red)
-        // ana listeden kalkar ve "Tekliflerim"e geçer. Geçmişinden silmiş olsa bile ana listeye geri dönmez.
-        var touchedListingIds = allMine.Select(o => o.ListingId).ToHashSet();
-        open = open.Where(l => !touchedListingIds.Contains(l.Id)).ToList();
-        // Konum verilmişse her ilanın kalkış ilçesine mesafe hesaplanır (kuş uçuşu, Haversine); verilmemişse null.
         var hasLocation = query.Lat is not null && query.Lon is not null;
-        var points = hasLocation ? await CreateListingHandler.DistrictPointsAsync(geography, open, cancellationToken) : [];
+        // Sıralama verilmediyse: konum varsa en yakın, yoksa en yeni. Konumsuz "en yakın" istenirse en yeniye düşer (uç zaten 400 verir).
+        var sort = query.Sort ?? (hasLocation ? ListingSort.Nearest : ListingSort.Newest);
+        if (sort == ListingSort.Nearest && !hasLocation) sort = ListingSort.Newest;
 
-        var dtos = open.Select(l => CreateListingHandler.ToDto(l, names, districts) with
+        var filter = new OpenListingFilter(query.CarrierId, query.FromCityId, query.FromDistrictId, query.ToCityId,
+            query.MinBudget, query.MaxBudget, query.VehicleType, query.PickupFrom, query.PickupTo);
+
+        IReadOnlyList<Listing> items;
+        int total;
+        Dictionary<int, (double Lat, double Lon)> points = [];
+
+        if (sort == ListingSort.Nearest)
         {
-            MyOfferAmount = myOffers.TryGetValue(l.Id, out var mine) ? mine.Amount : null,
-            MyOfferStatus = myOffers.TryGetValue(l.Id, out var mine2) ? mine2.Status : null,
+            // 1) Filtreye uyan hepsinin hafif özeti (ilan numarası + kalkış yeri) 2) mesafeyle sırala 3) yalnız bu sayfanın ilanlarını oku.
+            var all = await search.ListOpenPointsAsync(filter, cancellationToken);
+            points = await DistrictPointsAsync(geography, all.Select(p => p.FromCityId).Distinct(), cancellationToken);
+            double Km(ListingPoint p) => points.TryGetValue(p.FromDistrictId, out var pt)
+                ? GeoMath.DistanceKm(query.Lat!.Value, query.Lon!.Value, pt.Lat, pt.Lon) : double.MaxValue;
+
+            var pageIds = all.OrderBy(Km).ThenByDescending(p => p.CreatedAt).ThenBy(p => p.Id) // son anahtar Id: kararlı sıra
+                .Skip((query.Page - 1) * query.PageSize).Take(query.PageSize).Select(p => p.Id).ToList();
+            var loaded = await listings.ListAsync(l => pageIds.Contains(l.Id), asNoTracking: true, cancellationToken);
+            var byId = loaded.ToDictionary(l => l.Id);
+            items = pageIds.Where(byId.ContainsKey).Select(id => byId[id]).ToList(); // sıra pageIds'teki gibi
+            total = all.Count;
+        }
+        else
+        {
+            var page = await search.SearchOpenAsync(filter, sort, query.Page, query.PageSize, cancellationToken);
+            items = page.Items;
+            total = page.TotalCount;
+            if (hasLocation) points = await DistrictPointsAsync(geography, items.Select(l => l.FromCityId).Distinct(), cancellationToken);
+        }
+
+        var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
+        var districts = await CreateListingHandler.DistrictNamesAsync(geography, items, cancellationToken);
+        // Listedeki ilanlar bu taşımacının DOKUNMADIĞI ilanlardır (teklif verdikleri Tekliflerim'e geçer), bu yüzden MyOffer* alanları burada boş kalır.
+        var dtos = items.Select(l => CreateListingHandler.ToDto(l, names, districts) with
+        {
             DistanceKm = hasLocation && points.TryGetValue(l.FromDistrictId, out var p)
                 ? Math.Round(GeoMath.DistanceKm(query.Lat!.Value, query.Lon!.Value, p.Lat, p.Lon), 1)
                 : null
-        });
+        }).ToList();
+        return new PagedResult<ListingDto>(dtos, query.Page, query.PageSize, total);
+    }
 
-        // Sıralama: konum varsa en yakın üstte (eşitlikte en yeni), yoksa en yeni üstte.
-        return (hasLocation
-                ? dtos.OrderBy(d => d.DistanceKm ?? double.MaxValue).ThenByDescending(d => d.CreatedAt)
-                : dtos.OrderByDescending(d => d.CreatedAt))
-            .ToList();
+    // İlçe numarası → (enlem, boylam); yalnız verilen illerin ilçeleri okunur (ilçe listeleri il başına önbellekli).
+    private static async Task<Dictionary<int, (double Lat, double Lon)>> DistrictPointsAsync(
+        IGeographyRepository geography, IEnumerable<int> cityIds, CancellationToken ct)
+    {
+        var result = new Dictionary<int, (double, double)>();
+        foreach (var cityId in cityIds)
+            foreach (var d in await geography.ListDistrictsAsync(cityId, ct))
+                result[d.Id] = (d.Latitude, d.Longitude);
+        return result;
     }
 }

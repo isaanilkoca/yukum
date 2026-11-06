@@ -25,6 +25,9 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
             .CreateClient();
     }
 
+    // Taşımacı ilan listesi sayfalı zarf döner ({ items, page, pageSize, totalCount }); eski testler yalnız ilan dizisine bakar.
+    private static async Task<JsonElement> Items(HttpResponseMessage r) => (await Json(r)).GetProperty("items");
+
     private static async Task<JsonElement> Json(HttpResponseMessage r) =>
         JsonDocument.Parse(await r.Content.ReadAsStringAsync()).RootElement;
 
@@ -89,9 +92,9 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var mersinDistricts = await Json(await c.GetAsync("/api/v1/cities/33/districts"));
         var otherDistrict = mersinDistricts[1].GetProperty("id").GetInt32();   // ilanın ilçesi [0], bu başka bir ilçe
 
-        var all = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
-        var adana = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?fromCityId=1"));
-        var wrongDistrict = await Json(await Call(c, carrier, HttpMethod.Get, $"/api/v1/listings?fromCityId=33&fromDistrictId={otherDistrict}"));
+        var all = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var adana = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?fromCityId=1"));
+        var wrongDistrict = await Items(await Call(c, carrier, HttpMethod.Get, $"/api/v1/listings?fromCityId=33&fromDistrictId={otherDistrict}"));
 
         Assert.Equal(2, all.GetArrayLength());                                   // filtre yok: hepsi
         Assert.Equal(1, adana.GetArrayLength());                                 // il filtresi
@@ -132,9 +135,9 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         await NewListing(c, shipper, fromCityId: 33);   // Mersin çıkışlı
         await NewListing(c, shipper, fromCityId: 22);   // Edirne çıkışlı
 
-        var nearIstanbul = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=41.0&lon=29.0"));
-        var nearMersin = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=36.8&lon=34.6"));
-        var noLocation = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var nearIstanbul = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=41.0&lon=29.0"));
+        var nearMersin = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=36.8&lon=34.6"));
+        var noLocation = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
 
         Assert.Equal("Edirne", nearIstanbul[0].GetProperty("fromCityName").GetString());   // İstanbul'a Edirne yakın
         Assert.Equal("Mersin", nearMersin[0].GetProperty("fromCityName").GetString());     // Mersin'dekine Mersin yakın
@@ -221,7 +224,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerB}/accept");   // ilan artık atandı: 409
         var lateOffer = await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 500 }); // atanmış ilana teklif: 409
         var offers = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));   // kabul/red verilenler geçmişte
-        var open = await Json(await Call(c, b, HttpMethod.Get, "/api/v1/listings"));
+        var open = await Items(await Call(c, b, HttpMethod.Get, "/api/v1/listings"));
         var pendingLeft = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
 
         Assert.Equal(HttpStatusCode.OK, accept.StatusCode);
@@ -240,13 +243,13 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
         var untouched = await NewListing(c, shipper); var offered = await NewListing(c, shipper);
 
-        var before = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var before = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
         var offer = await NewOffer(c, carrier, offered, 1000);
-        var pending = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));          // bekleyen teklif: ana listeden kalktı
+        var pending = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));          // bekleyen teklif: ana listeden kalktı
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/reject");
-        var rejected = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var rejected = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
         await Call(c, carrier, HttpMethod.Delete, $"/api/v1/offers/{offer}");                          // geçmişten silse de ana listeye dönmez
-        var hidden = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var hidden = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
         var mine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
 
         Assert.Equal(2, before.GetArrayLength());
@@ -268,7 +271,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{r}/reject");
 
         var mine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
-        var main = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var main = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
 
         Assert.Equal(["Accepted", "Pending", "Rejected"], mine.EnumerateArray().Select(o => o.GetProperty("status").GetString()!).Order().ToArray());
         Assert.Equal(0, main.GetArrayLength());   // üçü de dokunulmuş, ana listede ilan kalmadı
@@ -429,7 +432,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var mineA = await Json(await Call(c, a, HttpMethod.Get, "/api/v1/offers/mine"));
         Assert.Equal("Cancelled", mineA[0].GetProperty("status").GetString());
         Assert.True(mineA[0].GetProperty("isNew").GetBoolean());
-        Assert.Equal(other, (await Json(await Call(c, a, HttpMethod.Get, "/api/v1/listings"))).EnumerateArray().Single().GetProperty("id").GetString());
+        Assert.Equal(other, (await Items(await Call(c, a, HttpMethod.Get, "/api/v1/listings"))).EnumerateArray().Single().GetProperty("id").GetString());
         // sohbet kilitli ama eski mesajlar okunur
         Assert.Equal(HttpStatusCode.Conflict, (await Call(c, a, HttpMethod.Post, $"/api/v1/offers/{offerA}/messages", new { text = "x" })).StatusCode);
         Assert.Equal(1, (await Json(await Call(c, a, HttpMethod.Get, $"/api/v1/offers/{offerA}/messages"))).GetArrayLength());
@@ -465,6 +468,138 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
         Assert.Contains(carrierMine.EnumerateArray(), o => o.GetProperty("status").GetString() == "Cancelled");   // kabul edilmiş teklif iptal oldu
         Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
+    }
+
+    // ---------- ilan listesi: filtre, sıralama, sayfalama ----------
+    private static async Task<string> NewListingWith(HttpClient c, string shipperToken, string title, int fromCityId, int toCityId,
+        decimal? budget, string vehicleType, int daysAhead)
+    {
+        var from = (await Json(await c.GetAsync($"/api/v1/cities/{fromCityId}/districts")))[0].GetProperty("id").GetInt32();
+        var to = (await Json(await c.GetAsync($"/api/v1/cities/{toCityId}/districts")))[0].GetProperty("id").GetInt32();
+        var r = await Call(c, shipperToken, HttpMethod.Post, "/api/v1/listings", new
+        {
+            title, weightKg = 1000, vehicleType, fromCityId, fromDistrictId = from, toCityId, toDistrictId = to,
+            pickupDate = DateTime.UtcNow.AddDays(daysAhead).ToString("yyyy-MM-dd"), budget
+        });
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        return (await Json(r)).GetProperty("id").GetString()!;
+    }
+
+    private static string[] Titles(JsonElement items) => items.EnumerateArray().Select(i => i.GetProperty("title").GetString()!).ToArray();
+
+    // 4 ilan: A Mersin→İstanbul 1000 Truck +5g | B Mersin→Ankara 3000 Lorry +20g | C Adana→İstanbul 5000 Truck +40g | D Mersin→İstanbul bütçesiz Pickup +10g
+    private async Task<(HttpClient C, string Shipper, string Carrier)> FourListings()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        await NewListingWith(c, shipper, "A", 33, 34, 1000, "Truck", 5);
+        await NewListingWith(c, shipper, "B", 33, 6, 3000, "Lorry", 20);
+        await NewListingWith(c, shipper, "C", 1, 34, 5000, "Truck", 40);
+        await NewListingWith(c, shipper, "D", 33, 34, null, "Pickup", 10);
+        return (c, shipper, carrier);
+    }
+
+    [Fact]
+    public async Task The_open_list_filters_by_destination_price_vehicle_and_date_and_reports_the_total()
+    {
+        var (c, _, carrier) = await FourListings();
+        async Task<string> Get(string query)
+        {
+            var json = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?" + query));
+            return $"{string.Join(",", Titles(json.GetProperty("items")).Order())}|{json.GetProperty("totalCount").GetInt32()}"; // "A,C,D|3" = başlıklar|toplam
+        }
+        var day = (int d) => DateTime.UtcNow.AddDays(d).ToString("yyyy-MM-dd");
+
+        Assert.Equal("A,C,D|3", await Get("toCityId=34"));
+        Assert.Equal("B,C|2", await Get("minBudget=2000"));                    // bütçesiz D fiyat aralığına girmez
+        Assert.Equal("A,B|2", await Get("maxBudget=3000"));
+        Assert.Equal("B|1", await Get("minBudget=2000&maxBudget=3000"));
+        Assert.Equal("A,C|2", await Get("vehicleType=Truck"));
+        Assert.Equal("B,D|2", await Get($"pickupFrom={day(8)}&pickupTo={day(25)}"));
+        Assert.Equal("A|1", await Get("fromCityId=33&toCityId=34&vehicleType=Truck"));   // filtreler birlikte (AND)
+        Assert.Equal("A,B,C,D|4", await Get(""));                         // filtre yok: hepsi
+        Assert.Equal("|0", await Get("toCityId=6&vehicleType=Truck"));    // eşleşme yok: boş sayfa, toplam 0
+    }
+
+    [Fact]
+    public async Task The_open_list_sorts_by_newest_and_by_price_with_unpriced_listings_last()
+    {
+        var (c, _, carrier) = await FourListings();
+        async Task<string[]> Order(string query) =>
+            Titles((await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?" + query))).GetProperty("items"));
+
+        Assert.Equal(new[] { "D", "C", "B", "A" }, await Order(""));                         // varsayılan: en yeni üstte
+        Assert.Equal(new[] { "D", "C", "B", "A" }, await Order("sort=Newest"));
+        Assert.Equal(new[] { "A", "B", "C", "D" }, await Order("sort=PriceAsc"));            // bütçesiz D en sonda
+        Assert.Equal(new[] { "C", "B", "A", "D" }, await Order("sort=PriceDesc"));           // azalanda da D en sonda
+    }
+
+    [Fact]
+    public async Task The_open_list_pages_without_repeating_or_losing_listings_even_when_prices_tie()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        for (var i = 1; i <= 5; i++) await NewListingWith(c, shipper, $"L{i}", 33, 34, 2000, "Truck", 5);   // beşinin de fiyatı aynı
+
+        async Task<(string[] Titles, int Total, int PageNo, int Size)> Page(int page)
+        {
+            var json = await Json(await Call(c, carrier, HttpMethod.Get, $"/api/v1/listings?sort=PriceAsc&pageSize=2&page={page}"));
+            return (Titles(json.GetProperty("items")), json.GetProperty("totalCount").GetInt32(),
+                json.GetProperty("page").GetInt32(), json.GetProperty("pageSize").GetInt32());
+        }
+        var p1 = await Page(1); var p2 = await Page(2); var p3 = await Page(3); var p4 = await Page(4);
+
+        Assert.Equal(2, p1.Titles.Length); Assert.Equal(2, p2.Titles.Length); Assert.Single(p3.Titles); Assert.Empty(p4.Titles);
+        Assert.All(new[] { p1, p2, p3, p4 }, p => Assert.Equal(5, p.Total));                 // toplam her sayfada aynı
+        Assert.Equal((1, 2), (p1.PageNo, p1.Size));
+        var all = p1.Titles.Concat(p2.Titles).Concat(p3.Titles).ToArray();
+        Assert.Equal(5, all.Distinct().Count());                                              // kararlı sıra: tekrar yok, kayıp yok
+        Assert.Equal(await Titles2(c, carrier, "sort=PriceAsc&pageSize=50"), all);            // sayfalar birleşince tek büyük sayfayla aynı sıra
+    }
+
+    private static async Task<string[]> Titles2(HttpClient c, string token, string query) =>
+        Titles((await Json(await Call(c, token, HttpMethod.Get, "/api/v1/listings?" + query))).GetProperty("items"));
+
+    [Fact]
+    public async Task The_nearest_sort_is_paged_by_distance_and_reports_distance_on_each_item()
+    {
+        var (c, _, carrier) = await FourListings();      // A,B,D Mersin çıkışlı, C Adana çıkışlı
+
+        var first = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=36.8&lon=34.6&pageSize=2"));
+        var second = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?lat=36.8&lon=34.6&pageSize=2&page=2"));
+
+        Assert.Equal(4, first.GetProperty("totalCount").GetInt32());
+        var near = Titles(first.GetProperty("items")); var far = Titles(second.GetProperty("items"));
+        Assert.Equal(2, near.Length); Assert.Equal(2, far.Length);
+        Assert.Equal("C", far.Last());                                                        // Adana en uzak: son sayfanın sonunda
+        Assert.Equal(new[] { "A", "B", "D" }, near.Concat(far.Take(1)).Order().ToArray());    // Mersin'dekiler önce
+        Assert.All(first.GetProperty("items").EnumerateArray(), i => Assert.True(i.GetProperty("distanceKm").GetDouble() < 5));
+    }
+
+    [Fact]
+    public async Task The_open_list_rejects_bad_query_parameters_with_400_and_excludes_listings_already_offered_on()
+    {
+        var (c, shipper, carrier) = await FourListings();
+        async Task<HttpStatusCode> Status(string query) => (await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?" + query)).StatusCode;
+
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("page=0"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("pageSize=0"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("pageSize=51"));                 // en çok 50
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("minBudget=5000&maxBudget=1000"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("minBudget=-1"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("pickupFrom=2026-12-01&pickupTo=2026-11-01"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("sort=Nearest"));                // konumsuz en yakın
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("sort=Bogus"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("vehicleType=Spaceship"));
+        Assert.Equal(HttpStatusCode.BadRequest, await Status("lat=36.8"));                    // lat tek başına
+        Assert.Equal(HttpStatusCode.Forbidden, (await Call(c, shipper, HttpMethod.Get, "/api/v1/listings")).StatusCode);
+
+        // teklif verilen ilan listeden ve toplamdan düşer
+        var a = (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"))).EnumerateArray().First(i => i.GetProperty("title").GetString() == "A").GetProperty("id").GetString()!;
+        await NewOffer(c, carrier, a, 900);
+        var json = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        Assert.Equal(3, json.GetProperty("totalCount").GetInt32());
+        Assert.DoesNotContain("A", Titles(json.GetProperty("items")));
     }
 
     // ---------- ilan güncelle ----------

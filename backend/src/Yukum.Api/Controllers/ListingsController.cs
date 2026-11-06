@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Yukum.Application.Abstractions.Messaging;
+using Yukum.Application.Common;
 using Yukum.Application.Listings;
 using Yukum.Domain.Accounts;
 
@@ -15,7 +16,7 @@ namespace Yukum.Api.Controllers;
 public class ListingsController(
     ICommandHandler<CreateListingCommand, ListingDto> createListing,
     IQueryHandler<GetMyListingsQuery, IReadOnlyList<ListingDto>> getMyListings,
-    IQueryHandler<GetOpenListingsQuery, IReadOnlyList<ListingDto>> getOpenListings,
+    IQueryHandler<GetOpenListingsQuery, PagedResult<ListingDto>> getOpenListings,
     ICommandHandler<CancelListingCommand, bool> cancelListing,
     ICommandHandler<UpdateListingCommand, ListingDto> updateListing) : ControllerBase
 {
@@ -42,22 +43,41 @@ public class ListingsController(
     public async Task<IActionResult> Mine(CancellationToken cancellationToken) =>
         Ok(await getMyListings.HandleAsync(new GetMyListingsQuery(CurrentUserId), cancellationToken));
 
-    /// <summary>Tüm açık ilanlar (yeniden eskiye). Yalnız Taşımacı görür. İsteğe bağlı filtre: kalkış ili ve ilçesi.</summary>
-    // GET /api/v1/listings
+    /// <summary>
+    /// Taşımacı'nın açık ilan listesi: sayfalı, filtreli, sıralı. Yalnız Taşımacı görür; teklif verdiği ilanlar listede çıkmaz.
+    /// Tüm parametreler isteğe bağlıdır.
+    /// </summary>
+    // GET /api/v1/listings?fromCityId=33&fromDistrictId=12&toCityId=34&minBudget=1000&maxBudget=9000&vehicleType=Truck
+    //                     &pickupFrom=2026-11-01&pickupTo=2026-11-30&sort=PriceAsc&page=1&pageSize=20&lat=36.8&lon=34.6
+    // (query string = adresteki ?...&... kısmı) | cevap: { items, page, pageSize, totalCount }
+    // sort: Newest (varsayılan; konum varsa Nearest) | PriceAsc | PriceDesc | Nearest (lat+lon ister). Konum kaydedilmez, yalnız bu istekte kullanılır.
     [HttpGet]
     [Authorize(Roles = RoleNames.Carrier)]
-    [ProducesResponseType<IReadOnlyList<ListingDto>>(StatusCodes.Status200OK)]
-    // GET /api/v1/listings?fromCityId=33&fromDistrictId=12&lat=36.8&lon=34.6  (hepsi isteğe bağlı; query string = adresteki ?...&... kısmı)
-    // lat+lon verilirse ilanlar en yakından uzağa sıralanır ve her ilanda distanceKm döner. Konum kaydedilmez, yalnız bu istekte kullanılır.
-    public async Task<IActionResult> Open(int? fromCityId, int? fromDistrictId, double? lat, double? lon, CancellationToken cancellationToken)
+    [ProducesResponseType<PagedResult<ListingDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Open(
+        int? fromCityId, int? fromDistrictId, int? toCityId, decimal? minBudget, decimal? maxBudget, VehicleType? vehicleType,
+        DateOnly? pickupFrom, DateOnly? pickupTo, ListingSort? sort, double? lat, double? lon,
+        CancellationToken cancellationToken, int page = 1, int pageSize = 20)
     {
-        // Konum ya iki parça birlikte (lat ve lon) ya hiç; geçerli aralıkta olmalı (enlem -90..90, boylam -180..180).
+        // Sorgu parametrelerinin sınırları (hatalar tek 400 cevabında toplanır, alan adı camelCase).
         if ((lat is null) != (lon is null) || lat is < -90 or > 90 || lon is < -180 or > 180)
-        {
             ModelState.AddModelError("location", "lat ve lon birlikte, geçerli aralıkta verilmeli.");
-            return ValidationProblem(ModelState);
-        }
-        return Ok(await getOpenListings.HandleAsync(new GetOpenListingsQuery(CurrentUserId, fromCityId, fromDistrictId, lat, lon), cancellationToken));
+        if (page < 1) ModelState.AddModelError("page", "Sayfa numarası 1 veya daha büyük olmalı.");
+        if (pageSize is < 1 or > MaxPageSize) ModelState.AddModelError("pageSize", $"Sayfa boyutu 1 ile {MaxPageSize} arasında olmalı.");
+        if (minBudget is < 0) ModelState.AddModelError("minBudget", "En düşük fiyat negatif olamaz.");
+        if (maxBudget is < 0) ModelState.AddModelError("maxBudget", "En yüksek fiyat negatif olamaz.");
+        if (minBudget is not null && maxBudget is not null && minBudget > maxBudget)
+            ModelState.AddModelError("minBudget", "En düşük fiyat, en yüksek fiyattan büyük olamaz.");
+        if (pickupFrom is not null && pickupTo is not null && pickupFrom > pickupTo)
+            ModelState.AddModelError("pickupFrom", "Başlangıç tarihi bitiş tarihinden sonra olamaz.");
+        if (sort == ListingSort.Nearest && (lat is null || lon is null))
+            ModelState.AddModelError("sort", "En yakın sıralaması için lat ve lon gerekir.");
+        if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+        var query = new GetOpenListingsQuery(CurrentUserId, fromCityId, fromDistrictId, lat, lon, toCityId, minBudget, maxBudget,
+            vehicleType, pickupFrom, pickupTo, sort, page, pageSize);
+        return Ok(await getOpenListings.HandleAsync(query, cancellationToken));
     }
 
     /// <summary>İlanı günceller (tam değiştirme). Yalnız sahibi ve yalnız hâlâ açık ilan; kabul edilmiş iş/tamamlanmış/kaldırılmış 409, başkasının ilanı 404.</summary>
@@ -84,6 +104,9 @@ public class ListingsController(
         await cancelListing.HandleAsync(new CancelListingCommand(id, CurrentUserId), cancellationToken);
         return NoContent();
     }
+
+    // Sayfa başına en çok kayıt: tek istekte aşırı veri çekilmesin.
+    private const int MaxPageSize = 50;
 
     // Jetondaki 'sub' (kullanıcı numarası). MapInboundClaims kapalı olduğu için adı 'sub'dır.
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);
