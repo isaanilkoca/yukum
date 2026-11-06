@@ -24,8 +24,17 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (form alanları kaybolmaz)
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CreateListingView › body | okur: CreateListingView › body
-    @State private var viewModel = CreateListingViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
-
+    // listing: düzenlenecek ilan | nil = yeni ilan, bu yüzden HomeView'daki CreateListingView() çağrısı DEĞİŞMEZ
+       // onSaved: düzenleme başarılı olunca çağrılır | ListingOffersView burada kendini de kapatır, eski başlık ekranda kalmasın
+       // (() -> Void)? [SWIFT]: parametresiz, değer dönmeyen fonksiyon, boş (nil) olabilir
+       private let onSaved: (() -> Void)?
+       // @State: ekran yenilense de AYNI ViewModel yaşar | default değer yok, çünkü init'te listing'e göre kuruluyor
+       @State private var viewModel: CreateListingViewModel
+       init(listing: Listing? = nil, onSaved: (() -> Void)? = nil) {
+           // _viewModel [SWIFT]: @State'in kendisine (kutusuna) ulaşır | State(initialValue:) ilk değeri verir | BAĞLANTI: ListingOffersView.init aynı kalıbı kullanıyor
+           _viewModel = State(initialValue: CreateListingViewModel(editing: listing)) // CreateListingViewModel.init(editing:) → alanları ilanla doldurur
+           self.onSaved = onSaved
+       }
     // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemin hazır değerini al | dismiss: "bu ekranı kapat" komutu | ilan açılınca HomeView'a dönmek için
 
@@ -39,7 +48,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
 
             VStack(spacing: 24) { // VStack [SWIFT]: elemanları alt alta dizer | spacing: elemanlar arası boşluk
 
-                Text("İlan Ver").font(.largeTitle).bold() // .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
+                Text(viewModel.screenTitle).font(.largeTitle).bold() // .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
 
                 TextField("Başlık", text: $viewModel.title).textFieldStyle(.roundedBorder) // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .textFieldStyle [SWIFT]: yazı kutusu stili
 
@@ -110,9 +119,10 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
 
                 // Düğme yalnız TETİKLEYİCİ: kontroller (başlık, ağırlık, araç, il-ilçe, bütçe), paket hazırlama (tarih yazıya çevirme dahil) ve gönderme ViewModel.submit()'te
                 // başarıda ekran kapanır ve HomeView'a dönülür (HomeView listeyi ekran görününce kendisi yeniler)
-                Button("İlanı Yayınla") { // Button [SWIFT]: dokununca kod çalıştıran düğme
+                
+                Button(viewModel.submitTitle) { // "İlanı Yayınla" / "İlanı Güncelle" | ViewModel.submitTitle isEditing'e bakar
                     Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar; ekran donmaz
-                        if await viewModel.submit() { dismiss() } // başarılıysa ekranı kapat, HomeView'a dön | ⮕ CreateListingViewModel.submit() → ListingService.create(CreateListingRequest) → POST /api/v1/listings
+                        if await viewModel.submit() { dismiss(); onSaved?() }  // ⮕ submit() → ListingService.update (düzenleme) / create (yeni)
                     }
                 }.buttonStyle(.borderedProminent).disabled(viewModel.isLoading) // dolgulu düğme görünümü | isLoading iken kilitli (çift tıklama olmasın) | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli | .buttonStyle [SWIFT]: düğme görünüm stili
 

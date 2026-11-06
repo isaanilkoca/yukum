@@ -55,6 +55,12 @@ final class CreateListingViewModel {
      private let editingId: String?
      // Türetilmiş değerler: View yazıları bunlardan okur, "düzenleme mi" kararı tek yerde kalır | KULLANAN: Views/CreateListingView (adım 5'te bağlayacağız)
      var isEditing: Bool { editingId != nil }
+    
+    
+    // Tam il/ilçe listeleri çekildi mi | düzenlemede başlangıç listesi tek elemanlı, tam liste gelince true olur
+    // private [SWIFT]: yalnız bu sınıf görür | KULLANAN: loadCities()
+    private var optionsLoaded = false
+
      var screenTitle: String { isEditing ? "İlanı Düzenle" : "İlan Ver" } // a ? b : c [SWIFT]: a doğruysa b, değilse c
      var submitTitle: String { isEditing ? "İlanı Güncelle" : "İlanı Yayınla" }
 
@@ -102,24 +108,35 @@ final class CreateListingViewModel {
             fromCityId = listing.fromCityId; fromDistrictId = listing.fromDistrictId
             toCityId = listing.toCityId; toDistrictId = listing.toDistrictId
             pickupDate = Self.parseDate(listing.pickupDate) ?? Date() // API yazısı "2026-12-01" → Date | çevrilemezse bugün
+            
+            // Picker seçimi ilk çizimde geçerli olsun diye listeleri bilinen adlarla tek elemanlı başlatırız (adlar Listing'te hazır)
+                   // City / District: Models/Geography | memberwise init [SWIFT]: struct'ın alanlarını sırayla verince otomatik oluşan init
+                   cities = [City(id: listing.fromCityId, name: listing.fromCityName)]
+                   if listing.toCityId != listing.fromCityId { cities.append(City(id: listing.toCityId, name: listing.toCityName)) } // aynı ilse Picker'da iki kez görünmesin
+                   fromDistricts = [District(id: listing.fromDistrictId, name: listing.fromDistrictName)]
+                   toDistricts = [District(id: listing.toDistrictId, name: listing.toDistrictName)]
+
         }
 
     // loadCities: ekran açılınca il listesini çeker | try?: hata olursa nil | ?? []: nil ise boş liste
     // ⮕ ZİNCİR: Views/CreateListingView: .task { await viewModel.loadCities() } | CityService.cities()
     // ⮕ KULLANIM [loadCities]: çağırır: CreateListingView › body, CreateListingViewModelTests (test)
   
+    // loadCities: ekran açılınca il listesini (düzenlemede ilçe listelerini de) çeker
     // ⮕ ZİNCİR: Views/CreateListingView: .task { await viewModel.loadCities() } | CityService.cities() ve (düzenlemede) CityService.districts(cityId:)
-      func loadCities() async {
-          if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] }
-          // Düzenlemede ilçe listeleri de dolmalı, yoksa ilçe Picker'ı boş kalır.
-          // NEDEN fromCityChanged çağırmıyoruz: o fonksiyon ilçe seçimini SIFIRLAR; biz kayıtlı ilçeyi korumak istiyoruz.
-          // NEDEN burada: View'daki .onChange yalnız DEĞİŞİNCE tetiklenir; init'te atanan ilk değer için hiç çalışmaz.
-          guard isEditing, fromDistricts.isEmpty else { return } // guard [SWIFT]: düzenleme değilse ya da zaten yüklüyse çık (.task ekran her göründüğünde çalışır)
-          fromDistricts = (try? await cityService.districts(cityId: fromCityId)) ?? []
-          toDistricts = (try? await cityService.districts(cityId: toCityId)) ?? []
-      }
-    
-    
+    func loadCities() async {
+        guard !optionsLoaded else { return } // .task ekran her göründüğünde çalışır; tam liste bir kez yeter | guard [SWIFT]: şart yoksa çık
+        // İl listesi gelmediyse (internet yok) bayrak kalkmaz: sonraki .task yeniden dener | try? [SWIFT]: hata olursa nil
+        guard let all = try? await cityService.cities(), !all.isEmpty else { return }
+        cities = all // yeni ilanda boştu, düzenlemede tek elemanlıydı: tam liste yazılır
+        if isEditing {
+            // fromCityChanged çağırmıyoruz: o ilçe seçimini SIFIRLAR. View'daki .onChange de yalnız DEĞİŞİNCE tetiklenir, init'teki ilk değer için çalışmaz
+            if let list = try? await cityService.districts(cityId: fromCityId) { fromDistricts = list }
+            if let list = try? await cityService.districts(cityId: toCityId) { toDistricts = list }
+        }
+        optionsLoaded = true
+    }
+
     // fromCityChanged / toCityChanged: il Picker'ı değişince | ilçe seçimini sıfırlar (eski ilin ilçesi yeni ile ait değil, kalırsa yanlış ilan gider) ve yeni ilin ilçelerini çeker
     // ⮕ ZİNCİR: Views/CreateListingView: kalkış il Picker .onChange | CityService.districts(cityId:) → fromDistricts
     // ⮕ KULLANIM [fromCityChanged]: çağırır: CreateListingView › body, CreateListingViewModelTests (test)

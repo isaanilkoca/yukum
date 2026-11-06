@@ -81,6 +81,13 @@ struct ListingOffersView: View {
         .navigationBarTitleDisplayMode(.inline) // .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
         // .toolbar [SWIFT]: üst çubuğa eleman koyar | sağ üstte "Kaldır": iptal olan, vazgeçilen, yanlış açılan ilanlar için
         .toolbar {
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                           // NavigationLink [SWIFT]: basınca süslü parantezdeki ekrana geçer | CreateListingView: Views/CreateListingView.swift (düzenleme modu)
+                           // viewModel.listing: bu ekrana verilen ilan (Listing, Models/Listings) → form onunla dolar
+                           // onSaved: { dismiss() }: kayıt sonrası bu ekran da kapanır, HomeView görününce .task listeyi yeniler (yeni başlık orada görünür)
+                           NavigationLink("Düzenle") { CreateListingView(listing: viewModel.listing, onSaved: { dismiss() }) }
+                       }
             ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe | ToolbarItem [SWIFT]: üst çubukta bir eleman
                 Button("Kaldır", role: .destructive) { showCancelConfirm = true } // role: .destructive: kırmızı | basınca onay penceresi açılır
             }
