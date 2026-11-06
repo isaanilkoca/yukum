@@ -982,4 +982,53 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(1, offers[0].GetProperty("carrierRatingCount").GetInt32());
         Assert.Equal(carrierId, offers[0].GetProperty("carrierId").GetString());
     }
+
+    // ---------- emsal fiyat ----------
+    [Fact]
+    public async Task Price_reference_is_the_median_of_completed_jobs_on_the_same_route_and_needs_three_of_them()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        const string url = "/api/v1/price-reference?fromCityId=33&toCityId=34&vehicleType=Truck";
+
+        await CompletedJob(c, shipper, carrier, 1000);
+        await CompletedJob(c, shipper, carrier, 4000);
+        var twoJobs = await Json(await Call(c, carrier, HttpMethod.Get, url));          // 2 iş: gösterilmez
+
+        await CompletedJob(c, shipper, carrier, 2000);
+        var threeJobs = await Json(await Call(c, carrier, HttpMethod.Get, url));        // 3 iş: medyan 2000
+
+        var otherRoute = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/price-reference?fromCityId=6&toCityId=34&vehicleType=Truck"));
+        var otherVehicle = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/price-reference?fromCityId=33&toCityId=34&vehicleType=Lorry"));
+
+        Assert.Equal(JsonValueKind.Null, twoJobs.GetProperty("medianAmount").ValueKind);
+        Assert.Equal(2, twoJobs.GetProperty("sampleCount").GetInt32());
+        Assert.Equal(2000m, threeJobs.GetProperty("medianAmount").GetDecimal());
+        Assert.Equal(3, threeJobs.GetProperty("sampleCount").GetInt32());
+        Assert.Equal(0, otherRoute.GetProperty("sampleCount").GetInt32());              // başka rota karışmaz
+        Assert.Equal(0, otherVehicle.GetProperty("sampleCount").GetInt32());            // başka araç tipi karışmaz
+    }
+
+    [Fact]
+    public async Task Price_reference_ignores_jobs_that_are_not_completed_and_validates_its_parameters()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        for (var i = 0; i < 3; i++)   // 3 teklif kabul edildi ama TAMAMLANMADI
+        {
+            var offer = await NewOffer(c, carrier, await NewListing(c, shipper), 1000 + i);
+            await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        }
+        const string url = "/api/v1/price-reference?fromCityId=33&toCityId=34&vehicleType=Truck";
+
+        var result = await Json(await Call(c, carrier, HttpMethod.Get, url));
+        var anonymous = await Call(c, null, HttpMethod.Get, url);
+        var missing = await Call(c, carrier, HttpMethod.Get, "/api/v1/price-reference");
+        var badCity = await Call(c, carrier, HttpMethod.Get, "/api/v1/price-reference?fromCityId=0&toCityId=34&vehicleType=Truck");
+
+        Assert.Equal(0, result.GetProperty("sampleCount").GetInt32());
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, badCity.StatusCode);
+    }
 }
