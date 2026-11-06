@@ -29,7 +29,7 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
                 return new CarrierOfferDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
                     cities[l.ToCityId], districts[l.ToDistrictId], shippers.GetValueOrDefault(l.ShipperId, "Yük Veren"),
                     l.WeightKg, l.PickupDate, o.Amount, o.Note,
-                    o.Status, IsNew: o.Status != OfferStatus.Pending && !o.CarrierSeen, o.CreatedAt, o.DecidedAt);
+                    o.Status, IsNew: o.Status != OfferStatus.Pending && !o.CarrierSeen, o.CreatedAt, o.DecidedAt, o.Stage);
             }).ToList();
     }
 }
@@ -56,7 +56,7 @@ public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRe
                 var l = myListings[o.ListingId];
                 return new ShipperOfferHistoryDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
                     cities[l.ToCityId], districts[l.ToDistrictId], l.WeightKg, l.PickupDate,
-                    names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt);
+                    names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt, o.Stage);
             }).ToList();
     }
 }

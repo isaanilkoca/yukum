@@ -14,6 +14,12 @@ public sealed record OfferDto(Guid Id, Guid ListingId, decimal Amount, string? N
 /// <summary>Komut: Taşımacı bekleyen teklifini geri çeker.</summary>
 public sealed record WithdrawOfferCommand(Guid OfferId, Guid CarrierId);
 
+/// <summary>Komut: Taşımacı kabul edilmiş işin aşamasını bir sonrakine ilerletir.</summary>
+public sealed record AdvanceStageCommand(Guid OfferId, Guid CarrierId);
+
+/// <summary>Aşama ilerletme cevabı: teklif ve yeni aşaması.</summary>
+public sealed record OfferStageDto(Guid Id, JobStage Stage);
+
 /// <summary>Sorgu: Yük Veren kendi ilanına gelen teklifleri ister.</summary>
 public sealed record GetListingOffersQuery(Guid ListingId, Guid ShipperId);
 
@@ -30,7 +36,7 @@ public sealed record GetMyOffersQuery(Guid CarrierId);
 public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName,
     string ShipperName, int WeightKg, DateOnly PickupDate,
-    decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt);
+    decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt, JobStage Stage);
 
 /// <summary>Sorgu: Yük Veren'in karar verdiği (kabul/red) tekliflerin geçmişi (silinenler hariç).</summary>
 public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
@@ -38,7 +44,7 @@ public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
 /// <summary>Yük Veren geçmişindeki satır: teklif + hangi ilan + hangi taşımacı.</summary>
 public sealed record ShipperOfferHistoryDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName, int WeightKg, DateOnly PickupDate,
-    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt);
+    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt, JobStage Stage);
 
 /// <summary>Komut: kullanıcı karara bağlanmış bir teklifi kendi geçmişinden siler (karşı tarafta durur).</summary>
 public sealed record HideOfferCommand(Guid OfferId, Guid UserId, bool IsCarrier);

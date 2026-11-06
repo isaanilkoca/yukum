@@ -23,6 +23,9 @@ public class Offer : BaseEntity
     /// <summary>Yük Veren'in karar verdiği an (UTC); bekleyen teklifte boştur.</summary>
     public DateTime? DecidedAt { get; set; }
 
+    /// <summary>İşin aşaması (yük alındı, yolda, teslim edildi). Yalnız Kabul edilmiş teklifte anlamlıdır.</summary>
+    public JobStage Stage { get; set; } = JobStage.NotStarted;
+
     /// <summary>Taşımacı karar bildirimini gördü mü? Karar verilince false olur ("Yeni" rozeti), taşımacı geçmişi açınca true olur.</summary>
     public bool CarrierSeen { get; set; }
 

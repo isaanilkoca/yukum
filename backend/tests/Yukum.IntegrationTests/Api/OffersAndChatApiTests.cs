@@ -82,6 +82,13 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
     }
 
     // ---------- filtre ----------
+    // Taşımacı işi baştan sona ilerletir: yük alındı → yolda → teslim edildi (3 kez advance)
+    private static async Task Deliver(HttpClient c, string carrierToken, string offerId)
+    {
+        for (var i = 0; i < 3; i++)
+            Assert.Equal(HttpStatusCode.OK, (await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/offers/{offerId}/advance")).StatusCode);
+    }
+
     [Fact]
     public async Task Open_listings_can_be_filtered_by_departure_city_and_district()
     {
@@ -356,6 +363,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         await Call(c, carrier, HttpMethod.Post, chat, new { text = "Yola çıktım" });
         await Call(c, shipper, HttpMethod.Post, chat, new { text = "Tamam" });
 
+        await Deliver(c, carrier, offer);
         var complete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");   // Yük Veren bitirir
 
         Assert.Equal(HttpStatusCode.OK, complete.StatusCode);
@@ -384,6 +392,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
 
+        await Deliver(c, carrier, offer);
         var complete = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
         var shipperHistory = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
         var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
@@ -403,11 +412,14 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var pending = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");     // bekleyen: 409
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
         var byOutsider = await Call(c, outsider, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");   // taraf değil: 404
+        var notDelivered = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");  // teslim edilmeden: 409
+        await Deliver(c, carrier, offer);
         var first = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
         var again = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");        // zaten tamamlandı: 409
 
         Assert.Equal(HttpStatusCode.Conflict, pending.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, byOutsider.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, notDelivered.StatusCode);
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
     }
@@ -459,6 +471,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var done = await NewListing(c, shipper);
         var doneOffer = await NewOffer(c, carrier, done, 500);
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/accept");
+        await Deliver(c, carrier, doneOffer);
         await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/complete");
         var afterComplete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{done}/cancel");   // tamamlanmış iş iptal edilemez
 
@@ -674,6 +687,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
         var whileAssigned = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{assigned}", body);
 
+        await Deliver(c, carrier, offer);
         await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
         var afterComplete = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{assigned}", body);
 
@@ -834,5 +848,46 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);             // aynı ilana yeniden teklif serbest
         Assert.Equal(1, shipperOffers.GetArrayLength());                 // yeniden Beklemede, Yük Veren görür
         Assert.Equal(900m, shipperOffers[0].GetProperty("amount").GetDecimal());
+    }
+
+    // ---------- iş aşamaları ----------
+    [Fact]
+    public async Task The_carrier_advances_an_accepted_job_one_stage_at_a_time_and_both_sides_see_it()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+
+        var stages = new List<string>();
+        for (var i = 0; i < 3; i++)
+            stages.Add((await Json(await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/advance"))).GetProperty("stage").GetString()!);
+        var fourth = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/advance");
+        var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        var shipperHistory = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
+
+        Assert.Equal(new[] { "PickedUp", "InTransit", "Delivered" }, stages);
+        Assert.Equal(HttpStatusCode.Conflict, fourth.StatusCode);                                  // teslimden sonra ilerlemez
+        Assert.Equal("Delivered", carrierMine[0].GetProperty("stage").GetString());
+        Assert.Equal("Delivered", shipperHistory[0].GetProperty("stage").GetString());              // Yük Veren de izler
+    }
+
+    [Fact]
+    public async Task Advancing_is_only_for_the_owner_carrier_and_only_for_an_accepted_job()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); var other = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+
+        var pending = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/advance");      // kabul edilmemiş: 409
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var byOther = await Call(c, other, HttpMethod.Post, $"/api/v1/offers/{offer}/advance");        // başkası: 404
+        var byShipper = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/advance");    // rol: 403
+        var missing = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{Guid.NewGuid()}/advance");
+
+        Assert.Equal(HttpStatusCode.Conflict, pending.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byShipper.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
 }

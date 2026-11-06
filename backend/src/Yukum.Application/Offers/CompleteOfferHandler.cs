@@ -30,6 +30,8 @@ public sealed class CompleteOfferHandler(
 
         if (offer.Status != OfferStatus.Accepted)
             throw new ConflictException("Yalnız kabul edilmiş iş tamamlanabilir.");
+        if (offer.Stage != JobStage.Delivered)
+            throw new ConflictException("Önce yük teslim edilmeli.");   // aşama akışı: alındı → yolda → teslim edildi → ancak sonra bitir
 
         // Durum iki taraf için de değişir: sohbet iki tarafta kilitlenir.
         offer.Status = OfferStatus.Completed;

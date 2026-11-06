@@ -21,7 +21,8 @@ public class OffersController(
     IQueryHandler<GetUnseenCountQuery, UnseenCountDto> getUnseenCount,
     ICommandHandler<MarkSeenCommand, bool> markSeen,
     ICommandHandler<CompleteOfferCommand, OfferDto> completeOffer,
-    ICommandHandler<WithdrawOfferCommand, OfferDto> withdrawOffer) : ControllerBase
+    ICommandHandler<WithdrawOfferCommand, OfferDto> withdrawOffer,
+    ICommandHandler<AdvanceStageCommand, OfferStageDto> advanceStage) : ControllerBase
 {
     /// <summary>İlana teklif verir; aynı ilana tekrar verilirse eski teklifin tutarı güncellenir.</summary>
     // POST /api/v1/listings/{listingId}/offers
@@ -122,6 +123,15 @@ public class OffersController(
     [ProducesResponseType<OfferDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Withdraw(Guid offerId, CancellationToken cancellationToken) =>
         Ok(await withdrawOffer.HandleAsync(new WithdrawOfferCommand(offerId, CurrentUserId), cancellationToken));
+
+    /// <summary>Taşımacı kabul edilmiş işin aşamasını ilerletir: yük alındı → yolda → teslim edildi.</summary>
+    // POST /api/v1/offers/{offerId}/advance
+    // FONKSİYON ROLÜ: API'NİN KAPISI | iOS'taki OfferService.advance'ın isteğini karşılar, rolü kontrol eder, işi AdvanceStageHandler'a devreder
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/advance")]
+    [Authorize(Roles = RoleNames.Carrier)]
+    [ProducesResponseType<OfferStageDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Advance(Guid offerId, CancellationToken cancellationToken) =>
+        Ok(await advanceStage.HandleAsync(new AdvanceStageCommand(offerId, CurrentUserId), cancellationToken));
 
     // Jetondaki 'sub' (kullanıcı numarası).
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);
