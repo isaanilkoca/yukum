@@ -1,0 +1,29 @@
+# Backend CI: her push ve PR'da derle + test et + Docker imajı derlenebiliyor mu bak
+name: backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", "docs/veri/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", "docs/veri/**", ".github/workflows/backend.yml"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest # Docker hazır gelir: entegrasyon testleri Testcontainers ile gerçek SQL Server açar
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Derle
+        run: dotnet build backend/Yukum.slnx -c Release
+      - name: Test (birim + entegrasyon)
+        run: dotnet test backend/Yukum.slnx -c Release --no-build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Docker imajı derlenebiliyor mu
+        run: docker build -f backend/Dockerfile .

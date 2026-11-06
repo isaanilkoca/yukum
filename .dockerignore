@@ -1,0 +1,9 @@
+# Docker derleme bağlamı depo kökü: gereksizleri dışarıda tut
+**/bin/
+**/obj/
+**/logs/
+backend/tests/
+ios/
+graphify-out/
+.git/
+.env

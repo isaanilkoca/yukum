@@ -15,6 +15,23 @@ Yük Veren'in ilan açtığı, Taşımacı'nın ilana fiyat teklifi verdiği aç
 
 Yapım sırası: `docs/Yukum_Adim_Adim_Uygulama_Plani.pdf`
 
+## Hızlı başlangıç (Docker, tek komut)
+Gerekenler: Docker Desktop. API ve SQL Server birlikte ayağa kalkar; tablolar ve 81 il / ilçe verisi açılışta kendiliğinden kurulur.
+```
+cp .env.example .env        # DB_PASSWORD ve JWT_SIGNING_KEY değerlerini değiştir (.env Git'e girmez)
+docker compose up --build
+```
+- API: http://localhost:5054/scalar (deneme sayfası) · sağlık: http://localhost:5054/health
+- iOS uygulaması varsayılan olarak `localhost:5054`'e bağlanır, ek ayar gerekmez.
+- Durdurmak: `docker compose down` · veriyi de silmek: `docker compose down -v`
+- Bu yol, aşağıdaki "Geliştirme ortamı kurulumu" ile aynı sonucu verir; kod yazarken `dotnet run` (hızlı yeniden başlatma), demo ve kurulum için Docker kullanılır.
+
+**Bu kurulumdaki teknik tercihler**
+- Çok aşamalı `backend/Dockerfile`: SDK ile derle, yalnız çalışma zamanı imajına kopyala, root olmayan kullanıcıyla çalıştır.
+- `docker-compose.yml`: SQL Server sağlık kontrolü geçmeden API başlamaz (`depends_on: service_healthy`); gizli değerler `.env`'den gelir, kodda yoktur.
+- `Database:MigrateOnStartup`: açılışta EF Core migration'ları uygulanır (yalnız compose'ta açık).
+- `.github/workflows/backend.yml` (GitHub Actions): her push/PR'da derleme + birim ve entegrasyon testleri (Testcontainers ile gerçek SQL Server) + Docker imajı derleme kontrolü.
+
 ## Geliştirme ortamı kurulumu (backend)
 Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
 

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Asp.Versioning;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,6 +17,7 @@ using Yukum.Api.Middleware;
 using Yukum.Application;
 using Yukum.Infrastructure;
 using Yukum.Infrastructure.Identity;
+using Yukum.Infrastructure.Persistence;
 using Yukum.Api.Validation;
 
 // Program.cs = uygulamanın açılış planı. İki bölüm: (1) builder: hangi servisler var, (2) app: istek hangi sırayla işlenir.
@@ -174,6 +176,14 @@ app.UseAuthorization();    // [Authorize] ve rol kurallarını uygular
 app.MapControllers();
 // GET /health: uygulama ayakta mı, veritabanına bağlanabiliyor mu?
 app.MapHealthChecks("/health");
+
+// Açılışta migration: yalnız "Database:MigrateOnStartup" true ise çalışır (docker compose'ta açık, normal geliştirmede kapalı).
+// NEDEN: boş bir SQL Server'da `docker compose up` tek komutla tabloları ve 81 il / ilçe verisini kursun. MigrateAsync bekleyen migration'ları uygular.
+if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
+    using var scope = app.Services.CreateScope(); // scope: DbContext kısa ömürlü olduğu için bu iş için ayrı kapsam açılır
+    await scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.MigrateAsync();
+}
 
 // Sunucuyu başlatır. Program burada bekler ve istekleri karşılar.
 app.Run();
