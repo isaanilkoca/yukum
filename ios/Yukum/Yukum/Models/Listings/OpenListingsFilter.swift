@@ -24,6 +24,11 @@ struct OpenListingsFilter: Equatable {
     var pickupTo: String?
     var sort: ListingSort?     // nil = sunucu seçer (konum varsa en yakın, yoksa en yeni)
 
+    // extraCount: Filtre sayfasındaki dolu alan sayısı (rozet için) | kalkış il/ilçesi ana ekranda göründüğü için sayılmaz
+    var extraCount: Int {
+        [toCityId != 0, minBudget != nil, maxBudget != nil, !vehicleType.isEmpty, pickupFrom != nil, pickupTo != nil, sort != nil].filter { $0 }.count // [Bool].filter{$0}: doğruları say
+    }
+
     // Filtreyi adresin ?'ten sonraki kısmına çevirir | URLQueryItem [SWIFT, Foundation]: "ad=değer" çifti
     // Adlar API'deki parametre adlarıyla birebir aynı olmalı | lat+lon yalnız ikisi birlikte gider (API tek parçayı 400 ile reddeder)
     func queryItems(page: Int, pageSize: Int, lat: Double?, lon: Double?) -> [URLQueryItem] {

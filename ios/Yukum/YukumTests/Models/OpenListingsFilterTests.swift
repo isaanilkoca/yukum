@@ -51,4 +51,20 @@ struct OpenListingsFilterTests {
         #expect(page.page == 2 && page.pageSize == 20 && page.totalCount == 41)
         #expect(page.items.count == 1 && page.items[0].title == "20 palet" && page.items[0].distanceKm == 12.5)
     }
+
+    @Test func extraCount_countsOnlyTheFilterSheetFields() {
+        #expect(OpenListingsFilter().extraCount == 0)
+        #expect(OpenListingsFilter(fromCityId: 33, fromDistrictId: 7).extraCount == 0) // kalkış ana ekranda, sayılmaz
+        var f = OpenListingsFilter()
+        f.toCityId = 34; f.minBudget = 1000; f.vehicleType = "Truck"; f.sort = .priceAsc
+        #expect(f.extraCount == 4)
+    }
+
+    @MainActor
+    @Test func filterSheetDate_roundTripsInTheApiFormat() {
+        let date = OpenListingsFilterView.parse("2026-12-05")
+        #expect(date != nil)
+        #expect(OpenListingsFilterView.format(date!) == "2026-12-05")
+        #expect(OpenListingsFilterView.parse("bozuk") == nil)
+    }
 }

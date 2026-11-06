@@ -35,6 +35,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     // ⮕ KULLANIM [openURL]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
+    @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
     // init: dışarıdan "user" verilir (LoginView: HomeView(user: user)), ViewModel burada oluşturulur
@@ -84,7 +85,13 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 } else { // Shipper değilse (Carrier)
                     if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // hata varsa kırmızı yaz (Yük Veren ile aynı değişken)
 
-                    Text("Açık İlanlar").font(.title3).bold() // liste başlığı | boş olsa da görünsün diye if listings.isEmpty'nin DIŞINDA
+                    HStack { // başlık solda, Filtre düğmesi sağda
+                        Text("Açık İlanlar").font(.title3).bold() // liste başlığı | boş olsa da görünsün diye if listings.isEmpty'nin DIŞINDA
+                        Spacer()
+                        Button { showFilter = true } label: { // basınca alttan Filtre sayfası açılır (.sheet aşağıda)
+                            Label(viewModel.filter.extraCount > 0 ? "Filtre (\(viewModel.filter.extraCount))" : "Filtre", systemImage: "line.3.horizontal.decrease.circle") // sayfadaki aktif filtre sayısı
+                        }
+                    }
 
                     // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
                     HStack { // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
@@ -169,6 +176,9 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
             .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Models/Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
+            .sheet(isPresented: $showFilter) { // .sheet [SWIFT]: alttan açılan sayfa | showFilter true olunca görünür
+                OpenListingsFilterView(filter: viewModel.filter, cities: viewModel.cities) { viewModel.filter = $0 } // Uygula → ViewModel.filter → reloadKey → load()
+            }
             .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık | .navigationTitle [SWIFT]: üst çubuk başlığı
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
                 if viewModel.isShipper { // yalnız Yük Veren ilan açabilir

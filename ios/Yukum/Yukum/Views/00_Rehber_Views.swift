@@ -19,6 +19,7 @@
 //  ListingOffersView    ListingOffersViewModel    ilana gelen teklifler: kabul/red, ilanı kaldır, sohbet. HomeView'dan (Yük Veren) açılır
 //  MyOffersView         MyOffersViewModel         Taşımacının verdiği teklifler. HomeView'dan açılır; sohbet için ChatView'ı açar
 //  OldOffersView        OldOffersViewModel        Yük Verenin karara bağlanmış (geçmiş) teklifleri. HomeView'dan açılır; ChatView'ı açar
+//  OpenListingsFilterView (ViewModel yok)    Taşımacı Filtre sayfası (varış, fiyat, araç, tarih, sıralama). HomeView .sheet açar; kopya üzerinde çalışır, Uygula → HomeViewModel.filter
 //  ChatView             ChatViewModel            teklif sohbeti. MyOffersView / ListingOffersView / OldOffersView açar
 //
 // API'ye giden kod BURADA YOK. Yolu: View → ViewModels/ → Models/Services/ → Models/Networking/APIClient → sunucu.
