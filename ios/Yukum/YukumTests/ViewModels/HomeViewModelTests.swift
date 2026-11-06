@@ -41,7 +41,7 @@ struct HomeViewModelTests {
         listings.openListingsResult = .success(Sample.page([Sample.listing("x")]))
         offers.unseenResult = .success(3)
         cities.citiesResult = .success([City(id: 33, name: "Mersin")])
-        vm.filterCityId = 33; vm.filterDistrictId = 7
+        vm.filter.fromCityId = 33; vm.filter.fromDistrictId = 7
 
         await vm.load()
         await vm.load() // ikinci yükleme: il listesi tekrar çekilmemeli
@@ -121,10 +121,10 @@ struct HomeViewModelTests {
     @Test func changingTheCity_resetsTheDistrict_andLoadsTheNewDistricts() async {
         let (vm, _, _, cities) = make()
         cities.districtsResult = .success([District(id: 1, name: "Mezitli")])
-        vm.filterDistrictId = 99
+        vm.filter.fromDistrictId = 99
 
         await vm.cityFilterChanged(to: 33)
-        #expect(vm.filterDistrictId == 0) // eski ilçe sıfırlandı
+        #expect(vm.filter.fromDistrictId == 0) // eski ilçe sıfırlandı
         #expect(vm.filterDistricts.map(\.name) == ["Mezitli"])
         #expect(cities.districtCalls == [33])
 
@@ -137,7 +137,7 @@ struct HomeViewModelTests {
         let (vm, _, _, _, location, _) = makeAll()
         let base = vm.reloadKey
 
-        vm.filterCityId = 5
+        vm.filter.fromCityId = 5
         let withCity = vm.reloadKey
         vm.nearMe = true
         let withNearMe = vm.reloadKey

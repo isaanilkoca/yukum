@@ -67,12 +67,11 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ ZİNCİR: Views/HomeView: ilçe Picker'ının satırları | DOLDURAN: cityFilterChanged(to:) ← CityService.districts(cityId:) | MODEL: [District]
     // ⮕ KULLANIM [filterDistricts]: YAZAR: HomeViewModel › cityFilterChanged() | okur: HomeView › body, HomeViewModelTests (test)
     var filterDistricts: [District] = [] // seçilen ilin ilçeleri
-    // ⮕ ZİNCİR: Views/HomeView: Picker("İl", selection: $viewModel.filterCityId) — seçim doğrudan buraya yazılır (@Bindable) | load()'da openListings(fromCityId:) filtresi olarak API'ye gider
-    // ⮕ KULLANIM [filterCityId]: okur: HomeViewModel › load(), HomeViewModel › reloadKey, HomeView › body | bağlar(okur+yazar): HomeView › body | YAZAR: HomeViewModelTests (test)
-    var filterCityId = 0
-    // ⮕ ZİNCİR: Views/HomeView: Picker("İlçe", selection: $viewModel.filterDistrictId) | load()'da openListings(fromDistrictId:) filtresi olarak API'ye gider
-    // ⮕ KULLANIM [filterDistrictId]: okur: HomeViewModel › load(), HomeViewModel › reloadKey, HomeViewModelTests (test) | YAZAR: HomeViewModel › cityFilterChanged(), HomeViewModelTests (test) | bağlar(okur+yazar): HomeView › body
-    var filterDistrictId = 0
+    // Taşımacı filtresinin TEK kaynağı | 0 / nil / "" = filtre yok | Picker'lar ve filtre ekranı alanlarına doğrudan bağlanır
+    // ZİNCİR: Views/HomeView Picker'ları ($viewModel.filter.fromCityId ...) yazar → reloadKey değişir → .task(id:) → load() → fetchOpen → GET /api/v1/listings?...
+    // MODEL: Models/Listings/OpenListingsFilter
+    var filter = OpenListingsFilter() // struct [SWIFT]: alanı değişince bütün değer değişmiş sayılır, @Observable ekranı yeniler
+    
     // ⮕ ZİNCİR: Views/HomeView: Toggle("Yakınımdakiler", isOn: $viewModel.nearMe) | true iken load() konumu API'ye gönderir (lat/lon) ve sunucu en yakından uzağa sıralar
     // ⮕ KULLANIM [nearMe]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError, HomeViewModel › load(), HomeViewModel › reloadKey, HomeView › body | bağlar(okur+yazar): HomeView › body | YAZAR: HomeViewModelTests (test)
     var nearMe = false // "Yakınımdakiler" anahtarı: true iken liste telefonun konumuna göre yakından uzağa sıralanır
@@ -164,7 +163,6 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     private func fetchOpen(page: Int) async throws -> Page<Listing> {
         let lat = nearMe ? location.latitude : nil // konum yoksa nil: sıralama en yeni
         let lon = nearMe ? location.longitude : nil
-        let filter = OpenListingsFilter(fromCityId: filterCityId, fromDistrictId: filterDistrictId)
         return try await listingService.openListings(filter: filter, page: page, lat: lat, lon: lon)
     }
 
@@ -173,7 +171,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ ZİNCİR: Views/HomeView: il Picker'ındaki .onChange(of: viewModel.filterCityId) → Task { await viewModel.cityFilterChanged(to:) } | CityService.districts(cityId:)
     // ⮕ KULLANIM [cityFilterChanged]: çağırır: HomeView › body, HomeViewModelTests (test)
     func cityFilterChanged(to cityId: Int) async {
-        filterDistrictId = 0
+        filter.fromDistrictId = 0 // eski ilin ilçesi sıfırlanır
         filterDistricts = []
         guard cityId != 0 else { return } // "Tüm İller"e dönüldüyse çekecek ilçe yok | guard [SWIFT]: şart sağlanmazsa fonksiyondan erken çık
         filterDistricts = (try? await cityService.districts(cityId: cityId)) ?? []
@@ -183,6 +181,6 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ ZİNCİR: Views/HomeView: .task(id: viewModel.reloadKey) — bu yazı değişince (filtre, anahtar, konum) SwiftUI task'ı yeniden çalıştırır → load()
     // ⮕ KULLANIM [reloadKey]: okur: HomeView › body, HomeViewModelTests (test)
     var reloadKey: String {
-        "\(filterCityId)-\(filterDistrictId)-\(nearMe)-\(location.latitude.map { String($0) } ?? "-"),\(location.longitude.map { String($0) } ?? "-")"
+        "\(filter)-\(nearMe)-\(location.latitude.map { String($0) } ?? "-"),\(location.longitude.map { String($0) } ?? "-")"
     }
 }

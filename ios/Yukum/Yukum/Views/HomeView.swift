@@ -88,7 +88,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                     // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
                     HStack { // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
-                        Picker("İl", selection: $viewModel.filterCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ) | ⮕ HomeViewModel.filterCityId (Picker seçimi buraya yazılır)
+                        Picker("İl", selection: $viewModel.filter.fromCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ) | ⮕ HomeViewModel.filterCityId (Picker seçimi buraya yazılır)
                             Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok | .tag [SWIFT]: Picker seçeneğinin değeri
                             ForEach(viewModel.cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: ViewModel.load'da dolan liste | ⮕ HomeViewModel.cities ← CityService.cities() → [City]
                                 Text(city.name).tag(city.id) // city.name: ekranda görünen ad | tag(city.id): seçilince değişkene yazılacak numara
@@ -96,11 +96,11 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         }
                         .pickerStyle(.menu) // açılır menü görünümü | .pickerStyle [SWIFT]: seçici görünüm stili
                         // .onChange [SWIFT]: değişkeni izler, değişince BİR KEZ çalışır | il değişince ViewModel ilçe seçimini sıfırlar ve yeni ilin ilçelerini çeker (mantık ViewModel'de, burada yalnız tetikleme)
-                        .onChange(of: viewModel.filterCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = yeni değer
+                        .onChange(of: viewModel.filter.fromCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = yeni değer
                             Task { await viewModel.cityFilterChanged(to: newId) } // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır | ⮕ HomeViewModel.cityFilterChanged → CityService.districts(cityId:) → filterDistricts
                         }
-                        if viewModel.filterCityId != 0 { // il seçilmeden ilçe Picker'ı çizilmez
-                            Picker("İlçe", selection: $viewModel.filterDistrictId) { // seçilen ilçe numarası ViewModel'e yazılır
+                        if viewModel.filter.fromCityId != 0 { // il seçilmeden ilçe Picker'ı çizilmez
+                            Picker("İlçe", selection: $viewModel.filter.fromDistrictId) { // seçilen ilçe numarası ViewModel'e yazılır
                                 Text("Tüm İlçeler").tag(0) // 0 = ilçe filtresi yok
                                 ForEach(viewModel.filterDistricts) { district in // ViewModel.cityFilterChanged'in doldurduğu liste
                                     Text(district.name).tag(district.id)
