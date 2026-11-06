@@ -52,6 +52,13 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ ZİNCİR: Views/HomeView toolbar: kutu ikonundaki kırmızı rozet (> 0 ise çizilir) | DOLDURAN: load() ← OfferService.unseenCount()
     // ⮕ KULLANIM [unseenCount]: YAZAR: HomeViewModel › load() | okur: HomeView › body, HomeViewModelTests (test)
     var unseenCount = 0 // Taşımacı'nın görmediği karar sayısı (kutu ikonundaki rozet) | 0: rozet çizilmez
+    
+    // Sayfalama durumu (yalnız Taşımacı listesi) | DOLDURAN: load() ve loadMore() ← Page<Listing> zarfı
+    // ZİNCİR: Views/HomeView listenin son satırı .onAppear → loadMore() | alttaki yükleme göstergesi isLoadingMore'a bağlı
+    private(set) var page = 1 // private(set) [SWIFT]: dışarıdan okunur, yalnız bu sınıf yazar
+    private(set) var totalCount = 0 // sunucunun söylediği TOPLAM kayıt (filtreye uyan hepsi)
+    private(set) var isLoadingMore = false // true iken ikinci loadMore istenmez
+    var hasMore: Bool { listings.count < totalCount } // türetilmiş: başka sayfa var mı
 
     // Taşımacı filtresi: kalkış ili / ilçesi | 0 = "Tümü" (filtre yok) | hem Picker seçimini tutar hem API'ye giden filtredir
     // ⮕ ZİNCİR: Views/HomeView: il Picker'ının satırları (ForEach) | DOLDURAN: load() (yalnız bir kez) ← CityService.cities() | MODEL: [City]
@@ -121,11 +128,10 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
             if isShipper { // VERİ kararı: rol hangi ucu çağıracağımızı belirler
                 listings = try await listingService.myListings() // GET /api/v1/listings/mine
             } else {
-                let lat = nearMe ? location.latitude : nil // nearMe ? A : B kısa if | konum yoksa nil kalır, liste eskisi gibi (en yeni üstte) gelir
-                let lon = nearMe ? location.longitude : nil
-                let filter = OpenListingsFilter(fromCityId: filterCityId, fromDistrictId: filterDistrictId) // Picker seçimleri → filtre paketi
-                let result = try await listingService.openListings(filter: filter, page: 1, lat: lat, lon: lon) // → Page<Listing>
-                listings = result.items // zarfın içinden yalnız ilanlar | sonraki sayfalar sonraki adımda
+                let result = try await fetchOpen(page: 1) // GET /api/v1/listings?page=1&...
+                listings = result.items // liste baştan kurulur
+                page = 1
+                totalCount = result.totalCount
                 if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // il listesi yalnız bir kez yüklenir | try?: hata olursa nil | ?? []: nil ise boş liste | try? [SWIFT]: hata olursa çökme, nil ver
                 
                 unseenCount = try await offerService.unseenCount() // rozet sayısı
@@ -133,6 +139,33 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
         } catch {
             if let message = error.userMessage { listError = message } // iptal ise (nil) yazı gösterilmez
         }
+    }
+
+    // loadMore: listenin sonuna gelince SONRAKİ sayfayı çekip listeye ekler
+    // ÇAĞIRAN: Views/HomeView son satır .onAppear | guard: Yük Veren'de sayfa yok, son sayfada ya da zaten yüklenirken istek atılmaz
+    // ZİNCİR: fetchOpen(page+1) → ListingService.openListings → GET /api/v1/listings?page=2&... → Page<Listing>
+    func loadMore() async {
+        guard !isShipper, hasMore, !isLoadingMore else { return } // guard [SWIFT]: şart sağlanmazsa erken çık
+        isLoadingMore = true
+        defer { isLoadingMore = false } // defer [SWIFT]: fonksiyon nasıl biterse bitsin (başarı/hata) en sonda çalışır
+        do {
+            let result = try await fetchOpen(page: page + 1)
+            let known = Set(listings.map(\.id)) // Set [SWIFT]: tekrarsız küme | sayfalar kayarsa aynı ilan iki kez gelmesin
+            listings += result.items.filter { !known.contains($0.id) } // += sona ekler | filter [SWIFT]: şartı sağlayanları tutar
+            page += 1
+            totalCount = result.totalCount
+        } catch {
+            if let message = error.userMessage { listError = message } // liste silinmez, yalnız hata yazılır
+        }
+    }
+
+    // fetchOpen: load ve loadMore'un ORTAK kısmı | filtre paketini + (nearMe açıksa) konumu kurup servisi çağırır
+    // BAĞLANTI: OpenListingsFilter (Models/Listings) | location (LocationProviding) | ListingServicing.openListings
+    private func fetchOpen(page: Int) async throws -> Page<Listing> {
+        let lat = nearMe ? location.latitude : nil // konum yoksa nil: sıralama en yeni
+        let lon = nearMe ? location.longitude : nil
+        let filter = OpenListingsFilter(fromCityId: filterCityId, fromDistrictId: filterDistrictId)
+        return try await listingService.openListings(filter: filter, page: page, lat: lat, lon: lon)
     }
 
     // cityFilterChanged: il Picker'ı değişince çağrılır | ilçe seçimi sıfırlanır ve yeni ilin ilçeleri çekilir

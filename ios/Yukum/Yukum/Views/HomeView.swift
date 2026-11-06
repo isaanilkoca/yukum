@@ -136,13 +136,23 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     if viewModel.listings.isEmpty { // liste boş mu
                         Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
                     } else {
-                        List(viewModel.listings) { listing in // Yük Veren listesiyle aynı yapı, farkı: bu liste teklif vermediğin açık ilanlar | ⮕ HomeViewModel.listings ← load() ← ListingService.openListings() (Taşımacı) → [Listing]
-                            NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
-                                ListingDetailView(listing: listing) // Views/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
-                            } label: { // label: satırın görünen kısmı
-                                ListingRow(listing: listing) // eski satır aynen kalır
-                            }
-                        }.listStyle(.plain)
+                        List { // List [SWIFT]: bu kez içine ForEach + ek satır koyacağımız biçim
+                                                   ForEach(viewModel.listings) { listing in // ForEach [SWIFT]: her ilan için bir satır | ⮕ HomeViewModel.listings ← load()/loadMore()
+                                                       NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
+                                                           ListingDetailView(listing: listing) // Views/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
+                                                       } label: { // label: satırın görünen kısmı
+                                                           ListingRow(listing: listing) // Views/ListingRow.swift
+                                                       }
+                                                       .onAppear { // .onAppear [SWIFT]: bu satır ekrana GİRİNCE çalışır
+                                                           if listing.id == viewModel.listings.last?.id { // son satır mı | ?. : liste boşsa nil
+                                                               Task { await viewModel.loadMore() } // Task [SWIFT]: async işi başlatır | ⮕ HomeViewModel.loadMore(): sonraki sayfa → GET ...?page=2
+                                                           }
+                                                       }
+                                                   }
+                                                   if viewModel.isLoadingMore { // ⮕ HomeViewModel.isLoadingMore: sayfa yüklenirken true
+                                                       ProgressView().frame(maxWidth: .infinity) // ProgressView [SWIFT]: dönen çark | listenin altında ortalı
+                                                   }
+                                               }
                         .refreshable { await viewModel.load() } // aşağı çekince yenile
                     }
                 }

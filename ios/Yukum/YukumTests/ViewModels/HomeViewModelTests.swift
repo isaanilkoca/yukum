@@ -146,4 +146,69 @@ struct HomeViewModelTests {
 
         #expect(Set([base, withCity, withNearMe, withCoordinate]).count == 4) // her değişiklik listeyi yeniden yükletir
     }
+
+    // ── Sayfalama ──
+
+    @Test func loadMore_appendsTheNextPage_andStopsWhenAllLoaded() async {
+        let (vm, listings, _, _) = make()
+        listings.openListingsResult = .success(Sample.page([Sample.listing("a"), Sample.listing("b")], total: 3))
+        await vm.load()
+        #expect(vm.hasMore) // 2 < 3
+
+        listings.openListingsResult = .success(Sample.page([Sample.listing("c")], total: 3))
+        await vm.loadMore()
+
+        #expect(vm.listings.map(\.id) == ["a", "b", "c"]) // sona eklendi, yerine konmadı
+        #expect(listings.openListingsCalls.last?.page == 2)
+        #expect(!vm.hasMore)
+
+        await vm.loadMore() // hepsi yüklü: istek atılmaz
+        #expect(listings.openListingsCalls.count == 2)
+    }
+
+    @Test func loadMore_skipsDuplicates_whenPagesShift() async {
+        let (vm, listings, _, _) = make()
+        listings.openListingsResult = .success(Sample.page([Sample.listing("a"), Sample.listing("b")], total: 4))
+        await vm.load()
+
+        listings.openListingsResult = .success(Sample.page([Sample.listing("b"), Sample.listing("c")], total: 4)) // "b" yeni ilanlar yüzünden tekrar geldi
+        await vm.loadMore()
+
+        #expect(vm.listings.map(\.id) == ["a", "b", "c"])
+    }
+
+    @Test func load_resetsToPageOne_andReplacesTheList() async {
+        let (vm, listings, _, _) = make()
+        listings.openListingsResult = .success(Sample.page([Sample.listing("a")], total: 2))
+        await vm.load()
+        listings.openListingsResult = .success(Sample.page([Sample.listing("b")], total: 2))
+        await vm.loadMore()
+        #expect(vm.page == 2)
+
+        listings.openListingsResult = .success(Sample.page([Sample.listing("z")], total: 1))
+        await vm.load() // yenileme / filtre değişimi
+
+        #expect(vm.page == 1)
+        #expect(vm.listings.map(\.id) == ["z"])
+    }
+
+    @Test func loadMore_failureKeepsTheList_andShowsTheError() async {
+        let (vm, listings, _, _) = make()
+        listings.openListingsResult = .success(Sample.page([Sample.listing("a")], total: 2))
+        await vm.load()
+
+        listings.openListingsResult = .failure(APIError(message: "Sunucu meşgul."))
+        await vm.loadMore()
+
+        #expect(vm.listings.map(\.id) == ["a"]) // liste silinmedi
+        #expect(vm.page == 1) // sayfa ilerlemedi, tekrar denenebilir
+        #expect(vm.listError == "Sunucu meşgul.")
+        #expect(!vm.isLoadingMore)
+    }
+
+    @Test func shipper_neverLoadsMore() async {
+        let (vm, listings, _, _) = make(Sample.shipper)
+        await vm.loadMore()
+        #expect(listings.openListingsCalls.isEmpty)
+    }
 }
