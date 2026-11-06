@@ -94,6 +94,12 @@ struct OfferService { // OfferService [BİZİM] ad
         try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/withdraw", fallback: "Teklif geri çekilemedi.")
     }
 
+    // advance: aşamayı bir ilerletir | API: POST /api/v1/offers/{id}/advance | DÖNEN: {id, stage} (kullanmıyoruz, liste yeniden çekilir)
+    // 409 (zaten teslim edildi / kabul edilmemiş) APIError olur, mesaj Türkçe gelir
+    func advance(offerId: String) async throws {
+        try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/advance", fallback: "Aşama güncellenemedi.")
+    }
+
     // shipperHistory: Yük Veren'in karara bağladığı (kabul/red/tamamlanan) teklifler = "Eski teklifler"
     // ÇAĞIRAN: Views/OldOffersView.swift | API: GET /api/v1/offers/history
     // ⮕ ZİNCİR: ViewModels/OldOffersViewModel.load() ← Views/OldOffersView .task/.refreshable | API: GET /api/v1/offers/history | DÖNEN: [ShipperHistoryOffer]

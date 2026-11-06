@@ -39,4 +39,7 @@ struct ShipperHistoryOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON
     let amount: Double // teklif tutarı (API 48000.0 gönderir)
     // ⮕ KULLANIM [status]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let status: String // "Accepted" (kabul ettim) / "Rejected" (reddettim) | geçmişte "Pending" olmaz, yalnız karar verilmişler gelir
+    let stage: String // işin aşaması (CarrierOffer.stage ile aynı değerler) | Yük Veren işi buradan izler
+    let carrierId: String // Taşımacı'nın numarası | NE İŞE YARAR: profiline gitmek için (GET /carriers/{carrierId})
+    let reviewed: Bool // true = bu işe puan verdim | "Puan ver" düğmesi yalnız false iken çıkar
 }

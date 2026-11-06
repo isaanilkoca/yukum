@@ -30,6 +30,8 @@ protocol OfferServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sah
     // withdraw: Taşımacı BEKLEYEN teklifini geri çeker | ÇAĞIRAN: MyOffersViewModel.withdraw() | UYGULAYAN: OfferService | SAHTESİ: YukumTests/Support/FakeOfferService
     // protocol'de gövde yazılmaz, yalnız imza vardır: "bu fonksiyon olmalı" | async throws [SWIFT]: beklemeli iş + hata fırlatabilir
     func withdraw(offerId: String) async throws
+    // advance: Taşımacı kabul edilmiş işi bir sonraki aşamaya geçirir (yük alındı → yolda → teslim edildi) | ÇAĞIRAN: MyOffersViewModel.advance() | API: POST /api/v1/offers/{id}/advance
+    func advance(offerId: String) async throws
     
     // ⮕ KULLANIM [shipperHistory]: çağırır: OldOffersViewModel › load()
     func shipperHistory() async throws -> [ShipperHistoryOffer]

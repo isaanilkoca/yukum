@@ -30,5 +30,8 @@ final class FakeOfferService: OfferServicing {
     var withdrawResult: Result<Void, Error> = .success(())
     private(set) var withdrawnIds: [String] = []
     func withdraw(offerId: String) async throws { withdrawnIds.append(offerId); try withdrawResult.get() }
+    var advanceResult: Result<Void, Error> = .success(())
+    private(set) var advancedIds: [String] = []
+    func advance(offerId: String) async throws { advancedIds.append(offerId); try advanceResult.get() }
     func shipperHistory() async throws -> [ShipperHistoryOffer] { try historyResult.get() }
 }

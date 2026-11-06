@@ -1,0 +1,29 @@
+//
+//  CarrierProfile.swift
+//  Yukum
+//
+
+import Foundation
+
+// Taşımacı profili | API: GET /api/v1/carriers/{id} | Decodable [SWIFT]: JSON'dan otomatik doldurulur (alan adları API ile birebir aynı)
+// BAĞLANTI: ReviewService.carrierProfile döner → CarrierProfileViewModel saklar → Views/CarrierProfileView çizer
+struct CarrierProfile: Decodable {
+    let id: String
+    let fullName: String // Taşımacı'nın adı
+    let about: String? // kısa tanıtım (şimdilik boş gelir) | String?: nil olabilir
+    let averageRating: Double // ortalama puan 0–5 | 0 = henüz puan yok
+    let ratingCount: Int // kaç kişi puan verdi
+    let completedJobCount: Int // tamamlanan iş sayısı
+    let reviews: [CarrierReview] // en yeni 20 yorum
+}
+
+// Profildeki tek yorum | Hashable [SWIFT]: ForEach(id: \.self) ile satır kimliği olarak kullanılabilir (API yorumlara ayrı numara vermez)
+struct CarrierReview: Decodable, Hashable {
+    let rating: Int // 1–5
+    let comment: String? // yorum yoksa nil
+    let shipperName: String // puanı veren, kısaltılmış ("Ali V.")
+    let listingTitle: String // hangi iş için
+    let fromCityName: String // rota
+    let toCityName: String
+    let createdAt: String // ISO tarih yazısı | ekranda ilk 10 karakter (yyyy-MM-dd) gösterilir
+}

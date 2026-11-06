@@ -24,4 +24,7 @@ struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersi
     let note: String? // isteğe bağlı not, yoksa nil
     // ⮕ KULLANIM [status]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let status: String // "Pending" / "Accepted" / "Rejected" (API durumu yazı olarak gönderir)
+    let carrierId: String // Taşımacı'nın numarası | NE İŞE YARAR: tıklayınca profiline gitmek için
+    let carrierRating: Double // ortalama puan (0 = henüz puan yok) | API decimal(3,2) gönderir, Double'a çözülür
+    let carrierRatingCount: Int // kaç kişi puan verdi | 0 ise "Yeni" yazılır, yıldız çizilmez
 }
