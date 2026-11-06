@@ -49,24 +49,16 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         try await api.send(.get, "/api/v1/listings/mine", fallback: "İlanlar yüklenemedi.") // GET: veri iste, gövde yok
     }
 
-    // openListings: tüm açık ilanlar (Taşımacı anasayfası) | İSTEĞE BAĞLI FİLTRE: kalkış ili ve ilçesi, ve konum
-    // fromCityId / fromDistrictId: 0 = "Tümü", filtre uygulanmaz | = 0: varsayılan değer, çağıran yazmazsa 0 sayılır
-    // lat / lon: Taşımacı'nın konumu | Double? = boş olabilir, nil ise konum gönderilmez
-    // NE İŞE YARAR: süzme ve mesafe sıralamasını SUNUCU yapar (SQL WHERE, Haversine) | telefon tüm ilanları çekip kendisi süzmez, çünkü ilan sayısı büyüyünce yavaşlar ve gereksiz veri taşır | konum sunucuda SAKLANMAZ
-    // ÇAĞIRAN: Views/HomeView.swift (Taşımacı) | API: GET /api/v1/listings?fromCityId=33&fromDistrictId=12&lat=36.8&lon=34.6
-    // ⮕ ZİNCİR: ViewModels/HomeViewModel.load() (Taşımacı) ← Views/HomeView .task(id:)/.refreshable | API: GET /api/v1/listings?fromCityId&fromDistrictId&lat&lon | DÖNEN: [Listing]
-    // ⮕ KULLANIM [openListings]: çağırır: HomeViewModel › load()
-    func openListings(fromCityId: Int = 0, fromDistrictId: Int = 0, lat: Double? = nil, lon: Double? = nil) async throws -> [Listing] {
-        // URLQueryItem [SWIFT]: adreste ?'ten sonraki bir "ad=değer" çifti (query string) | boş liste: filtre yoksa adrese hiçbir şey eklenmez
-        var items: [URLQueryItem] = []
-        if fromCityId != 0 { items.append(URLQueryItem(name: "fromCityId", value: String(fromCityId))) } // name: API'deki parametre adı, birebir aynı olmalı | String(): sayıyı yazıya çevirir
-        if fromDistrictId != 0 { items.append(URLQueryItem(name: "fromDistrictId", value: String(fromDistrictId))) }
-        if let lat, let lon { // API ikisini BİRLİKTE ister (yalnız biri gönderilirse 400 döner)
-            items.append(URLQueryItem(name: "lat", value: String(lat)))
-            items.append(URLQueryItem(name: "lon", value: String(lon)))
-        }
+    // openListings: Taşımacı anasayfasının açık ilan listesinin BİR SAYFASI | süzme, sıralama, sayfalamayı SUNUCU yapar, telefon hepsini çekmez
+    // ÇAĞIRAN: HomeViewModel.load() | API: GET /api/v1/listings?page=1&pageSize=20&... | DÖNEN: Page<Listing>
+    // lat / lon: Taşımacı'nın konumu (Double? = nil ise gönderilmez) | konum sunucuda SAKLANMAZ
+    func openListings(filter: OpenListingsFilter, page: Int, lat: Double? = nil, lon: Double? = nil) async throws -> Page<Listing> {
+        let items = filter.queryItems(page: page, pageSize: Self.pageSize, lat: lat, lon: lon) // adresin ?'ten sonrası
+        // send<Response>: JSON'u Response türüne çevirir; tür dönüş tipinden anlaşılır (Page<Listing>)
         return try await api.send(.get, "/api/v1/listings", query: items, fallback: "İlanlar yüklenemedi.")
     }
+
+    static let pageSize = 20 // static [SWIFT]: türe ait sabit | API en çok 50 kabul eder
 
     // cancel: ilanı yayından kaldırır (yalnız ilanın sahibi Yük Veren)
     // NE İŞE YARAR: ilan "Kaldırıldı" olur, bekleyen (ve kabul edilmiş) teklifler iptal olur, Taşımacılar Tekliflerim'de "İlan kaldırıldı" görür, sohbet kilitlenir
@@ -78,6 +70,8 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
     }
 }
 
+
 // ListingService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir
 // Gerçek servisler zaten bu fonksiyonlara sahip; "sen de bu sözleşmeyi karşılıyorsun" demek için boş extension yeter
 extension ListingService: ListingServicing {} // extension [SWIFT]: mevcut türe sonradan özellik/uyum ekler
+

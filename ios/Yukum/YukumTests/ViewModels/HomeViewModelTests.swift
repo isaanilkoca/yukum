@@ -38,7 +38,7 @@ struct HomeViewModelTests {
 
     @Test func carrier_loadsOpenListings_withFilter_unseenBadge_andCitiesOnlyOnce() async {
         let (vm, listings, offers, cities) = make()
-        listings.openListingsResult = .success([Sample.listing("x")])
+        listings.openListingsResult = .success(Sample.page([Sample.listing("x")]))
         offers.unseenResult = .success(3)
         cities.citiesResult = .success([City(id: 33, name: "Mersin")])
         vm.filterCityId = 33; vm.filterDistrictId = 7
@@ -48,8 +48,8 @@ struct HomeViewModelTests {
 
         #expect(vm.listings.map(\.id) == ["x"])
         #expect(vm.unseenCount == 3)
-        #expect(listings.openListingsCalls.last?.city == 33)
-        #expect(listings.openListingsCalls.last?.district == 7)
+        #expect(listings.openListingsCalls.last?.filter.fromCityId == 33)
+        #expect(listings.openListingsCalls.last?.filter.fromDistrictId == 7)
         #expect(cities.citiesCalls == 1) // il listesi yalnız bir kez
     }
 
@@ -102,7 +102,7 @@ struct HomeViewModelTests {
         await vm.load()
         #expect(vm.listError == "Bu işlem için yetkiniz yok.")
 
-        listings.openListingsResult = .success([])
+        listings.openListingsResult = .success(Sample.page([]))
         await vm.load()
         #expect(vm.listError == nil) // eski hata yazısı kalmaz
     }

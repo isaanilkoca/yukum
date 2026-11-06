@@ -1,0 +1,46 @@
+//
+//  OpenListingsFilter.swift
+//  Yukum
+//
+//  Created by İsa Anıl Koca on 6.11.2026.
+//
+
+import Foundation
+
+
+// Liste filtresi tek pakette | 0 / nil / "" = filtre yok (adrese yazılmaz)
+// NEDEN paket: servis fonksiyonu 10 parametre almasın, ViewModel filtreyi tek değişkende tutsun
+// Equatable [SWIFT]: iki filtre == ile karşılaştırılır
+// BAĞLANTI: HomeViewModel doldurur → ListingService.openListings → queryItems → GET /api/v1/listings?...
+
+struct OpenListingsFilter: Equatable {
+    var fromCityId = 0
+    var fromDistrictId = 0
+    var toCityId = 0
+    var minBudget: Int?        // Int?: boş olabilir
+    var maxBudget: Int?
+    var vehicleType = ""       // VehicleType.rawValue ("Truck"...)
+    var pickupFrom: String?    // API biçimi "2026-11-05"
+    var pickupTo: String?
+    var sort: ListingSort?     // nil = sunucu seçer (konum varsa en yakın, yoksa en yeni)
+
+    // Filtreyi adresin ?'ten sonraki kısmına çevirir | URLQueryItem [SWIFT, Foundation]: "ad=değer" çifti
+    // Adlar API'deki parametre adlarıyla birebir aynı olmalı | lat+lon yalnız ikisi birlikte gider (API tek parçayı 400 ile reddeder)
+    func queryItems(page: Int, pageSize: Int, lat: Double?, lon: Double?) -> [URLQueryItem] {
+        var items = [URLQueryItem(name: "page", value: String(page)), URLQueryItem(name: "pageSize", value: String(pageSize))]
+        if fromCityId != 0 { items.append(URLQueryItem(name: "fromCityId", value: String(fromCityId))) }
+        if fromDistrictId != 0 { items.append(URLQueryItem(name: "fromDistrictId", value: String(fromDistrictId))) }
+        if toCityId != 0 { items.append(URLQueryItem(name: "toCityId", value: String(toCityId))) }
+        if let minBudget { items.append(URLQueryItem(name: "minBudget", value: String(minBudget))) } // if let [SWIFT]: nil değilse içini aç
+        if let maxBudget { items.append(URLQueryItem(name: "maxBudget", value: String(maxBudget))) }
+        if !vehicleType.isEmpty { items.append(URLQueryItem(name: "vehicleType", value: vehicleType)) }
+        if let pickupFrom { items.append(URLQueryItem(name: "pickupFrom", value: pickupFrom)) }
+        if let pickupTo { items.append(URLQueryItem(name: "pickupTo", value: pickupTo)) }
+        if let sort { items.append(URLQueryItem(name: "sort", value: sort.rawValue)) }
+        if let lat, let lon {
+            items.append(URLQueryItem(name: "lat", value: String(lat)))
+            items.append(URLQueryItem(name: "lon", value: String(lon)))
+        }
+        return items
+    }
+}

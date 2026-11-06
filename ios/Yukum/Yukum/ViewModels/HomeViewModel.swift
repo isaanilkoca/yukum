@@ -123,8 +123,11 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
             } else {
                 let lat = nearMe ? location.latitude : nil // nearMe ? A : B kısa if | konum yoksa nil kalır, liste eskisi gibi (en yeni üstte) gelir
                 let lon = nearMe ? location.longitude : nil
-                listings = try await listingService.openListings(fromCityId: filterCityId, fromDistrictId: filterDistrictId, lat: lat, lon: lon) // GET /api/v1/listings?...
+                let filter = OpenListingsFilter(fromCityId: filterCityId, fromDistrictId: filterDistrictId) // Picker seçimleri → filtre paketi
+                let result = try await listingService.openListings(filter: filter, page: 1, lat: lat, lon: lon) // → Page<Listing>
+                listings = result.items // zarfın içinden yalnız ilanlar | sonraki sayfalar sonraki adımda
                 if cities.isEmpty { cities = (try? await cityService.cities()) ?? [] } // il listesi yalnız bir kez yüklenir | try?: hata olursa nil | ?? []: nil ise boş liste | try? [SWIFT]: hata olursa çökme, nil ver
+                
                 unseenCount = try await offerService.unseenCount() // rozet sayısı
             }
         } catch {

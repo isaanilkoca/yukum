@@ -8,8 +8,8 @@ import Foundation
 
 final class FakeListingService: ListingServicing {
     var myListingsResult: Result<[Listing], Error> = .success([])
-    var openListingsResult: Result<[Listing], Error> = .success([])
-    private(set) var openListingsCalls: [(city: Int, district: Int, lat: Double?, lon: Double?)] = [] // hangi filtreyle çağrıldı
+    var openListingsResult: Result<Page<Listing>, Error> = .success(Sample.page([]))
+    private(set) var openListingsCalls: [(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?)] = [] // hangi filtre ve sayfayla çağrıldı
     private(set) var myListingsCalls = 0
     var createResult: Result<ListingResponse, Error> = .success(ListingResponse(id: "1", title: "t"))
     private(set) var createBodies: [CreateListingRequest] = []
@@ -18,8 +18,8 @@ final class FakeListingService: ListingServicing {
     
     func create(_ body: CreateListingRequest) async throws -> ListingResponse { createBodies.append(body); return try createResult.get() }
     func myListings() async throws -> [Listing] { myListingsCalls += 1; return try myListingsResult.get() }
-    func openListings(fromCityId: Int, fromDistrictId: Int, lat: Double?, lon: Double?) async throws -> [Listing] {
-        openListingsCalls.append((fromCityId, fromDistrictId, lat, lon)); return try openListingsResult.get()
+    func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing> {
+        openListingsCalls.append((filter, page, lat, lon)); return try openListingsResult.get()
     }
     func cancel(listingId: String) async throws { cancelledIds.append(listingId); try cancelResult.get() }
     

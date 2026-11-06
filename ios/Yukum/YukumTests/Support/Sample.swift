@@ -16,6 +16,10 @@ enum Sample {
                 pickupDate: "2026-12-01", budget: 5000, myOfferAmount: nil, myOfferStatus: nil, distanceKm: nil,
                 description: nil, vehicleType: "Truck", fromCityId: 33, fromDistrictId: 1, toCityId: 34, toDistrictId: 2)
     }
+    // page: ilan listesini API'nin sayfa zarfına sarar | total verilmezse sayfadaki sayı kadar
+    static func page(_ items: [Listing], total: Int? = nil) -> Page<Listing> {
+        Page(items: items, page: 1, pageSize: ListingService.pageSize, totalCount: total ?? items.count)
+    }
     static func listingOffer(_ id: String = "o1", status: String = "Pending") -> ListingOffer {
         ListingOffer(id: id, carrierName: "Taşımacı", amount: 1000, note: nil, status: status)
     }
