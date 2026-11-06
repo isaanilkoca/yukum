@@ -81,7 +81,7 @@ iOS uygulaması (SwiftUI)
 - `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
 - `Persistence/GeographyRepository.cs` — `IGeographyRepository`'nin gerçeği; sonuçları `IMemoryCache`'te 24 saat saklar (boş sonuç saklanmaz).
 - `Identity/AccountService.cs` — Hesabı tek işlemde kurar: kullanıcı + rol + profil + araçlar + çalışma illeri; çift e-posta/telefon → `ConflictException`.
-- `Identity/AuthService.cs` — Şifre denetimi, hatalı deneme sayacı ve 5 hatada 15 dk kilit; kullanıcı yoksa da sahte hash doğrulaması (süre farkı olmasın).
+- `Identity/AuthService.cs` — Şifre denetimi, hatalı deneme sayacı ve 10 hatada 5 dk kilit (K-020); kullanıcı yoksa da sahte hash doğrulaması (süre farkı olmasın).
 - `Identity/JwtTokenService.cs` + `JwtOptions.cs` — Erişim jetonu (HS256 JWT) üretimi ve ayarları. İçine yalnız `sub`, `role`, `jti` yazılır.
 - `Identity/PasswordPolicyValidator.cs` — Şifre kuralını Identity'ye bağlar (Identity'nin ASCII-yalnız harf kontrolü yerine).
 - `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.

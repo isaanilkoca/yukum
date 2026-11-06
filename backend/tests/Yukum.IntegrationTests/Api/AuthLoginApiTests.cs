@@ -159,12 +159,12 @@ public class AuthLoginApiTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task Five_wrong_attempts_return_423_with_retry_after_and_even_the_right_password_stays_refused()
+    public async Task Ten_wrong_attempts_return_423_with_retry_after_and_even_the_right_password_stays_refused()
     {
         var (client, _) = await StartAsync();
         await RegisterShipperAsync(client);
 
-        for (var attempt = 1; attempt <= 4; attempt++)
+        for (var attempt = 1; attempt <= 9; attempt++)
             Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(client, "ali@x.com", "Yanlis123")).StatusCode);
 
         var locked = await LoginAsync(client, "ali@x.com", "Yanlis123");
@@ -176,7 +176,7 @@ public class AuthLoginApiTests(SqlServerFixture sql)
         Assert.Contains("kilitlendi", problem.GetProperty("detail").GetString());
         var retryAfter = locked.Headers.RetryAfter?.Delta;
         Assert.NotNull(retryAfter);
-        Assert.InRange(retryAfter.Value, TimeSpan.FromMinutes(14), TimeSpan.FromMinutes(15));
+        Assert.InRange(retryAfter.Value, TimeSpan.FromMinutes(4), TimeSpan.FromMinutes(5));
 
         Assert.Equal(HttpStatusCode.Locked, (await LoginAsync(client)).StatusCode);
     }

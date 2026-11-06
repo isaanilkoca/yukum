@@ -67,7 +67,7 @@
 - **Karar:**
   1. **Giriş alanı** `emailOrPhone`: `@` içeriyorsa e-posta (küçük harf), değilse cep telefonu (`+905…` biçimine çevrilir); ikisi de değilse ayrı hata değil genel 401. `deviceId` zorunlu, `deviceName` opsiyonel (oturum jetonu cihaz bazlı olacağı için D4'ten önce sözleşmeye alındı).
   2. **Hatalı giriş tek cevap:** kullanıcı yok ve şifre yanlış aynı 401 ("E-posta veya şifre hatalı."); kullanıcı yokken de sahte hash'e karşı doğrulama yapılır (süre farkı). Hesap devre dışılığı (403) **yalnız doğru şifreden sonra** söylenir.
-  3. **Kilit:** 5 hatalı denemede 15 dk; kilit anındaki 5. denemeden itibaren **423** + `Retry-After` (saniye). Kilitliyken doğru şifre de reddedilir. Başarılı girişte sayaç sıfırlanır. Eşzamanlı yanlış denemeler sayımı ezmesin diye sayım birkaç kez yeniden denenir.
+  3. **Kilit:** ~~5 hatalı denemede 15 dk~~ → **K-020 ile güncellendi: 10 hatalı denemede 5 dk**; kilit anındaki 5. denemeden itibaren **423** + `Retry-After` (saniye). Kilitliyken doğru şifre de reddedilir. Başarılı girişte sayaç sıfırlanır. Eşzamanlı yanlış denemeler sayımı ezmesin diye sayım birkaç kez yeniden denenir.
   4. **Erişim jetonu:** JWT, HS256, 15 dk, yalnız `sub`, `role`, `jti` (+ `iss`, `aud`, `iat`, `nbf`, `exp`); kişisel veri yok. Doğrulama: yalnız HS256, imza + yayıncı + hedef + süre, saat toleransı 30 sn. `role` claim'i rol olarak okunur.
   5. **Ayarlar:** `Jwt:Issuer`, `Jwt:Audience`, `Jwt:AccessTokenMinutes` `appsettings.json`'da; `Jwt:SigningKey` (≥32 karakter) **gizli**: user-secrets / ortam değişkeni. Eksik ya da kısa anahtar uygulama açılırken hata verir (`ValidateOnStart`).
   6. Giriş cevabında `refreshToken` **D4'e bırakıldı** (alan eklemek geriye dönük uyumlu); cevapta kullanıcı özeti `id`, `displayName`, `role`, `avatarUrl`.
@@ -81,3 +81,9 @@
 - **Neden:** Yük Veren'in ilanları kendi kalkış/varış ilini taşır, Taşımacı her yere gidebilir; profildeki il hiçbir sorguda kullanılmıyordu ve iOS sahte bir değer (34) gönderiyordu. Taşımacının çalıştığı iller zaten isteğe bağlı `CarrierServiceCities` tablosunda.
 - **Uygulama:** migration `MakeProfileCityOptional`, doğrulama `OptionalExistingCity`, entegrasyon testi "ilsiz kayıt".
 - **Geri dönüş maliyeti:** Düşük (sütunlar yeniden `NOT NULL` yapılırsa boş satırlar önce doldurulmalı).
+
+## K-020 — Hesap kilidi gevşetildi: 10 deneme / 5 dakika (7 Kasım 2026)
+- **Karar:** `MaxFailedAccessAttempts` 5 → **10**, `DefaultLockoutTimeSpan` 15 dk → **5 dk**. K-018 madde 3'ü günceller; 423 + `Retry-After` davranışı aynı.
+- **Neden:** Gerçek kullanımda (test sırasında) birkaç yazım hatası hesabı 15 dakika kilitledi. Kullanıcı kilidin kolay devreye girmemesini istedi.
+- **Güvenlik dengesi:** Kilit tek koruma değil; giriş/kayıt/yenileme uçlarında IP başına dakikada 30 istek hız sınırı da var. 5 dk kilitle saldırgan en çok dakikada ~2 şifre dener, 10 deneme sonrası beklemek zorunda. Parola politikası (en az 8 karakter, büyük/küçük/rakam) aynı.
+- **Geri dönüş maliyeti:** Düşük (iki ayar sabiti). Canlıda kötüye kullanım görülürse sayılar sıkılaştırılır ya da her kilitte süre uzatılan (artan bekleme) yönteme geçilir.

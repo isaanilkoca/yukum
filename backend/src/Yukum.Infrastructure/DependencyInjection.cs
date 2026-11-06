@@ -85,10 +85,12 @@ public static class DependencyInjection
                 // Her e-posta tek hesap. Giriş adı e-postanın kendisidir.
                 options.User.RequireUniqueEmail = true;
 
-                // 5 yanlış denemede 15 dakika kilit (rapor 6.2; giriş uçları D3'te bunu kullanır).
+                // 10 yanlış denemede 5 dakika kilit (K-020; ilk karar K-018'de 5 deneme / 15 dk idi).
+                // Dengeyi şöyle kurduk: gerçek kullanıcı birkaç yazım hatasıyla kilitlenmesin, parola tahmin eden saldırgan ise
+                // dakikada en çok ~2 deneme alabilsin (+ giriş ucundaki IP hız sınırı da devrede).
                 options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.MaxFailedAccessAttempts = 5;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+                options.Lockout.MaxFailedAccessAttempts = 10;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
             })
             // Rol desteği (Admin, Shipper, Carrier).
             .AddRoles<IdentityRole<Guid>>()

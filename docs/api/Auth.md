@@ -221,7 +221,7 @@ struct RegisteredUser: Codable, Identifiable {
 | **400** | Alan eksik/geçersiz | "Doğrulama hatası" | `errors` içindeki alan mesajları (`emailOrPhone`, `password`, `deviceId`) |
 | **401** | Kullanıcı yok **ya da** şifre yanlış | "Giriş başarısız" | `detail`: "E-posta veya şifre hatalı." **Hangisinin yanlış olduğu bilerek söylenmez.** |
 | **403** | Şifre doğru ama hesap devre dışı/engelli | "Erişim engellendi" | `detail`: "Hesabınız şu an kullanılamıyor. Lütfen destek ile iletişime geçin." |
-| **423** | 5 hatalı denemeden sonra **15 dk kilit** | "Hesap geçici olarak kilitlendi" | `detail` gösterilir; `Retry-After` başlığı kalan **saniyeyi** verir (örn. `900`). Kilitliyken doğru şifre de reddedilir. |
+| **423** | 10 hatalı denemeden sonra **5 dk kilit** | "Hesap geçici olarak kilitlendi" | `detail` gösterilir; `Retry-After` başlığı kalan **saniyeyi** verir (örn. `300`). Kilitliyken doğru şifre de reddedilir. |
 
 ```json
 {

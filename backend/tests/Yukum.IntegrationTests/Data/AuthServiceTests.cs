@@ -98,22 +98,22 @@ public class AuthServiceTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task The_fifth_wrong_attempt_locks_the_account_for_15_minutes()
+    public async Task The_tenth_wrong_attempt_locks_the_account_for_5_minutes()
     {
         var db = await NewDatabaseWithShipperAsync();
 
-        for (var attempt = 1; attempt <= 4; attempt++)
+        for (var attempt = 1; attempt <= 9; attempt++)
             await Assert.ThrowsAsync<InvalidCredentialsException>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
 
         var locked = await Assert.ThrowsAsync<AccountLockedException>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
-        Assert.InRange(locked.RetryAfter, TimeSpan.FromMinutes(14), TimeSpan.FromMinutes(15));
+        Assert.InRange(locked.RetryAfter, TimeSpan.FromMinutes(4), TimeSpan.FromMinutes(5));
     }
 
     [Fact]
     public async Task While_locked_even_the_correct_password_is_refused()
     {
         var db = await NewDatabaseWithShipperAsync();
-        for (var attempt = 1; attempt <= 5; attempt++)
+        for (var attempt = 1; attempt <= 10; attempt++)
             await Assert.ThrowsAnyAsync<Exception>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
 
         await Assert.ThrowsAsync<AccountLockedException>(() => LoginAsync(db, "ali@x.com", null, Password));
@@ -124,7 +124,7 @@ public class AuthServiceTests(SqlServerFixture sql)
     public async Task After_the_lock_expires_the_correct_password_works_again_and_the_counter_is_reset()
     {
         var db = await NewDatabaseWithShipperAsync();
-        for (var attempt = 1; attempt <= 5; attempt++)
+        for (var attempt = 1; attempt <= 10; attempt++)
             await Assert.ThrowsAnyAsync<Exception>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
 
         await using (var scope = NewScope(db))   // kilit süresinin dolduğunu simüle et
@@ -150,8 +150,8 @@ public class AuthServiceTests(SqlServerFixture sql)
 
         await LoginAsync(db, "ali@x.com", null, Password);
 
-        // Sayaç sıfırlandı: yine 4 hatalı deneme kilit açmaz, beşincisi açar.
-        for (var attempt = 1; attempt <= 4; attempt++)
+        // Sayaç sıfırlandı: yine 9 hatalı deneme kilit açmaz, onuncusu açar.
+        for (var attempt = 1; attempt <= 9; attempt++)
             await Assert.ThrowsAsync<InvalidCredentialsException>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
         await Assert.ThrowsAsync<AccountLockedException>(() => LoginAsync(db, "ali@x.com", null, "Yanlis123"));
     }

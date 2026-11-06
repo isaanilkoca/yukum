@@ -209,8 +209,8 @@ public class AccountServiceTests(SqlServerFixture sql)
         var options = scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<IdentityOptions>>().Value;
 
         Assert.True(options.Lockout.AllowedForNewUsers);
-        Assert.Equal(5, options.Lockout.MaxFailedAccessAttempts);
-        Assert.Equal(TimeSpan.FromMinutes(15), options.Lockout.DefaultLockoutTimeSpan);
+        Assert.Equal(10, options.Lockout.MaxFailedAccessAttempts);
+        Assert.Equal(TimeSpan.FromMinutes(5), options.Lockout.DefaultLockoutTimeSpan);
         Assert.Equal(8, options.Password.RequiredLength);
         Assert.True(options.User.RequireUniqueEmail);
     }
