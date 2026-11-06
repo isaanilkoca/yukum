@@ -21,6 +21,11 @@ final class FakeListingService: ListingServicing {
     func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing> {
         openListingsCalls.append((filter, page, lat, lon)); return try openListingsResult.get()
     }
+    var priceReferenceResult: Result<PriceReference, Error> = .success(PriceReference(medianAmount: nil, sampleCount: 0))
+    private(set) var priceReferenceCalls: [(fromCityId: Int, toCityId: Int, vehicleType: String)] = []
+    func priceReference(fromCityId: Int, toCityId: Int, vehicleType: String) async throws -> PriceReference {
+        priceReferenceCalls.append((fromCityId, toCityId, vehicleType)); return try priceReferenceResult.get()
+    }
     func cancel(listingId: String) async throws { cancelledIds.append(listingId); try cancelResult.get() }
     
     

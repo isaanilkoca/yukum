@@ -60,6 +60,16 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
 
     static let pageSize = 20 // static [SWIFT]: türe ait sabit | API en çok 50 kabul eder
 
+    // priceReference: aynı rota + araç tipi için son tamamlanan işlerin medyan tutarı
+    // API: GET /api/v1/price-reference?fromCityId=33&toCityId=34&vehicleType=Truck | DÖNEN: PriceReference (medianAmount boş olabilir)
+    // URLQueryItem [SWIFT, Foundation]: adresin ?'ten sonraki "ad=değer" çifti | String(Int): sayıdan yazı
+    func priceReference(fromCityId: Int, toCityId: Int, vehicleType: String) async throws -> PriceReference {
+        let items = [URLQueryItem(name: "fromCityId", value: String(fromCityId)),
+                     URLQueryItem(name: "toCityId", value: String(toCityId)),
+                     URLQueryItem(name: "vehicleType", value: vehicleType)]
+        return try await api.send(.get, "/api/v1/price-reference", query: items, fallback: "Emsal fiyat yüklenemedi.")
+    }
+
     // cancel: ilanı yayından kaldırır (yalnız ilanın sahibi Yük Veren)
     // NE İŞE YARAR: ilan "Kaldırıldı" olur, bekleyen (ve kabul edilmiş) teklifler iptal olur, Taşımacılar Tekliflerim'de "İlan kaldırıldı" görür, sohbet kilitlenir
     // ÇAĞIRAN: Views/ListingOffersView.swift sağ üst "Kaldır" | API: POST /api/v1/listings/{id}/cancel (gövdesiz, cevap 204)

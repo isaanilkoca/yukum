@@ -58,4 +58,33 @@ struct ListingDetailViewModelTests {
         #expect(offerVM().0.buttonTitle == "Teklifi Gönder")
         #expect(offerVM(myOffer: 900).0.buttonTitle == "Teklifi Güncelle")
     }
+
+    // ── Emsal fiyat ──
+    @Test func referencePrice_isShownOnlyWhenTheServerHasEnoughData() async {
+        let listings = FakeListingService()
+        let vm = ListingDetailViewModel(listing: Sample.listing(), service: FakeOfferService(), listingService: listings)
+        #expect(vm.referenceText == nil) // yüklenmeden hiçbir şey yok
+
+        await vm.loadReference() // varsayılan sahte cevap: medianAmount nil (yetersiz veri)
+        #expect(vm.referenceText == nil)
+
+        listings.priceReferenceResult = .success(PriceReference(medianAmount: 2000, sampleCount: 3))
+        await vm.loadReference()
+        #expect(vm.referenceText == "Bu rotada emsal fiyat: 2000 ₺ (son 3 iş)")
+        // sunucuya ilanın rotası ve araç tipi gitti (Sample: Mersin 33 → İstanbul 34, Truck)
+        #expect(listings.priceReferenceCalls.last?.fromCityId == 33)
+        #expect(listings.priceReferenceCalls.last?.toCityId == 34)
+        #expect(listings.priceReferenceCalls.last?.vehicleType == "Truck")
+    }
+
+    @Test func referencePrice_failureIsSilent_andNeverBlocksTheOffer() async {
+        let listings = FakeListingService()
+        listings.priceReferenceResult = .failure(StubError())
+        let vm = ListingDetailViewModel(listing: Sample.listing(), service: FakeOfferService(), listingService: listings)
+
+        await vm.loadReference()
+
+        #expect(vm.referenceText == nil)
+        #expect(vm.errorMessage == nil) // hata yazısı çıkmaz: teklif ekranı etkilenmez
+    }
 }

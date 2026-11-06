@@ -12,7 +12,7 @@
 //  RegisterViewModel         RegisterView için. AuthService.register → POST /auth/register/shipper
 //  CarrierRegisterViewModel  CarrierRegisterView için. AuthService.registerCarrier → POST /auth/register/carrier
 //  HomeViewModel             HomeView için. ListingService.openListings / myListings (GET /listings…), CityService (il/ilçe), OfferService.unseenCount (rozet), konum (LocationProviding), çıkış (AuthSession)
-//  ListingDetailViewModel    ListingDetailView için. Tutarı kontrol eder → OfferService.create → POST /listings/{id}/offers
+//  ListingDetailViewModel    ListingDetailView için. Tutarı kontrol eder → OfferService.create → POST /listings/{id}/offers; ListingService.priceReference → emsal fiyat yazısı
 //  CreateListingViewModel    CreateListingView için. Formu kontrol eder → ListingService.create → POST /listings (il/ilçe için CityService)
 //  ListingOffersViewModel    ListingOffersView için. OfferService.listingOffers / decide (kabul-red), ListingService.cancel (ilanı kaldır)
 //  MyOffersViewModel         MyOffersView için. OfferService.myOffers, markSeen, hide, withdraw (geri çek), create (tutar değiştir), advance (iş aşaması)

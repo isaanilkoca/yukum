@@ -24,6 +24,7 @@ final class ListingDetailViewModel {
     let listing: Listing // teklif verilen ilan
     // ⮕ KULLANIM [service]: okur: ListingDetailViewModel › submit()
     private let service: OfferServicing
+    private let listingService: ListingServicing // emsal fiyat için (teklif servisinden ayrı: konu ilan)
 
     // ⮕ ZİNCİR: Views/ListingDetailView: TextField("Teklif tutarı", text: $viewModel.amountText) | submit() Int'e çevirip CreateOfferRequest.amount'a koyar
     // ⮕ KULLANIM [amountText]: okur: ListingDetailViewModel › submit() | bağlar(okur+yazar): ListingDetailView › body | YAZAR: ListingDetailViewModelTests (test)
@@ -49,9 +50,26 @@ final class ListingDetailViewModel {
     // ⮕ KULLANIM [buttonTitle]: okur: ListingDetailView › body, ListingDetailViewModelTests (test)
     var buttonTitle: String { hasExistingOffer ? "Teklifi Güncelle" : "Teklifi Gönder" }
 
-    init(listing: Listing, service: OfferServicing = OfferService()) {
+    init(listing: Listing, service: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
         self.listing = listing
         self.service = service
+        self.listingService = listingService
+    }
+
+    // ─── Emsal fiyat ───
+    var reference: PriceReference? // dolana kadar nil; sunucu "yetersiz veri" derse medianAmount nil
+
+    // referenceText: ekranda görünecek yazı | nil = hiçbir şey çizilmez (veri yok ya da hata)
+    // ZİNCİR: Views/ListingDetailView: if let text = viewModel.referenceText { Text(text) } ← loadReference() ← GET /api/v1/price-reference
+    var referenceText: String? {
+        guard let median = reference?.medianAmount, let count = reference?.sampleCount else { return nil } // guard let [SWIFT]: nil ise erken çık
+        return "Bu rotada emsal fiyat: \(Int(median)) ₺ (son \(count) iş)"
+    }
+
+    // loadReference: ilanın rotası için emsal fiyatı ister | ÇAĞIRAN: View .task
+    // try? : hata olursa sessiz geç (emsal fiyat yardımcı bilgi, teklif vermeyi engellememeli) | ilan alanları Listing'ten gelir
+    func loadReference() async {
+        reference = try? await listingService.priceReference(fromCityId: listing.fromCityId, toCityId: listing.toCityId, vehicleType: listing.vehicleType)
     }
 
     // submit: Teklifi Gönder | -> Bool: başarılı mı (ekran başarılıysa ana sayfaya döner)

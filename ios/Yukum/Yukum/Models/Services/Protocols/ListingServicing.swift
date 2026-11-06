@@ -27,6 +27,8 @@ protocol ListingServicing {
     func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing>    // ⮕ KULLANIM [cancel]: çağırır: ListingOffersViewModel › cancelListing(), ChatViewModelTests (test)
     
     func cancel(listingId: String) async throws
+    // priceReference: bir rotanın emsal fiyatı (medyan) | ÇAĞIRAN: ListingDetailViewModel.loadReference() | API: GET /api/v1/price-reference
+    func priceReference(fromCityId: Int, toCityId: Int, vehicleType: String) async throws -> PriceReference
     // İlanı günceller | body: ilan açmayla aynı paket (aynı kurallar) | API: PUT /api/v1/listings/{id}
     // ZİNCİR: CreateListingViewModel.submit() (düzenleme modu) → bu sözleşme → ListingService.update
     func update(listingId: String, _ body: CreateListingRequest) async throws -> ListingResponse

@@ -48,6 +48,10 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
                 Text("Bütçe : \(Int(budget)) TL") // doluysa göster
             }
 
+            if let text = viewModel.referenceText { // yeterli veri yoksa (en az 3 tamamlanmış iş) hiç çizilmez
+                Text(text).font(.subheadline).foregroundColor(.blue) // ⮕ ListingDetailViewModel.referenceText ← loadReference()
+            }
+
             Divider() // ince ayırıcı çizgi | Divider [SWIFT]: ince ayırıcı çizgi
 
             if let offer = listing.myOfferAmount { // daha önce teklif verdiyse
@@ -73,6 +77,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
             Spacer() // kalan boşluğu doldurur, yazılar üste çıkar | Spacer [SWIFT]: kalan boşluğu doldurur
         }
         .padding() // kenarlardan boşluk | .padding [SWIFT]: etrafında boşluk bırakır
+        .task { await viewModel.loadReference() } // .task [SWIFT]: ekran göründüğünde çalışır | emsal fiyatı çeker (hata olursa sessiz)
         .navigationTitle("İlan Detayı") // [SWIFT] üst çubuk başlığı | geri oku NavigationStack'ten otomatik gelir | .navigationTitle [SWIFT]: üst çubuk başlığı
         .navigationBarTitleDisplayMode(.inline) // [SWIFT]: başlığı küçük, ortada gösterir | .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
     }
