@@ -60,6 +60,27 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
 
     static let pageSize = 20 // static [SWIFT]: türe ait sabit | API en çok 50 kabul eder
 
+    // setFavorite: kalbe basınca | PUT = "favori olsun", DELETE = "favori olmasın" | ikisi de tekrar çağrılabilir (sunucu idempotent), cevap 204 (gövde yok)
+    // HTTPMethod seçimi if/else: isFavorite true ise .put, değilse .delete | `condition ? a : b` [SWIFT]: kısa if
+    func setFavorite(listingId: String, isFavorite: Bool) async throws {
+        try await api.sendNoContent(isFavorite ? .put : .delete, "/api/v1/listings/\(listingId)/favorite", fallback: "Favori güncellenemedi.")
+    }
+
+    // favorites: GET /api/v1/listings/favorites → [Listing] (isFavorite hepsinde true)
+    func favorites() async throws -> [Listing] {
+        try await api.send(.get, "/api/v1/listings/favorites", fallback: "Favoriler yüklenemedi.")
+    }
+
+    // recordView: görüntülenme kaydı | sunucu aynı kişiyi günde bir kez sayar | cevap 204
+    func recordView(listingId: String) async throws {
+        try await api.sendNoContent(.post, "/api/v1/listings/\(listingId)/view", fallback: "Görüntülenme yazılamadı.")
+    }
+
+    // stats: GET /api/v1/listings/{id}/stats → ListingStats (yalnız ilan sahibi; başkasınınsa 404)
+    func stats(listingId: String) async throws -> ListingStats {
+        try await api.send(.get, "/api/v1/listings/\(listingId)/stats", fallback: "Sayılar yüklenemedi.")
+    }
+
     // priceReference: aynı rota + araç tipi için son tamamlanan işlerin medyan tutarı
     // API: GET /api/v1/price-reference?fromCityId=33&toCityId=34&vehicleType=Truck | DÖNEN: PriceReference (medianAmount boş olabilir)
     // URLQueryItem [SWIFT, Foundation]: adresin ?'ten sonraki "ad=değer" çifti | String(Int): sayıdan yazı

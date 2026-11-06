@@ -44,7 +44,7 @@ struct OpenListingsFilterTests {
         {"items":[{"id":"a1","title":"20 palet","weightKg":1000,"fromCityName":"Mersin","fromDistrictName":"Mezitli",
                    "toCityName":"İstanbul","toDistrictName":"Kadıköy","pickupDate":"2026-12-01","budget":5000.0,
                    "myOfferAmount":null,"myOfferStatus":null,"distanceKm":12.5,
-                   "description":null,"vehicleType":"Truck","fromCityId":33,"fromDistrictId":1,"toCityId":34,"toDistrictId":2}],
+                   "description":null,"vehicleType":"Truck","fromCityId":33,"fromDistrictId":1,"toCityId":34,"toDistrictId":2,"isFavorite":false}],
          "page":2,"pageSize":20,"totalCount":41}
         """
         let page = try JSONDecoder().decode(Page<Listing>.self, from: Data(json.utf8))

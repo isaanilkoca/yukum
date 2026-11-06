@@ -198,6 +198,10 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         }
                     }
                 } else { // Taşımacı
+                    ToolbarItem(placement: .topBarLeading) { // Favoriler yalnız Taşımacı'da: sol üst kalp
+                        NavigationLink { FavoritesView() } label: { Image(systemName: "heart") } // Views/FavoritesView.swift
+                    }
+
                     // "Tekliflerim" düğmesi yalnız Taşımacı'da çıkar (Yük Veren'in + düğmesiyle aynı yer, roller farklı olduğu için çakışmaz)
                     ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
                         NavigationLink { // basınca süslü parantezdeki ekrana geçer

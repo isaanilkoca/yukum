@@ -77,7 +77,14 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
             Spacer() // kalan boşluğu doldurur, yazılar üste çıkar | Spacer [SWIFT]: kalan boşluğu doldurur
         }
         .padding() // kenarlardan boşluk | .padding [SWIFT]: etrafında boşluk bırakır
-        .task { await viewModel.loadReference() } // .task [SWIFT]: ekran göründüğünde çalışır | emsal fiyatı çeker (hata olursa sessiz)
+        .toolbar { // üst çubuğa kalp düğmesi
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { Task { await viewModel.toggleFavorite() } } label: {
+                    Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart").foregroundColor(.red) // SF Symbols: dolu/boş kalp | ⮕ ListingDetailViewModel.isFavorite
+                }
+            }
+        }
+        .task { await viewModel.recordView(); await viewModel.loadReference() } // .task [SWIFT]: ekran göründüğünde çalışır | emsal fiyatı çeker (hata olursa sessiz)
         .navigationTitle("İlan Detayı") // [SWIFT] üst çubuk başlığı | geri oku NavigationStack'ten otomatik gelir | .navigationTitle [SWIFT]: üst çubuk başlığı
         .navigationBarTitleDisplayMode(.inline) // [SWIFT]: başlığı küçük, ortada gösterir | .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
     }

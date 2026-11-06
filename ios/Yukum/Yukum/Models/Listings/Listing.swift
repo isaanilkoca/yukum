@@ -49,6 +49,7 @@ struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan �
     let fromDistrictId: Int
     let toCityId: Int
     let toDistrictId: Int
+    let isFavorite: Bool // bu Taşımacı ilanı favorilemiş mi | API her ilan cevabında gönderir (Yük Veren listelerinde hep false) | detay ekranındaki kalbin ilk durumu
 
 
 }

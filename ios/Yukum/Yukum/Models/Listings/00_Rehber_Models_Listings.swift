@@ -8,6 +8,7 @@
 //
 //  Listing               gelen: tek ilan (başlık, yük, şehirler, bütçe, durum). ListingService döner; HomeViewModel listeler, ListingRow çizer
 //  PriceReference        gelen: emsal fiyat (medyan tutar + örnek sayısı). ListingService.priceReference döner → ListingDetailViewModel → ilan detayında "Bu rotada emsal fiyat"
+//  ListingStats          gelen: ilan sahibinin sayıları (görüntülenme, favori, teklif). ListingService.stats döner → ListingOffersViewModel → ListingOffersView üst kartları
 //  CreateListingRequest  giden: yeni ilan. CreateListingViewModel hazırlar → ListingService.create
 //  ListingResponse       gelen: ilan açılınca dönen cevap
 //  Page<Item>            gelen: API'nin sayfa zarfı (items, page, pageSize, totalCount). APIClient çözer → ListingService.openListings döner → HomeViewModel .items'ı okur

@@ -50,10 +50,33 @@ final class ListingDetailViewModel {
     // ⮕ KULLANIM [buttonTitle]: okur: ListingDetailView › body, ListingDetailViewModelTests (test)
     var buttonTitle: String { hasExistingOffer ? "Teklifi Güncelle" : "Teklifi Gönder" }
 
+    var isFavorite: Bool // kalbin durumu | ilk değer listeden gelir (Listing.isFavorite), sonra kullanıcı değiştirir
+
     init(listing: Listing, service: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
         self.listing = listing
         self.service = service
         self.listingService = listingService
+        self.isFavorite = listing.isFavorite
+    }
+
+    // toggleFavorite: kalbe basınca | İYİMSER GÜNCELLEME (optimistic update): kalp ÖNCE hemen döner, istek arkadan gider
+    // NEDEN: cevabı bekleyince kalp gecikmeli dönerdi, uygulama yavaş hissettirirdi | istek başarısız olursa eski hâline GERİ DÖNER ve hata yazılır
+    // ZİNCİR: Views/ListingDetailView toolbar kalbi → bu fonksiyon → ListingService.setFavorite → PUT/DELETE /api/v1/listings/{id}/favorite
+    func toggleFavorite() async {
+        let target = !isFavorite // hedef durum
+        isFavorite = target
+        errorMessage = nil
+        do { try await listingService.setFavorite(listingId: listing.id, isFavorite: target) }
+        catch {
+            isFavorite = !target // geri al
+            if let message = error.userMessage { errorMessage = message }
+        }
+    }
+
+    // recordView: ilan detayı açıldı | try? : hata olursa sessiz geç (sayaç yardımcı bilgi, ekranı bozmamalı)
+    // ZİNCİR: View .task → bu fonksiyon → POST /api/v1/listings/{id}/view | sunucu aynı kişiyi günde bir kez sayar
+    func recordView() async {
+        try? await listingService.recordView(listingId: listing.id)
     }
 
     // ─── Emsal fiyat ───

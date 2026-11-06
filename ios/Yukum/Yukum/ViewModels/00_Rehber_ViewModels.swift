@@ -17,6 +17,7 @@
 //  ListingOffersViewModel    ListingOffersView için. OfferService.listingOffers / decide (kabul-red), ListingService.cancel (ilanı kaldır)
 //  MyOffersViewModel         MyOffersView için. OfferService.myOffers, markSeen, hide, withdraw (geri çek), create (tutar değiştir), advance (iş aşaması)
 //  OldOffersViewModel        OldOffersView için. OfferService.shipperHistory, hide
+//  FavoritesViewModel        FavoritesView için. ListingService.favorites / setFavorite (Çıkar)
 //  CarrierProfileViewModel   CarrierProfileView için. ReviewService.carrierProfile (ortalama puan + yorumlar)
 //  RatingViewModel           RatingView için. ReviewService.create (1–5 puan + yorum)
 //  ChatViewModel             ChatView için. ChatService.messages / send / clear, OfferService.complete; mesajları belirli aralıkla yeniler

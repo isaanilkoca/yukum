@@ -11,10 +11,10 @@ enum Sample {
     static let shipper = LoginUser(id: "s1", displayName: "Yük Veren", role: "Shipper")
     static let carrier = LoginUser(id: "c1", displayName: "Taşımacı", role: "Carrier")
 
-    static func listing(_ id: String = "l1", title: String = "İlan") -> Listing {
+    static func listing(_ id: String = "l1", title: String = "İlan", isFavorite: Bool = false) -> Listing {
         Listing(id: id, title: title, weightKg: 1000, fromCityName: "Mersin", fromDistrictName: "Mezitli", toCityName: "İstanbul", toDistrictName: "Kadıköy",
                 pickupDate: "2026-12-01", budget: 5000, myOfferAmount: nil, myOfferStatus: nil, distanceKm: nil,
-                description: nil, vehicleType: "Truck", fromCityId: 33, fromDistrictId: 1, toCityId: 34, toDistrictId: 2)
+                description: nil, vehicleType: "Truck", fromCityId: 33, fromDistrictId: 1, toCityId: 34, toDistrictId: 2, isFavorite: isFavorite)
     }
     // page: ilan listesini API'nin sayfa zarfına sarar | total verilmezse sayfadaki sayı kadar
     static func page(_ items: [Listing], total: Int? = nil) -> Page<Listing> {

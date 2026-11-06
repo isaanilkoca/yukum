@@ -20,6 +20,7 @@
 //  MyOffersView         MyOffersViewModel         Taşımacının verdiği teklifler. HomeView'dan açılır; sohbet için ChatView'ı açar
 //  OldOffersView        OldOffersViewModel        Yük Verenin karara bağlanmış (geçmiş) teklifleri. HomeView'dan açılır; ChatView'ı açar
 //  OpenListingsFilterView (ViewModel yok)    Taşımacı Filtre sayfası (varış, fiyat, araç, tarih, sıralama). HomeView .sheet açar; kopya üzerinde çalışır, Uygula → HomeViewModel.filter
+//  FavoritesView        FavoritesViewModel        Taşımacının favori ilanları. HomeView sol üst kalp ikonu açar; satır → ListingDetailView
 //  CarrierProfileView   CarrierProfileViewModel   Taşımacı profili: ★ ortalama, tamamlanan iş, yorumlar. ListingOffersView / OldOffersView "Profil" ile açar
 //  RatingView           RatingViewModel           Puan ver sayfası (alttan açılır). OldOffersView "Puan ver" ve ChatView (işi bitirince) açar
 //  ChatView             ChatViewModel            teklif sohbeti. MyOffersView / ListingOffersView / OldOffersView açar

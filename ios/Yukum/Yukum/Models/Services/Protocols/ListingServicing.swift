@@ -28,6 +28,14 @@ protocol ListingServicing {
     
     func cancel(listingId: String) async throws
     // priceReference: bir rotanın emsal fiyatı (medyan) | ÇAĞIRAN: ListingDetailViewModel.loadReference() | API: GET /api/v1/price-reference
+    // setFavorite: favoriler / favoriden çıkarır | ÇAĞIRAN: ListingDetailViewModel.toggleFavorite(), FavoritesViewModel.remove() | API: PUT / DELETE /api/v1/listings/{id}/favorite
+    func setFavorite(listingId: String, isFavorite: Bool) async throws
+    // favorites: Taşımacı'nın favori (ve hâlâ açık) ilanları | ÇAĞIRAN: FavoritesViewModel.load() | API: GET /api/v1/listings/favorites
+    func favorites() async throws -> [Listing]
+    // recordView: ilan detayı açıldı | ÇAĞIRAN: ListingDetailViewModel.recordView() | API: POST /api/v1/listings/{id}/view
+    func recordView(listingId: String) async throws
+    // stats: ilan sahibinin sayıları | ÇAĞIRAN: ListingOffersViewModel.loadStats() | API: GET /api/v1/listings/{id}/stats
+    func stats(listingId: String) async throws -> ListingStats
     func priceReference(fromCityId: Int, toCityId: Int, vehicleType: String) async throws -> PriceReference
     // İlanı günceller | body: ilan açmayla aynı paket (aynı kurallar) | API: PUT /api/v1/listings/{id}
     // ZİNCİR: CreateListingViewModel.submit() (düzenleme modu) → bu sözleşme → ListingService.update

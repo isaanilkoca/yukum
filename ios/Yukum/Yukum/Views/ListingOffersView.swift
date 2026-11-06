@@ -45,6 +45,14 @@ struct ListingOffersView: View {
         @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar
 
         VStack(spacing: 16) { // VStack [SWIFT]: elemanları alt alta dizer
+            if let stats = viewModel.stats { // ilgi göstergesi: görüntülenme · favori · teklif
+                HStack {
+                    statCard("eye", stats.viewCount, "Görüntülenme")
+                    statCard("heart", stats.favoriteCount, "Favori")
+                    statCard("tray.full", stats.offerCount, "Teklif")
+                }
+            }
+
             Text(viewModel.listing.title).font(.title3).bold() // hangi ilan olduğu | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
 
             if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez | .foregroundColor [SWIFT]: yazı rengi
@@ -103,10 +111,22 @@ struct ListingOffersView: View {
         } message: {
             Text("İlan herkesin listesinden kalkar. Gelen teklifler iptal edilir, Taşımacılar bilgilendirilir ve sohbetler kapanır.")
         }
-        .task { await viewModel.load() } // .task [SWIFT]: ekran HER göründüğünde çalışır | teklifleri yükler
+        .task { await viewModel.load(); await viewModel.loadStats() } // .task [SWIFT]: ekran HER göründüğünde çalışır | teklifleri yükler
         // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil? List satırının içindeki NavigationLink, satırdaki Reddet/Kabul/Sohbet düğmelerini bozar (hepsi sayfaya götürür).
         // Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat'i doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat"
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te | .navigationDestination [SWIFT]: bir değer dolunca ekrana geçer
         .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) } // item: Hashable olmalı (String) | BAĞLANTI: Views/CarrierProfileView.swift
+    }
+
+    // statCard: tek sayaç kartı (ikon, sayı, etiket) | @ViewBuilder gerekmez, tek görünüm döner
+    private func statCard(_ icon: String, _ value: Int, _ title: String) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon).foregroundColor(.secondary)
+            Text("\(value)").font(.title3).bold()
+            Text(title).font(.caption).foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity) // üç kart eşit genişlik
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10)) // Color(.secondarySystemBackground) [SWIFT]: sistemin hafif gri zemini
     }
 }

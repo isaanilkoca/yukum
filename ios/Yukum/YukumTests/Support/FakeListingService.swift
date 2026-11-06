@@ -21,6 +21,15 @@ final class FakeListingService: ListingServicing {
     func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing> {
         openListingsCalls.append((filter, page, lat, lon)); return try openListingsResult.get()
     }
+    var favoriteResult: Result<Void, Error> = .success(())
+    private(set) var favoriteCalls: [(listingId: String, isFavorite: Bool)] = []
+    func setFavorite(listingId: String, isFavorite: Bool) async throws { favoriteCalls.append((listingId, isFavorite)); try favoriteResult.get() }
+    var favoritesResult: Result<[Listing], Error> = .success([])
+    func favorites() async throws -> [Listing] { try favoritesResult.get() }
+    private(set) var viewedIds: [String] = []
+    func recordView(listingId: String) async throws { viewedIds.append(listingId) }
+    var statsResult: Result<ListingStats, Error> = .success(ListingStats(viewCount: 0, favoriteCount: 0, offerCount: 0))
+    func stats(listingId: String) async throws -> ListingStats { try statsResult.get() }
     var priceReferenceResult: Result<PriceReference, Error> = .success(PriceReference(medianAmount: nil, sampleCount: 0))
     private(set) var priceReferenceCalls: [(fromCityId: Int, toCityId: Int, vehicleType: String)] = []
     func priceReference(fromCityId: Int, toCityId: Int, vehicleType: String) async throws -> PriceReference {

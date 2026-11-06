@@ -18,7 +18,7 @@ struct ListingDetailViewModelTests {
                               toCityName: base.toCityName, toDistrictName: base.toDistrictName, pickupDate: base.pickupDate, budget: base.budget,
                               myOfferAmount: myOffer, myOfferStatus: nil, distanceKm: nil,
                               description: base.description, vehicleType: base.vehicleType, fromCityId: base.fromCityId,
-                              fromDistrictId: base.fromDistrictId, toCityId: base.toCityId, toDistrictId: base.toDistrictId)
+                              fromDistrictId: base.fromDistrictId, toCityId: base.toCityId, toDistrictId: base.toDistrictId, isFavorite: base.isFavorite)
         return (ListingDetailViewModel(listing: listing, service: service), service)
     }
 

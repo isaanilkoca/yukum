@@ -36,6 +36,13 @@ final class ListingOffersViewModel {
     // ⮕ KULLANIM [chat]: YAZAR: ListingOffersViewModel › openChat() | bağlar(okur+yazar): ListingOffersView › body
     var chat: ChatContext?
     // profileCarrierId: dolunca CarrierProfileView açılır, nil olunca kapanır (chat ile aynı kalıp: List satırında NavigationLink çalışmaz)
+    var stats: ListingStats? // ilanın görüntülenme / favori / teklif sayıları | dolana kadar nil → kartlar çizilmez
+
+    // loadStats: sayıları çeker | try? : hata olursa sessiz (yardımcı bilgi) | ZİNCİR: View .task → ListingService.stats → GET /api/v1/listings/{id}/stats
+    func loadStats() async {
+        stats = try? await listingService.stats(listingId: listing.id)
+    }
+
     var profileCarrierId: String?
 
     init(listing: Listing, offerService: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
