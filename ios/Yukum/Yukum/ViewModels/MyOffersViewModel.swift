@@ -95,6 +95,26 @@ final class MyOffersViewModel {
         }
     }
 
+    // ─── İş aşaması (yalnız KABUL EDİLMİŞ işte) ───
+    // stage: API'nin aşama yazısını JobStage'e çevirir | ?? .notStarted: bilinmeyen yazıda güvenli varsayılan
+    func stage(_ offer: CarrierOffer) -> JobStage { JobStage(rawValue: offer.stage) ?? .notStarted }
+
+    // KURAL: yalnız kabul edilmiş işte ve teslim edilmediyse düğme çıkar | sunucu da aynısını denetler (409)
+    // ZİNCİR: Views/MyOffersView offerRow: if viewModel.canAdvance(offer) { stage(offer).advanceTitle düğmesi }
+    func canAdvance(_ offer: CarrierOffer) -> Bool { offer.status == "Accepted" && stage(offer).advanceTitle != nil }
+
+    // advance: aşamayı bir ilerletir, sonra listeyi yeniler (yeni aşama satırda görünür)
+    // ZİNCİR: MyOffersView düğmesi → bu fonksiyon → OfferService.advance → POST /api/v1/offers/{id}/advance → load()
+    func advance(_ offer: CarrierOffer) async {
+        errorMessage = nil
+        do {
+            try await service.advance(offerId: offer.id)
+            await load()
+        } catch {
+            if let message = error.userMessage { errorMessage = message }
+        }
+    }
+
     // ─── Tutar değiştirme ───
     // editingOffer: tutarı değiştirilen teklif | dolunca View'daki alert açılır, nil olunca kapanır (chat değişkeniyle aynı kalıp)
     // editAmountText: alert'teki TextField'ın yazısı | TextField String ile çalışır, göndermeden önce Int'e çevrilir

@@ -56,7 +56,7 @@ struct MyOffersViewModelTests {
 
     @Test func myOffers_openChatBuildsTheCarrierContext() {
         let vm = MyOffersViewModel(service: FakeOfferService())
-        vm.openChat(Sample.carrierOffer("o9", status: "Accepted"))
+        vm.openChat(Sample.carrierOffer("o9", status: "Accepted", stage: "Delivered"))
         #expect(vm.chat?.offerId == "o9")
         #expect(vm.chat?.canComplete == true)
     }
@@ -152,5 +152,34 @@ struct MyOffersViewModelTests {
         await vm.saveAmount(Sample.carrierOffer())
 
         #expect(vm.errorMessage == "Bu ilan artık teklif almıyor.")
+    }
+
+    @Test func stageButton_followsTheJobStage_andOnlyShowsForAcceptedJobs() {
+        let vm = MyOffersViewModel(service: FakeOfferService())
+        let expected: [(String, String?)] = [("NotStarted", "Yükü aldım"), ("PickedUp", "Yola çıktım"), ("InTransit", "Teslim ettim"), ("Delivered", nil)]
+        for (stage, title) in expected {
+            let offer = Sample.carrierOffer(status: "Accepted", stage: stage)
+            #expect(vm.stage(offer).advanceTitle == title)
+            #expect(vm.canAdvance(offer) == (title != nil))
+        }
+        #expect(!vm.canAdvance(Sample.carrierOffer(status: "Pending"))) // kabul edilmemiş iş ilerletilmez
+        #expect(vm.stage(Sample.carrierOffer(stage: "BilinmeyenAsama")).title == "Yük bekleniyor") // bilinmeyen yazı güvenli varsayılana düşer
+    }
+
+    @Test func advance_callsTheServer_thenReloads_andShowsTheServerMessageOnFailure() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        service.myOffersResult = .success([Sample.carrierOffer("a", status: "Accepted", stage: "NotStarted")])
+        await vm.load()
+
+        service.myOffersResult = .success([Sample.carrierOffer("a", status: "Accepted", stage: "PickedUp")])
+        await vm.advance(vm.offers[0])
+        #expect(service.advancedIds == ["a"])
+        #expect(vm.stage(vm.offers[0]) == .pickedUp) // liste yenilendi, yeni aşama görünür
+        #expect(vm.errorMessage == nil)
+
+        service.advanceResult = .failure(APIError(message: "Yük zaten teslim edildi."))
+        await vm.advance(vm.offers[0])
+        #expect(vm.errorMessage == "Yük zaten teslim edildi.")
     }
 }

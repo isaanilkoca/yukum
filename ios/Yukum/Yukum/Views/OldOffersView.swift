@@ -53,7 +53,7 @@ struct OldOffersView: View {
 
                         // durum yazısı | switch [SWIFT]: değere göre dallanır
                         switch offer.status {
-                        case "Accepted": Text("Kabul ettin").font(.subheadline).foregroundColor(.green) // aktif iş
+                        case "Accepted": Text("Kabul ettin · \(viewModel.stageTitle(offer))").font(.subheadline).foregroundColor(.green) // aktif iş
                         case "Completed": Text("Tamamlandı").font(.subheadline).foregroundColor(.gray) // iş bitti
                         default: Text("Reddettin").font(.subheadline).foregroundColor(.red) // Rejected
                         }

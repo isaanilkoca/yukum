@@ -107,6 +107,14 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
             default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
             }
 
+            // İş aşaması: yalnız kabul edilmiş işte | Taşımacı düğmeyle ilerletir, Yük Veren aynı aşamayı kendi ekranında izler
+            if offer.status == "Accepted" {
+                Text("Aşama: \(viewModel.stage(offer).title)").font(.subheadline).bold() // ⮕ MyOffersViewModel.stage → JobStage.title
+                if viewModel.canAdvance(offer), let title = viewModel.stage(offer).advanceTitle { // if let [SWIFT]: nil değilse içini aç
+                    Button(title) { Task { await viewModel.advance(offer) } }.buttonStyle(.borderedProminent) // ⮕ MyOffersViewModel.advance → POST /offers/{id}/advance
+                }
+            }
+
             if viewModel.canChat(offer) { // KURAL ViewModel'de: reddedilen teklifte sohbet yok
                 Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → ChatView açılır | .bordered: List'te satırın her yeri düğme olmasın diye stil şart | ⮕ MyOffersViewModel.openChat → ChatContext.forCarrier → .navigationDestination → ChatView | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
             }

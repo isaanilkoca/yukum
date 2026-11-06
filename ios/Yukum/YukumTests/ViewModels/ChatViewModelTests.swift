@@ -96,14 +96,17 @@ struct ChatViewModelTests {
     @Test func carrierRules_writeWhenPendingOrAccepted_completeOnlyWhenAccepted() {
         func ctx(_ status: String) -> ChatContext { .forCarrier(Sample.carrierOffer(status: status)) }
         #expect(ctx("Pending").canWrite && !ctx("Pending").canComplete)
-        #expect(ctx("Accepted").canWrite && ctx("Accepted").canComplete)
+        #expect(ctx("Accepted").canWrite && !ctx("Accepted").canComplete) // kabul edildi ama teslim edilmedi: işi bitirme yok
+        let delivered = ChatContext.forCarrier(Sample.carrierOffer(status: "Accepted", stage: "Delivered"))
+        #expect(delivered.canWrite && delivered.canComplete) // teslimden sonra bitirilebilir
         for closed in ["Rejected", "Completed", "Cancelled"] { #expect(!ctx(closed).canWrite && !ctx(closed).canComplete) }
     }
 
     @Test func shipperRules_pendingIsWritable_historyOnlyWhenAccepted() {
         #expect(ChatContext.forShipperPending(Sample.listingOffer()).canWrite)
         #expect(!ChatContext.forShipperPending(Sample.listingOffer()).canComplete)
-        #expect(ChatContext.forShipperHistory(Sample.historyOffer(status: "Accepted")).canComplete)
+        #expect(!ChatContext.forShipperHistory(Sample.historyOffer(status: "Accepted")).canComplete) // teslim edilmeden bitirilemez
+        #expect(ChatContext.forShipperHistory(Sample.historyOffer(status: "Accepted", stage: "Delivered")).canComplete)
         #expect(!ChatContext.forShipperHistory(Sample.historyOffer(status: "Completed")).canWrite)
         #expect(!ChatContext.forShipperHistory(Sample.historyOffer(status: "Rejected")).canWrite)
     }

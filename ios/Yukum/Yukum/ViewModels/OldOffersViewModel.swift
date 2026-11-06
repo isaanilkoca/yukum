@@ -61,4 +61,8 @@ final class OldOffersViewModel {
     // ⮕ ZİNCİR: Views/OldOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forShipperHistory(offer)
     // ⮕ KULLANIM [openChat]: çağırır: OldOffersView › body
     func openChat(_ offer: ShipperHistoryOffer) { chat = ChatContext.forShipperHistory(offer) }
+
+    // stageTitle: Yük Veren'in izlediği aşama yazısı (Taşımacı ilerletir) | JobStage'e çevrilemezse boş
+    // ZİNCİR: Views/OldOffersView "Kabul ettin · Yolda" ← API stage alanı (GET /offers/history)
+    func stageTitle(_ offer: ShipperHistoryOffer) -> String { (JobStage(rawValue: offer.stage) ?? .notStarted).title }
 }

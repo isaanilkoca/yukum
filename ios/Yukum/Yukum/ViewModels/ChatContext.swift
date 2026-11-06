@@ -24,7 +24,7 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [title]: okur: ChatContext › forCarrier(), ChatContext › forShipperPending(), ChatContext › forShipperHistory()
     let title: String // üst çubuktaki başlık (karşı tarafın adı)
     // ⮕ KULLANIM [canComplete]: okur: ChatContext › forCarrier(), ChatContext › forShipperPending(), ChatContext › forShipperHistory()
-    let canComplete: Bool // "İşi Bitir ve Sil" seçeneği çıksın mı | yalnız KABUL EDİLMİŞ (aktif) işte
+    let canComplete: Bool // "İşi Bitir ve Sil" seçeneği çıksın mı | yalnız KABUL EDİLMİŞ işte VE aşama "Teslim edildi" ise (sunucu kuralı: önce teslim)
     // ⮕ KULLANIM [canWrite]: okur: ChatContext › forCarrier(), ChatContext › forShipperPending(), ChatContext › forShipperHistory()
     let canWrite: Bool // yazma kutusu açık mı | reddedilmiş/tamamlanmış/iptal edilmişte kapalı, yalnız eski mesajlar okunur (API de 409 verir)
 
@@ -33,7 +33,7 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [forCarrier]: çağırır: MyOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forCarrier(_ offer: CarrierOffer) -> ChatContext { // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
         ChatContext(offerId: offer.id, title: offer.shipperName,
-                    canComplete: offer.status == "Accepted", canWrite: offer.status == "Pending" || offer.status == "Accepted")
+                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Pending" || offer.status == "Accepted")
     }
 
     // Yük Veren, ilanına gelen BEKLEYEN bir teklifle pazarlık ediyor (Gelen Teklifler): yazılabilir, henüz bitirilemez
@@ -48,6 +48,6 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [forShipperHistory]: çağırır: OldOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forShipperHistory(_ offer: ShipperHistoryOffer) -> ChatContext {
         ChatContext(offerId: offer.id, title: offer.carrierName,
-                    canComplete: offer.status == "Accepted", canWrite: offer.status == "Accepted")
+                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Accepted")
     }
 }
