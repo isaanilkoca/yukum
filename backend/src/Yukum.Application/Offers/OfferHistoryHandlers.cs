@@ -44,7 +44,7 @@ public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRe
         var myListings = (await listings.ListAsync(l => l.ShipperId == query.ShipperId, asNoTracking: true, cancellationToken)).ToDictionary(l => l.Id);
         var listingIds = myListings.Keys.ToList();
         var decided = await offers.ListAsync(
-            o => listingIds.Contains(o.ListingId) && o.Status != OfferStatus.Pending && !o.HiddenByShipper,
+            o => listingIds.Contains(o.ListingId) && o.Status != OfferStatus.Pending && o.Status != OfferStatus.Withdrawn && !o.HiddenByShipper,
             asNoTracking: true, cancellationToken);
         var names = await users.GetFullNamesAsync(decided.Select(o => o.CarrierId), cancellationToken);
         var cities = (await geography.ListCitiesAsync(cancellationToken)).ToDictionary(c => c.Id, c => c.Name);

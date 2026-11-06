@@ -11,6 +11,9 @@ public sealed record CreateOfferCommand(Guid ListingId, Guid CarrierId, decimal 
 /// <summary>İstemciye giden teklif bilgisi.</summary>
 public sealed record OfferDto(Guid Id, Guid ListingId, decimal Amount, string? Note, OfferStatus Status);
 
+/// <summary>Komut: Taşımacı bekleyen teklifini geri çeker.</summary>
+public sealed record WithdrawOfferCommand(Guid OfferId, Guid CarrierId);
+
 /// <summary>Sorgu: Yük Veren kendi ilanına gelen teklifleri ister.</summary>
 public sealed record GetListingOffersQuery(Guid ListingId, Guid ShipperId);
 

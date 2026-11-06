@@ -16,5 +16,8 @@ public enum OfferStatus
     Completed = 4,
 
     /// <summary>İptal: ilan sahibi ilanı yayından kaldırdı ya da işi iptal etti. Sohbet iki tarafta yazmaya kapanır; taraflar kendi geçmişlerinden silebilir.</summary>
-    Cancelled = 5
+    Cancelled = 5,
+
+    /// <summary>Geri çekildi: Taşımacı bekleyen teklifini kendisi çekti. Yük Veren'in listelerinde görünmez; Taşımacı kendi geçmişinde görür, aynı ilana yeniden teklif verebilir.</summary>
+    Withdrawn = 6
 }

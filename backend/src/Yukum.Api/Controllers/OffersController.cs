@@ -20,7 +20,8 @@ public class OffersController(
     ICommandHandler<HideOfferCommand, bool> hideOffer,
     IQueryHandler<GetUnseenCountQuery, UnseenCountDto> getUnseenCount,
     ICommandHandler<MarkSeenCommand, bool> markSeen,
-    ICommandHandler<CompleteOfferCommand, OfferDto> completeOffer) : ControllerBase
+    ICommandHandler<CompleteOfferCommand, OfferDto> completeOffer,
+    ICommandHandler<WithdrawOfferCommand, OfferDto> withdrawOffer) : ControllerBase
 {
     /// <summary>İlana teklif verir; aynı ilana tekrar verilirse eski teklifin tutarı güncellenir.</summary>
     // POST /api/v1/listings/{listingId}/offers
@@ -112,6 +113,15 @@ public class OffersController(
     [ProducesResponseType<OfferDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Complete(Guid offerId, CancellationToken cancellationToken) =>
         Ok(await completeOffer.HandleAsync(new CompleteOfferCommand(offerId, CurrentUserId), cancellationToken));
+
+    /// <summary>Taşımacı bekleyen teklifini geri çeker (teklif silinmez, "Geri çekildi" olur).</summary>
+    // POST /api/v1/offers/{offerId}/withdraw
+    // FONKSİYON ROLÜ: API'NİN KAPISI | iOS'taki OfferService.withdraw'un isteğini karşılar, rolü kontrol eder, işi WithdrawOfferHandler'a devreder
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/withdraw")]
+    [Authorize(Roles = RoleNames.Carrier)] // yalnız Taşımacı; sahiplik handler'da denetlenir
+    [ProducesResponseType<OfferDto>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Withdraw(Guid offerId, CancellationToken cancellationToken) =>
+        Ok(await withdrawOffer.HandleAsync(new WithdrawOfferCommand(offerId, CurrentUserId), cancellationToken));
 
     // Jetondaki 'sub' (kullanıcı numarası).
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);

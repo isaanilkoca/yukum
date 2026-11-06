@@ -53,6 +53,8 @@ public sealed class SendMessageHandler(
         var offer = await ChatAccess.RequireParticipantAsync(offers, listings, command.OfferId, command.UserId, cancellationToken);
         if (offer.Status == OfferStatus.Rejected)
             throw new ConflictException("Reddedilen teklifte sohbet kapalı.");
+        if (offer.Status == OfferStatus.Withdrawn)
+            throw new ConflictException("Teklif geri çekildi, sohbet kapalı.");
         if (offer.Status == OfferStatus.Completed)
             throw new ConflictException("İş tamamlandı, sohbet kapalı.");   // iki tarafta da kilitli
         if (offer.Status == OfferStatus.Cancelled)

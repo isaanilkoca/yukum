@@ -771,4 +771,68 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, write.StatusCode);   // yazma kapalı
         Assert.Equal(1, read.GetArrayLength());                    // eski mesajlar okunur
     }
+
+    // ---------- teklifi geri çekme ----------
+    [Fact]
+    public async Task Withdraw_marks_the_pending_offer_withdrawn_and_hides_it_from_the_shipper()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing);
+
+        var withdraw = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");
+        var shipperOffers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
+        var shipperHistory = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));
+        var mine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        var unseen = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine/unseen-count"));
+
+        Assert.Equal(HttpStatusCode.OK, withdraw.StatusCode);
+        Assert.Equal(0, shipperOffers.GetArrayLength());                 // Yük Veren görmez
+        Assert.Equal(0, shipperHistory.GetArrayLength());
+        Assert.Equal(1, mine.GetArrayLength());                          // Taşımacı kendi geçmişinde görür
+        Assert.Equal("Withdrawn", mine[0].GetProperty("status").GetString());
+        Assert.False(mine[0].GetProperty("isNew").GetBoolean());         // kendi işlemi: "Yeni" rozeti yok
+        Assert.Equal(0, unseen.GetProperty("count").GetInt32());
+    }
+
+    [Fact]
+    public async Task Withdraw_is_only_for_the_owner_and_only_for_pending_offers()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); var other = await NewUser(c, false);
+        var offer = await NewOffer(c, carrier, await NewListing(c, shipper));
+
+        var byOther = await Call(c, other, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");      // başkasının teklifi: 404
+        var byShipper = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");  // rol yanlış: 403
+        var missing = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{Guid.NewGuid()}/withdraw");
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var accepted = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");   // kabul edilmiş: 409
+
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byShipper.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, accepted.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_withdrawn_offer_can_be_renewed_and_is_closed_for_chat_and_a_second_withdraw()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");
+
+        var chat = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "merhaba" });
+        var again = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");
+        var renewed = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 900, note = "yeniden" });
+        var shipperOffers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
+
+        Assert.Equal(HttpStatusCode.Conflict, chat.StatusCode);          // sohbet kapalı
+        Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);         // ikinci geri çekme: bekleyen değil
+        Assert.Equal(HttpStatusCode.OK, renewed.StatusCode);             // aynı ilana yeniden teklif serbest
+        Assert.Equal(1, shipperOffers.GetArrayLength());                 // yeniden Beklemede, Yük Veren görür
+        Assert.Equal(900m, shipperOffers[0].GetProperty("amount").GetDecimal());
+    }
 }
