@@ -9,6 +9,6 @@
 //  CreateOfferRequest   giden: tutar + not. ListingDetailViewModel → OfferService.create
 //  OfferResponse        gelen: teklif verilince dönen cevap
 //  ListingOffer         gelen: Yük Verenin ilanına gelen teklif (taşımacı bilgisiyle). ListingOffersViewModel listeler
-//  CarrierOffer         gelen: Taşımacının kendi teklifi (ilan bilgisiyle). MyOffersViewModel listeler
+//  CarrierOffer         gelen: Taşımacının kendi teklifi (ilan bilgisiyle, listingId + note dahil). MyOffersViewModel listeler, geri çeker (withdraw), tutarını değiştirir (saveAmount)
 //  ShipperHistoryOffer  gelen: Yük Verenin geçmiş teklifi. OldOffersViewModel listeler
 //  UnseenCount          gelen: Taşımacının görmediği karar sayısı. HomeViewModel rozet için okur

@@ -95,6 +95,45 @@ final class MyOffersViewModel {
         }
     }
 
+    // ─── Tutar değiştirme ───
+    // editingOffer: tutarı değiştirilen teklif | dolunca View'daki alert açılır, nil olunca kapanır (chat değişkeniyle aynı kalıp)
+    // editAmountText: alert'teki TextField'ın yazısı | TextField String ile çalışır, göndermeden önce Int'e çevrilir
+    var editingOffer: CarrierOffer?
+    var editAmountText = ""
+
+    // KURAL: tutar yalnız karar bekleyen teklifte değişir | sunucu da bekleyen olmayana 409 verir
+    func canEditAmount(_ offer: CarrierOffer) -> Bool { offer.status == "Pending" }
+
+    // startEditing: alert'i açar | kutu eski tutarla dolu başlar (kullanıcı sadece düzeltir)
+    // ZİNCİR: Views/MyOffersView .swipeActions "Tutarı değiştir" → bu fonksiyon → editingOffer dolar → .alert görünür
+    func startEditing(_ offer: CarrierOffer) {
+        editAmountText = String(Int(offer.amount)) // Double 48000.0 → Int 48000 → "48000" | String(...) [SWIFT]: sayıdan yazı
+        editingOffer = offer
+    }
+
+    // saveAmount: yeni tutarı sunucuya gönderir | YENİ UÇ YOK: aynı ilana tekrar teklif = tutar güncelleme (sunucu kuralı)
+    // ZİNCİR: alert "Kaydet" → saveAmount(offer) → OfferService.create(listingId:) → POST /api/v1/listings/{listingId}/offers → load()
+    // offer parametre olarak GELİR: alert kapanırken editingOffer nil olur, async iş başlarken kaybolmasın diye
+    // Doğrulama ListingDetailViewModel ile aynı: sayı olmalı, > 0, en çok maxAmount | guard let [SWIFT]: nil ise erken çık
+    func saveAmount(_ offer: CarrierOffer) async {
+        guard let amount = Int(editAmountText.trimmingCharacters(in: .whitespaces)), amount > 0 else {
+            errorMessage = "Geçerli bir tutar gir."
+            return
+        }
+        guard amount <= ListingDetailViewModel.maxAmount else {
+            errorMessage = "Teklif tutarı en fazla 100.000.000 ₺ olabilir."
+            return
+        }
+        errorMessage = nil
+        do {
+            // note: eski notu aynen yolluyoruz, yoksa sunucu notu siler
+            _ = try await service.create(listingId: offer.listingId, CreateOfferRequest(amount: amount, note: offer.note))
+            await load()
+        } catch {
+            if let message = error.userMessage { errorMessage = message } // örn. "Bu ilan artık teklif almıyor."
+        }
+    }
+
     // ⮕ ZİNCİR: Views/MyOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forCarrier(offer)
     // ⮕ KULLANIM [openChat]: çağırır: MyOffersView › offerRow(), MyOffersViewModelTests (test)
     func openChat(_ offer: CarrierOffer) { chat = ChatContext.forCarrier(offer) }

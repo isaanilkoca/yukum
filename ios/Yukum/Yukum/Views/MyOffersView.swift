@@ -64,6 +64,13 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki "Sohbet" düğmesi çalışmaz.
         //   Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat değişkenini doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat" | ChatContext Hashable olduğu için SwiftUI seçili öğeyi takip edebilir.
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te
+        // .alert(isPresented:) [SWIFT]: kutu penceresi | Binding(get:set:) [SWIFT]: "editingOffer dolu mu" sorusunu true/false'a çevirir, kapanınca nil yapar
+        // alert içinde TextField kullanmak iOS 16+ | "Kaydet" tıklanma anında editingOffer hâlâ doludur, offer'ı o an alıp saveAmount'a veririz
+        .alert("Tutarı değiştir", isPresented: Binding(get: { viewModel.editingOffer != nil }, set: { if !$0 { viewModel.editingOffer = nil } })) {
+            TextField("Yeni tutar (₺)", text: $viewModel.editAmountText).keyboardType(.numberPad) // ⮕ MyOffersViewModel.editAmountText
+            Button("Kaydet") { if let offer = viewModel.editingOffer { Task { await viewModel.saveAmount(offer) } } }
+            Button("Vazgeç", role: .cancel) {}
+        }
     }
 
     // offerRow: tek bir teklifin satırı | @ViewBuilder [SWIFT]: fonksiyon birden çok görünüm döndürebilir
@@ -110,6 +117,8 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
             if viewModel.canWithdraw(offer) { // KURAL ViewModel'de: yalnız bekleyen teklif
                 // .tint [SWIFT]: düğme rengi | Task { await … } [SWIFT]: düğme await çağıramaz, Task içinde çağırılır
                 Button("Geri çek") { Task { await viewModel.withdraw(offer) } }.tint(.orange) // ⮕ MyOffersViewModel.withdraw
+                // Tutarı değiştir: alert'i açar (ViewModel.editingOffer dolar) | .tint [SWIFT]: düğme rengi
+                Button("Tutarı değiştir") { viewModel.startEditing(offer) }.tint(.blue) // ⮕ MyOffersViewModel.startEditing
             }
             if viewModel.canHide(offer) { // KURAL ViewModel'de: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
                 Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | ⮕ MyOffersViewModel.hide → OfferService.hide → DELETE /api/v1/offers/{id} | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar

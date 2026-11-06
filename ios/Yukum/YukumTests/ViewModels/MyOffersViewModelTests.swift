@@ -107,4 +107,50 @@ struct MyOffersViewModelTests {
         #expect(vm.errorMessage == "Yalnız bekleyen teklif geri çekilebilir.")
         #expect(vm.pendingOffers.map(\.id) == ["a"]) // liste bozulmadı
     }
+
+    @Test func editAmount_isOnlyForPendingOffers_andStartsWithTheOldAmount() {
+        let vm = MyOffersViewModel(service: FakeOfferService())
+        #expect(vm.canEditAmount(Sample.carrierOffer(status: "Pending")))
+        for status in ["Accepted", "Rejected", "Completed", "Cancelled", "Withdrawn"] { #expect(!vm.canEditAmount(Sample.carrierOffer(status: status))) }
+
+        vm.startEditing(Sample.carrierOffer("a")) // Sample tutarı 1000
+        #expect(vm.editingOffer?.id == "a")
+        #expect(vm.editAmountText == "1000")
+    }
+
+    @Test func saveAmount_resendsTheOfferToTheSameListing_keepsTheNote_andReloads() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        vm.editAmountText = " 1500 "
+
+        await vm.saveAmount(Sample.carrierOffer("a", status: "Pending"))
+
+        #expect(service.createCalls.count == 1)
+        #expect(service.createCalls.first?.listingId == "l1")
+        #expect(service.createCalls.first?.body.amount == 1500) // boşluklar kırpıldı
+        #expect(service.createCalls.first?.body.note == "not") // eski not korundu
+        #expect(vm.errorMessage == nil)
+    }
+
+    @Test func saveAmount_rejectsInvalidAmounts_withoutCallingTheServer() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        for text in ["", "abc", "0", "-5", "100000001"] {
+            vm.editAmountText = text
+            await vm.saveAmount(Sample.carrierOffer())
+            #expect(vm.errorMessage != nil)
+        }
+        #expect(service.createCalls.isEmpty)
+    }
+
+    @Test func saveAmount_failureShowsTheServerMessage() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        service.createResult = .failure(APIError(message: "Bu ilan artık teklif almıyor."))
+        vm.editAmountText = "900"
+
+        await vm.saveAmount(Sample.carrierOffer())
+
+        #expect(vm.errorMessage == "Bu ilan artık teklif almıyor.")
+    }
 }

@@ -25,7 +25,7 @@ enum Sample {
     }
     static func carrierOffer(_ id: String = "o1", status: String = "Pending", isNew: Bool = false) -> CarrierOffer {
         CarrierOffer(id: id, listingTitle: "İlan", fromCityName: "Mersin", toCityName: "İstanbul", amount: 1000, status: status, isNew: isNew,
-                     fromDistrictName: "Mezitli", toDistrictName: "Kadıköy", shipperName: "Yük Veren", weightKg: 1000, pickupDate: "2026-12-01")
+                     fromDistrictName: "Mezitli", toDistrictName: "Kadıköy", shipperName: "Yük Veren", weightKg: 1000, pickupDate: "2026-12-01", listingId: "l1", note: "not")
     }
     static func historyOffer(_ id: String = "o1", status: String = "Accepted") -> ShipperHistoryOffer {
         ShipperHistoryOffer(id: id, listingTitle: "İlan", fromCityName: "Mersin", fromDistrictName: "Mezitli", toCityName: "İstanbul", toDistrictName: "Kadıköy",

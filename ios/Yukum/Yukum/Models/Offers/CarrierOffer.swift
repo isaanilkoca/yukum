@@ -43,5 +43,7 @@ struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan ü
     let weightKg: Int // yükün ağırlığı (kg) | NE İŞE YARAR: teklif geçmişinde ilanı hatırlatan detay | NEREDE: MyOffersView detay satırı
     // ⮕ KULLANIM [pickupDate]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let pickupDate: String // yükleme tarihi, "2026-11-05" yazısı gelir | NEREDE: MyOffersView detay satırı
+    let listingId: String // ilanın numarası | NE İŞE YARAR: tutar değiştirirken aynı ilana yeniden teklif göndermek için (POST /listings/{listingId}/offers) | NEREDE: MyOffersViewModel.saveAmount
+    let note: String? // teklifle gönderdiğimiz not (boş olabilir) | NE İŞE YARAR: tutarı güncellerken notu SİLMEMEK için aynen geri göndeririz | String?: nil olabilir, JSON'da yoksa/null ise nil gelir
 
 }
