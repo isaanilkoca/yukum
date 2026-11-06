@@ -890,4 +890,96 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Forbidden, byShipper.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
     }
+
+    // ---------- puan ve yorum, Taşımacı profili ----------
+    // Bir işi baştan sona yürütür (teklif → kabul → teslim → Taşımacı tamamlar) ve (teklif numarası, Taşımacı numarası) döner.
+    private async Task<(string Offer, string CarrierId)> CompletedJob(HttpClient c, string shipper, string carrier, decimal amount = 1000)
+    {
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, amount);
+        var carrierId = (await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers")))[0].GetProperty("carrierId").GetString()!;
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        await Deliver(c, carrier, offer);
+        Assert.Equal(HttpStatusCode.OK, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete")).StatusCode);
+        return (offer, carrierId);
+    }
+
+    [Fact]
+    public async Task Reviews_update_the_carrier_average_count_and_completed_jobs_and_show_on_the_profile()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var (first, carrierId) = await CompletedJob(c, shipper, carrier);
+        var (second, _) = await CompletedJob(c, shipper, carrier);
+
+        var r1 = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{first}/review", new { rating = 5, comment = "Harika" });
+        var r2 = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{second}/review", new { rating = 2, comment = (string?)null });
+        var profile = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/carriers/{carrierId}"));
+        var asCarrier = await Call(c, carrier, HttpMethod.Get, $"/api/v1/carriers/{carrierId}");   // Taşımacı da kendi profilini görür
+
+        Assert.Equal(HttpStatusCode.Created, r1.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, r2.StatusCode);
+        Assert.Equal(3.5m, profile.GetProperty("averageRating").GetDecimal());       // (5 + 2) / 2
+        Assert.Equal(2, profile.GetProperty("ratingCount").GetInt32());
+        Assert.Equal(2, profile.GetProperty("completedJobCount").GetInt32());
+        var reviews = profile.GetProperty("reviews");
+        Assert.Equal(2, reviews.GetArrayLength());
+        Assert.Contains(reviews.EnumerateArray(), x => x.GetProperty("comment").GetString() == "Harika");
+        Assert.Matches(@"^\S+ \S\.$", reviews[0].GetProperty("shipperName").GetString()!);   // "Ad S." biçimi: soyad kısaltılmış
+        Assert.Equal(HttpStatusCode.OK, asCarrier.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_review_needs_a_completed_job_from_the_owner_with_a_valid_rating_and_only_once()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var other = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var url = $"/api/v1/offers/{offer}/review";
+
+        var notCompleted = await Call(c, shipper, HttpMethod.Post, url, new { rating = 5 });           // tamamlanmadı: 409
+        await Deliver(c, carrier, offer);
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var byOther = await Call(c, other, HttpMethod.Post, url, new { rating = 5 });                  // başkasının işi: 404
+        var byCarrier = await Call(c, carrier, HttpMethod.Post, url, new { rating = 5 });              // rol: 403
+        var zero = await Call(c, shipper, HttpMethod.Post, url, new { rating = 0 });                   // 400
+        var six = await Call(c, shipper, HttpMethod.Post, url, new { rating = 6 });                    // 400
+        var longComment = await Call(c, shipper, HttpMethod.Post, url, new { rating = 4, comment = new string('x', 501) });   // 400
+        var ok = await Call(c, shipper, HttpMethod.Post, url, new { rating = 4 });
+        var twice = await Call(c, shipper, HttpMethod.Post, url, new { rating = 5 });                  // ikinci puan: 409
+        var history = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));    // Taşımacı bitirdi: Yük Veren'de durur
+
+        Assert.Equal(HttpStatusCode.Conflict, notCompleted.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byCarrier.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, zero.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, six.StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, longComment.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, twice.StatusCode);
+        Assert.True(history[0].GetProperty("reviewed").GetBoolean());   // iOS "Puan ver" düğmesini gizlesin
+    }
+
+    [Fact]
+    public async Task The_carrier_profile_is_404_for_unknown_ids_and_shows_the_rating_next_to_each_offer()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var (offer, carrierId) = await CompletedJob(c, shipper, carrier);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/review", new { rating = 4 });
+
+        var unknown = await Call(c, shipper, HttpMethod.Get, $"/api/v1/carriers/{Guid.NewGuid()}");
+        var anonymous = await Call(c, null, HttpMethod.Get, $"/api/v1/carriers/{carrierId}");
+        var listing = await NewListing(c, shipper);
+        await NewOffer(c, carrier, listing);
+        var offers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
+
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Equal(4m, offers[0].GetProperty("carrierRating").GetDecimal());          // Yük Veren, teklif listesinde puanı görür
+        Assert.Equal(1, offers[0].GetProperty("carrierRatingCount").GetInt32());
+        Assert.Equal(carrierId, offers[0].GetProperty("carrierId").GetString());
+    }
 }

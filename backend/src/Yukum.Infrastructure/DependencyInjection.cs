@@ -59,6 +59,8 @@ public static class DependencyInjection
         services.AddScoped<IListingSearchRepository, ListingSearchRepository>();
         // Kullanıcı adı okuyucu (teklif listesinde taşımacı adı).
         services.AddScoped<IUserDirectory, UserDirectory>();
+        // Taşımacı profili (özet okuma + puan/iş sayacı güncelleme).
+        services.AddScoped<ICarrierDirectory, CarrierDirectory>();
         return services;
     }
 

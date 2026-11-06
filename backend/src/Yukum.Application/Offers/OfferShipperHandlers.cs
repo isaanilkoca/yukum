@@ -7,7 +7,7 @@ using Yukum.Domain.Listings;
 namespace Yukum.Application.Offers;
 
 /// <summary>Yük Veren'in kendi ilanına gelen BEKLEYEN (karar bekleyen) teklifleri getirir (düşük tutar üstte). Kabul/red verilenler geçmişe (offers/history) gider.</summary>
-public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepository<Offer> offers, IUserDirectory users)
+public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepository<Offer> offers, IUserDirectory users, ICarrierDirectory carriers)
     : IQueryHandler<GetListingOffersQuery, IReadOnlyList<ListingOfferDto>>
 {
     /// <summary>İlan yoksa ya da başkasınınsa NotFoundException (404; başkasının ilanının varlığı sızdırılmaz).</summary>
@@ -19,9 +19,11 @@ public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepo
 
         var list = await offers.ListAsync(o => o.ListingId == query.ListingId && o.Status == OfferStatus.Pending && !o.HiddenByShipper, asNoTracking: true, cancellationToken);
         var names = await users.GetFullNamesAsync(list.Select(o => o.CarrierId), cancellationToken);
+        var summaries = await carriers.GetSummariesAsync(list.Select(o => o.CarrierId), cancellationToken); // puan ortalaması + sayı
 
         return list.OrderBy(o => o.Amount)
-            .Select(o => new ListingOfferDto(o.Id, names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.CreatedAt))
+            .Select(o => new ListingOfferDto(o.Id, names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.CreatedAt,
+                o.CarrierId, summaries.GetValueOrDefault(o.CarrierId)?.AverageRating ?? 0, summaries.GetValueOrDefault(o.CarrierId)?.RatingCount ?? 0))
             .ToList();
     }
 }

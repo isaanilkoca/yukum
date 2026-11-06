@@ -11,4 +11,10 @@ public interface IUnitOfWork
     /// <remarks>Kayıt arada başkası tarafından değiştirilmişse (RowVersion çakışması) <c>DbUpdateConcurrencyException</c> fırlar; API bunu 409'a çevirecek.</remarks>
     // Yapılan tüm Add/Remove/değişiklikleri TEK işlemde (transaction) veritabanına yazar: ya hepsi yazılır ya hiçbiri. Dönüş: etkilenen satır sayısı.
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Verilen işi TEK veritabanı işleminde çalıştırır: iş içindeki tüm SaveChanges ve SQL güncellemeleri birlikte onaylanır ya da hata olursa hepsi geri alınır.
+    /// Örn. "yorum ekle + Taşımacı'nın ortalama puanını güncelle".
+    /// </summary>
+    Task ExecuteInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken = default);
 }

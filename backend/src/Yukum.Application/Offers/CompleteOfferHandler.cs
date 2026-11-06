@@ -1,3 +1,4 @@
+using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
@@ -14,6 +15,7 @@ public sealed class CompleteOfferHandler(
     IRepository<Offer> offers,
     IRepository<Listing> listings,
     IRepository<Message> messages,
+    ICarrierDirectory carriers,
     IUnitOfWork unitOfWork) : ICommandHandler<CompleteOfferCommand, OfferDto>
 {
     /// <summary>Taraf olmayana 404; kabul edilmiş olmayan (bekleyen, reddedilmiş, zaten tamamlanmış) işe 409.</summary>
@@ -48,7 +50,12 @@ public sealed class CompleteOfferHandler(
             if (isCarrier) m.HiddenByCarrier = true; else m.HiddenByShipper = true;
         }
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        // Tamamlanan iş sayacı + durum değişiklikleri TEK işlemde (biri olmazsa ikisi de olmaz)
+        await unitOfWork.ExecuteInTransactionAsync(async ct =>
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+            await carriers.AddCompletedJobAsync(offer.CarrierId, ct);
+        }, cancellationToken);
         return new OfferDto(offer.Id, offer.ListingId, offer.Amount, offer.Note, offer.Status);
     }
 }

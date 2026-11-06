@@ -12,4 +12,13 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
         // EF, bekleyen TÜM değişiklikleri tek veritabanı işleminde (transaction) gönderir; biri hata verirse hepsi geri alınır.
         context.SaveChangesAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> work, CancellationToken cancellationToken = default)
+    {
+        // BeginTransactionAsync: açık işlem başlatır | await using: blok bitince işlem kapanır (Commit çağrılmadıysa geri alınır)
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        await work(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
 }

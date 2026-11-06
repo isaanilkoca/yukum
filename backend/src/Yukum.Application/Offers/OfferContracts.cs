@@ -24,7 +24,8 @@ public sealed record OfferStageDto(Guid Id, JobStage Stage);
 public sealed record GetListingOffersQuery(Guid ListingId, Guid ShipperId);
 
 /// <summary>Yük Veren'in gördüğü teklif satırı (taşımacı adıyla).</summary>
-public sealed record ListingOfferDto(Guid Id, string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime CreatedAt);
+public sealed record ListingOfferDto(Guid Id, string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime CreatedAt,
+    Guid CarrierId, decimal CarrierRating, int CarrierRatingCount);
 
 /// <summary>Komut: Yük Veren bir teklifi kabul eder (Accept=true) ya da reddeder (false).</summary>
 public sealed record DecideOfferCommand(Guid OfferId, Guid ShipperId, bool Accept);
@@ -44,7 +45,7 @@ public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
 /// <summary>Yük Veren geçmişindeki satır: teklif + hangi ilan + hangi taşımacı.</summary>
 public sealed record ShipperOfferHistoryDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName, int WeightKg, DateOnly PickupDate,
-    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt, JobStage Stage);
+    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt, JobStage Stage, Guid CarrierId, bool Reviewed);
 
 /// <summary>Komut: kullanıcı karara bağlanmış bir teklifi kendi geçmişinden siler (karşı tarafta durur).</summary>
 public sealed record HideOfferCommand(Guid OfferId, Guid UserId, bool IsCarrier);

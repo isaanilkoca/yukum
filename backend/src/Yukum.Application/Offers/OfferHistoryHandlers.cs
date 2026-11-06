@@ -35,7 +35,7 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
 }
 
 /// <summary>Yük Veren'in karara bağladığı (kabul/red) teklifler: "eski teklifler" bölümü.</summary>
-public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRepository<Listing> listings, IUserDirectory users, IGeographyRepository geography)
+public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRepository<Listing> listings, IUserDirectory users, IGeographyRepository geography, IRepository<Review> reviews)
     : IQueryHandler<GetShipperOfferHistoryQuery, IReadOnlyList<ShipperOfferHistoryDto>>
 {
     /// <summary>Yalnız jetondaki yük verenin ilanlarına gelen, karar verilmiş ve silinmemiş teklifler.</summary>
@@ -47,6 +47,7 @@ public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRe
             o => listingIds.Contains(o.ListingId) && o.Status != OfferStatus.Pending && o.Status != OfferStatus.Withdrawn && !o.HiddenByShipper,
             asNoTracking: true, cancellationToken);
         var names = await users.GetFullNamesAsync(decided.Select(o => o.CarrierId), cancellationToken);
+        var reviewedIds = (await reviews.ListAsync(r => r.ShipperId == query.ShipperId, asNoTracking: true, cancellationToken)).Select(r => r.OfferId).ToHashSet(); // puan verdiğim işler
         var cities = (await geography.ListCitiesAsync(cancellationToken)).ToDictionary(c => c.Id, c => c.Name);
         var districts = await Listings.CreateListingHandler.DistrictNamesAsync(geography, myListings.Values, cancellationToken);
 
@@ -56,7 +57,7 @@ public sealed class GetShipperOfferHistoryHandler(IRepository<Offer> offers, IRe
                 var l = myListings[o.ListingId];
                 return new ShipperOfferHistoryDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
                     cities[l.ToCityId], districts[l.ToDistrictId], l.WeightKg, l.PickupDate,
-                    names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt, o.Stage);
+                    names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.DecidedAt, o.Stage, o.CarrierId, reviewedIds.Contains(o.Id));
             }).ToList();
     }
 }
