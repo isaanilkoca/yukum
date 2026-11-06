@@ -27,5 +27,8 @@ final class FakeOfferService: OfferServicing {
     func unseenCount() async throws -> Int { try unseenResult.get() }
     func markSeen() async throws { markSeenCalls += 1; try markSeenResult.get() }
     func hide(offerId: String) async throws { hiddenIds.append(offerId); try hideResult.get() }
+    var withdrawResult: Result<Void, Error> = .success(())
+    private(set) var withdrawnIds: [String] = []
+    func withdraw(offerId: String) async throws { withdrawnIds.append(offerId); try withdrawResult.get() }
     func shipperHistory() async throws -> [ShipperHistoryOffer] { try historyResult.get() }
 }

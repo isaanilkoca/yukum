@@ -70,4 +70,41 @@ struct MyOffersViewModelTests {
 
         #expect(vm.errorMessage == nil) // iptal hata değildir
     }
+
+    @Test func withdraw_isOnlyForPendingOffers_andWithdrawnOnesAreDeletableButHaveNoChat() {
+        let vm = MyOffersViewModel(service: FakeOfferService())
+        #expect(vm.canWithdraw(Sample.carrierOffer(status: "Pending")))
+        for status in ["Accepted", "Rejected", "Completed", "Cancelled", "Withdrawn"] { #expect(!vm.canWithdraw(Sample.carrierOffer(status: status))) }
+        #expect(vm.canHide(Sample.carrierOffer(status: "Withdrawn")))
+        #expect(!vm.canChat(Sample.carrierOffer(status: "Withdrawn")))
+    }
+
+    @Test func withdraw_callsTheServer_thenReloads_andMovesTheOfferToHistory() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        service.myOffersResult = .success([Sample.carrierOffer("a", status: "Pending")])
+        await vm.load()
+        #expect(vm.pendingOffers.map(\.id) == ["a"])
+
+        service.myOffersResult = .success([Sample.carrierOffer("a", status: "Withdrawn")]) // sunucunun yeni cevabı
+        await vm.withdraw(Sample.carrierOffer("a", status: "Pending"))
+
+        #expect(service.withdrawnIds == ["a"])
+        #expect(vm.pendingOffers.isEmpty)
+        #expect(vm.historyOffers.map(\.id) == ["a"])
+        #expect(vm.errorMessage == nil)
+    }
+
+    @Test func withdraw_failureShowsTheServerMessage_andKeepsTheList() async {
+        let service = FakeOfferService()
+        let vm = MyOffersViewModel(service: service)
+        service.myOffersResult = .success([Sample.carrierOffer("a", status: "Pending")])
+        await vm.load()
+
+        service.withdrawResult = .failure(APIError(message: "Yalnız bekleyen teklif geri çekilebilir."))
+        await vm.withdraw(Sample.carrierOffer("a", status: "Pending"))
+
+        #expect(vm.errorMessage == "Yalnız bekleyen teklif geri çekilebilir.")
+        #expect(vm.pendingOffers.map(\.id) == ["a"]) // liste bozulmadı
+    }
 }

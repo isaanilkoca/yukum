@@ -44,11 +44,11 @@ final class MyOffersViewModel {
     // KURAL: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal edilen) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
     // ⮕ ZİNCİR: Views/MyOffersView: .swipeActions { if viewModel.canHide(offer) { "Sil" } } — yalnız reddedilen/tamamlanan/iptal
     // ⮕ KULLANIM [canHide]: çağırır: MyOffersView › offerRow(), MyOffersViewModelTests (test)
-    func canHide(_ offer: CarrierOffer) -> Bool { ["Rejected", "Completed", "Cancelled"].contains(offer.status) } // .contains [SWIFT]: içinde var mı diye bakar
+    func canHide(_ offer: CarrierOffer) -> Bool { ["Rejected", "Completed", "Cancelled", "Withdrawn"].contains(offer.status) } // .contains [SWIFT]: içinde var mı diye bakar
     // KURAL: reddedilen teklifte sohbet yok | bekleyen, kabul, tamamlanan, iptalde düğme çıkar (kapalı olanlarda yalnız eski mesajlar okunur/silinir)
     // ⮕ ZİNCİR: Views/MyOffersView: if viewModel.canChat(offer) { "Sohbet" düğmesi } — reddedilende yok
     // ⮕ KULLANIM [canChat]: çağırır: MyOffersView › offerRow(), MyOffersViewModelTests (test)
-    func canChat(_ offer: CarrierOffer) -> Bool { offer.status != "Rejected" }
+    func canChat(_ offer: CarrierOffer) -> Bool { !["Rejected", "Withdrawn"].contains(offer.status) } // ! [SWIFT]: tersi | dizide yoksa true
 
     // ⮕ ZİNCİR: Views/MyOffersView: .refreshable ve hide() sonrası | OfferService.myOffers()
     // ⮕ KULLANIM [load]: çağırır: MyOffersViewModel › loadAndMarkSeen(), MyOffersViewModel › hide(), MyOffersView › body, MyOffersViewModelTests (test)
@@ -75,6 +75,23 @@ final class MyOffersViewModel {
             await load() // silindi, liste yenilenir
         } catch {
             if let message = error.userMessage { errorMessage = message } // örn. "Kabul edilmiş teklif aktif iştir; önce "İşi bitir" denmeli."
+        }
+    }
+
+    // KURAL: yalnız KARAR BEKLEYEN teklif geri çekilir | kabul edilmişte iş başlamıştır, sunucu 409 verir
+    // ZİNCİR: Views/MyOffersView .swipeActions → if viewModel.canWithdraw(offer) { "Geri çek" }
+    func canWithdraw(_ offer: CarrierOffer) -> Bool { offer.status == "Pending" }
+
+    // withdraw: önce servise "geri çek" der, başarılıysa listeyi yeniler (teklif Geçmiş bölümüne düşer)
+    // ZİNCİR: Views/MyOffersView "Geri çek" ← bu fonksiyon → OfferService.withdraw → POST /api/v1/offers/{id}/withdraw → load()
+    // errorMessage: sunucu Türkçe mesaj verirse ekranda kırmızı görünür (hide ile aynı kalıp) | do/catch [SWIFT]: hata olursa catch'e düşer
+    func withdraw(_ offer: CarrierOffer) async {
+        errorMessage = nil
+        do {
+            try await service.withdraw(offerId: offer.id)
+            await load()
+        } catch {
+            if let message = error.userMessage { errorMessage = message }
         }
     }
 

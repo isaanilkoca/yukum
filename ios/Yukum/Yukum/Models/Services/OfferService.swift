@@ -85,6 +85,15 @@ struct OfferService { // OfferService [BİZİM] ad
         try await api.sendNoContent(.delete, "/api/v1/offers/\(offerId)", fallback: "Silinemedi.")
     }
 
+    
+    // withdraw: bekleyen teklifi geri çeker (teklif silinmez, sunucuda durumu "Withdrawn" olur)
+    // API: POST /api/v1/offers/{id}/withdraw | GİDEN: gövde yok | DÖNEN: OfferDto (kullanmıyoruz, o yüzden sendNoContent)
+    // sendNoContent [BİZİM, Models/Networking/APIClient]: 2xx cevabın gövdesini okumaz, hata varsa APIError fırlatır (jeton ekleme ve 401'de yenileme de burada)
+    // \(offerId) [SWIFT]: yazının içine değişkeni koyar | ÇAĞIRAN: MyOffersViewModel.withdraw()
+    func withdraw(offerId: String) async throws {
+        try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/withdraw", fallback: "Teklif geri çekilemedi.")
+    }
+
     // shipperHistory: Yük Veren'in karara bağladığı (kabul/red/tamamlanan) teklifler = "Eski teklifler"
     // ÇAĞIRAN: Views/OldOffersView.swift | API: GET /api/v1/offers/history
     // ⮕ ZİNCİR: ViewModels/OldOffersViewModel.load() ← Views/OldOffersView .task/.refreshable | API: GET /api/v1/offers/history | DÖNEN: [ShipperHistoryOffer]

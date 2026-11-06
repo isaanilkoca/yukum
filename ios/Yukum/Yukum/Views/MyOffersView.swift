@@ -95,6 +95,7 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
             case "Accepted": Text("Kabul edildi").foregroundColor(.green) // case: değer buna eşitse | Yük Veren kabul etti
             case "Rejected": Text("Reddedildi").foregroundColor(.red) // Yük Veren reddetti
             case "Cancelled": Text("İlan kaldırıldı").foregroundColor(.gray) // ilan sahibi ilanı yayından kaldırdı / işi iptal etti | sohbet kilitli, silinebilir
+            case "Withdrawn": Text("Geri çekildi").foregroundColor(.gray) // kendi geri çektiğimiz teklif | sohbet kapalı, silinebilir
             case "Completed": Text("Tamamlandı").foregroundColor(.gray) // iş bitti, anlaşma tamam | silinebilir
             default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
             }
@@ -106,6 +107,10 @@ struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir 
         .padding(.vertical, 4) // satırın üst/alt boşluğu
         // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
         .swipeActions {
+            if viewModel.canWithdraw(offer) { // KURAL ViewModel'de: yalnız bekleyen teklif
+                // .tint [SWIFT]: düğme rengi | Task { await … } [SWIFT]: düğme await çağıramaz, Task içinde çağırılır
+                Button("Geri çek") { Task { await viewModel.withdraw(offer) } }.tint(.orange) // ⮕ MyOffersViewModel.withdraw
+            }
             if viewModel.canHide(offer) { // KURAL ViewModel'de: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
                 Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | ⮕ MyOffersViewModel.hide → OfferService.hide → DELETE /api/v1/offers/{id} | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar
             }
