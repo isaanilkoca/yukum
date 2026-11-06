@@ -50,7 +50,8 @@ public sealed record ListingDto(
     DateTime CreatedAt,
     decimal? MyOfferAmount = null, // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
     OfferStatus? MyOfferStatus = null, // aynı yerde o teklifin durumu (Pending/Rejected), yoksa null
-    double? DistanceKm = null); // yalnız konum verilmişse dolar: Taşımacı'nın konumu ile ilanın kalkış noktası arası kuş uçuşu km
+    double? DistanceKm = null, // yalnız konum verilmişse dolar
+    bool IsFavorite = false); // yalnız Taşımacı listelerinde dolar: bu ilanı favorilemiş mi // yalnız konum verilmişse dolar: Taşımacı'nın konumu ile ilanın kalkış noktası arası kuş uçuşu km
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
 public sealed record GetMyListingsQuery(Guid ShipperId);

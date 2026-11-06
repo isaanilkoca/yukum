@@ -8759,6 +8759,43 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Yukum.Domain.Listings.FavoriteListing", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ListingId");
+
+                    b.HasIndex("UserId", "ListingId")
+                        .IsUnique();
+
+                    b.ToTable("FavoriteListings", (string)null);
+                });
+
             modelBuilder.Entity("Yukum.Domain.Listings.Listing", b =>
                 {
                     b.Property<Guid>("Id")
@@ -8837,6 +8874,44 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.HasIndex("Status", "ToCityId", "CreatedAt");
 
                     b.ToTable("Listings", (string)null);
+                });
+
+            modelBuilder.Entity("Yukum.Domain.Listings.ListingView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ListingId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ViewerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ListingId", "ViewerId", "Day")
+                        .IsUnique();
+
+                    b.ToTable("ListingViews", (string)null);
                 });
 
             modelBuilder.Entity("Yukum.Domain.Listings.Message", b =>
@@ -9220,6 +9295,15 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Navigation("City");
                 });
 
+            modelBuilder.Entity("Yukum.Domain.Listings.FavoriteListing", b =>
+                {
+                    b.HasOne("Yukum.Domain.Listings.Listing", null)
+                        .WithMany()
+                        .HasForeignKey("ListingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Yukum.Domain.Listings.Listing", b =>
                 {
                     b.HasOne("Yukum.Domain.Geography.City", null)
@@ -9243,6 +9327,15 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.HasOne("Yukum.Domain.Geography.District", null)
                         .WithMany()
                         .HasForeignKey("ToDistrictId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Yukum.Domain.Listings.ListingView", b =>
+                {
+                    b.HasOne("Yukum.Domain.Listings.Listing", null)
+                        .WithMany()
+                        .HasForeignKey("ListingId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

@@ -77,7 +77,7 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
 }
 
 /// <summary>Taşımacı için açık ilanları filtreleyip sıralayıp sayfalayarak getirir.</summary>
-public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRepository<Listing> listings, IGeographyRepository geography)
+public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRepository<Listing> listings, IGeographyRepository geography, IEngagementRepository engagement)
     : IQueryHandler<GetOpenListingsQuery, PagedResult<ListingDto>>
 {
     /// <summary>
@@ -124,8 +124,10 @@ public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRep
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, items, cancellationToken);
         // Listedeki ilanlar bu taşımacının DOKUNMADIĞI ilanlardır (teklif verdikleri Tekliflerim'e geçer), bu yüzden MyOffer* alanları burada boş kalır.
+        var favoriteIds = await engagement.GetFavoriteIdsAsync(query.CarrierId, items.Select(l => l.Id), cancellationToken); // kalp dolu mu
         var dtos = items.Select(l => CreateListingHandler.ToDto(l, names, districts) with
         {
+            IsFavorite = favoriteIds.Contains(l.Id),
             DistanceKm = hasLocation && points.TryGetValue(l.FromDistrictId, out var p)
                 ? Math.Round(GeoMath.DistanceKm(query.Lat!.Value, query.Lon!.Value, p.Lat, p.Lon), 1)
                 : null

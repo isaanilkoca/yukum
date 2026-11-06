@@ -56,6 +56,12 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     /// <summary>Yük Veren'in Taşımacı'ya verdiği puan ve yorumlar.</summary>
     public DbSet<Review> Reviews => Set<Review>();
 
+    /// <summary>Taşımacıların favori ilanları.</summary>
+    public DbSet<FavoriteListing> FavoriteListings => Set<FavoriteListing>();
+
+    /// <summary>İlan görüntülenmeleri (kişi başına günde bir).</summary>
+    public DbSet<ListingView> ListingViews => Set<ListingView>();
+
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.
     protected TimeProvider Time { get; }

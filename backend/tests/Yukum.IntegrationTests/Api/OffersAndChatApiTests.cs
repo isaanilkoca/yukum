@@ -1031,4 +1031,98 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, badCity.StatusCode);
     }
+
+    // ---------- favoriler ve sayaçlar ----------
+    [Fact]
+    public async Task Favoriting_is_idempotent_shows_in_the_open_list_and_in_the_favorites_list()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var url = $"/api/v1/listings/{listing}/favorite";
+
+        var first = await Call(c, carrier, HttpMethod.Put, url);
+        var second = await Call(c, carrier, HttpMethod.Put, url);                                   // iki kez: hata yok, sayı şişmez
+        var open = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var favorites = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings/favorites"));
+        var stats = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/stats"));
+
+        Assert.Equal(HttpStatusCode.NoContent, first.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, second.StatusCode);
+        Assert.True(open[0].GetProperty("isFavorite").GetBoolean());                                 // kalp dolu
+        Assert.Equal(1, favorites.GetArrayLength());
+        Assert.True(favorites[0].GetProperty("isFavorite").GetBoolean());
+        Assert.Equal(1, stats.GetProperty("favoriteCount").GetInt32());
+
+        var remove1 = await Call(c, carrier, HttpMethod.Delete, url);
+        var remove2 = await Call(c, carrier, HttpMethod.Delete, url);                               // favori değilken çıkar: hata yok
+        var after = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings/favorites"));
+        var openAfter = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+
+        Assert.Equal(HttpStatusCode.NoContent, remove1.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, remove2.StatusCode);
+        Assert.Equal(0, after.GetArrayLength());
+        Assert.False(openAfter[0].GetProperty("isFavorite").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Favorites_are_per_carrier_carrier_only_and_drop_listings_that_are_no_longer_open()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var a = await NewUser(c, false); var b = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+
+        await Call(c, a, HttpMethod.Put, $"/api/v1/listings/{listing}/favorite");
+        var byShipper = await Call(c, shipper, HttpMethod.Put, $"/api/v1/listings/{listing}/favorite");   // rol: 403
+        var unknown = await Call(c, a, HttpMethod.Put, $"/api/v1/listings/{Guid.NewGuid()}/favorite");    // 404
+        var bList = await Json(await Call(c, b, HttpMethod.Get, "/api/v1/listings/favorites"));            // b'nin listesi boş
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");                      // ilan kaldırıldı
+        var aList = await Json(await Call(c, a, HttpMethod.Get, "/api/v1/listings/favorites"));
+
+        Assert.Equal(HttpStatusCode.Forbidden, byShipper.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        Assert.Equal(0, bList.GetArrayLength());
+        Assert.Equal(0, aList.GetArrayLength());                                                           // kaldırılan ilan favoriden düştü
+    }
+
+    [Fact]
+    public async Task Views_count_each_carrier_once_per_day_and_stats_are_owner_only()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var other = await NewUser(c, true); var a = await NewUser(c, false); var b = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var view = $"/api/v1/listings/{listing}/view";
+
+        for (var i = 0; i < 3; i++) Assert.Equal(HttpStatusCode.NoContent, (await Call(c, a, HttpMethod.Post, view)).StatusCode);   // aynı kişi, aynı gün: tek sayılır
+        await Call(c, b, HttpMethod.Post, view);                                                                                      // ikinci kişi
+        await NewOffer(c, a, listing);
+        var byShipperView = await Call(c, shipper, HttpMethod.Post, view);                                                            // rol: 403
+        var unknownView = await Call(c, a, HttpMethod.Post, $"/api/v1/listings/{Guid.NewGuid()}/view");
+
+        var stats = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/stats"));
+        var byOther = await Call(c, other, HttpMethod.Get, $"/api/v1/listings/{listing}/stats");       // başkasının ilanı: 404
+        var byCarrier = await Call(c, a, HttpMethod.Get, $"/api/v1/listings/{listing}/stats");         // rol: 403
+
+        Assert.Equal(2, stats.GetProperty("viewCount").GetInt32());
+        Assert.Equal(0, stats.GetProperty("favoriteCount").GetInt32());
+        Assert.Equal(1, stats.GetProperty("offerCount").GetInt32());
+        Assert.Equal(HttpStatusCode.Forbidden, byShipperView.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknownView.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byCarrier.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_withdrawn_offer_is_not_counted_in_the_listing_stats()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing);
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");
+
+        var stats = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/stats"));
+
+        Assert.Equal(0, stats.GetProperty("offerCount").GetInt32());
+    }
 }
