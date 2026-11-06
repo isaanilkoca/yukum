@@ -49,7 +49,13 @@ struct OldOffersView: View {
                         Text("Taşımacı: \(offer.carrierName)").font(.caption).foregroundColor(.secondary) // teklifi veren Taşımacı | carrierName: backend'in Users tablosundan okuyup gönderdiği ad
                         Text("\(offer.weightKg) kg · \(offer.pickupDate)").font(.caption).foregroundColor(.secondary) // yük ağırlığı · yükleme tarihi
 
-                        Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → ChatView açılır | Kabul edilende yazılabilir, reddedilende/tamamlananda yalnız eski mesajlar okunur/silinir | .bordered: List'te satırın her yeri düğme olmasın diye stil şart | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
+                        HStack {
+                            Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered)
+                            Button("Profil") { viewModel.profileCarrierId = offer.carrierId }.buttonStyle(.bordered) // → CarrierProfileView
+                            if viewModel.canRate(offer) { // tamamlanmış ve puanlanmamış iş
+                                Button("Puan ver") { viewModel.ratingOffer = offer }.buttonStyle(.borderedProminent) // → RatingView (.sheet)
+                            }
+                        } // ViewModel'deki chat'i doldurur → ChatView açılır | Kabul edilende yazılabilir, reddedilende/tamamlananda yalnız eski mesajlar okunur/silinir | .bordered: List'te satırın her yeri düğme olmasın diye stil şart | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
 
                         // durum yazısı | switch [SWIFT]: değere göre dallanır
                         switch offer.status {
@@ -74,6 +80,11 @@ struct OldOffersView: View {
         .task { await viewModel.load() } // .task [SWIFT]: ekran HER göründüğünde çalışır | listeyi yükler
         // .navigationDestination(item:) [SWIFT]: ViewModel'deki chat dolunca ChatView'a GEÇER, nil olunca geri döner (List satırında NavigationLink yerine bu kullanılır, satırdaki düğmeler çalışsın diye)
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te
+        .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) }
+        // .sheet(item:) [SWIFT]: alttan açılan sayfa | item dolunca açılır, nil olunca kapanır | item Identifiable olmalı (ShipperHistoryOffer) | kapanınca liste yenilenir ("Puan ver" kalkar)
+        .sheet(item: $viewModel.ratingOffer, onDismiss: { Task { await viewModel.load() } }) { offer in
+            RatingView(offerId: offer.id, carrierName: offer.carrierName)
+        }
     }
 }
 

@@ -55,6 +55,7 @@ struct ListingOffersView: View {
                     VStack(alignment: .leading, spacing: 8) { // bir teklifin satırı: alt alta, sola yaslı
                         HStack { // HStack [SWIFT]: elemanları yan yana dizer
                             Text(offer.carrierName).font(.headline) // teklifi veren taşımacı
+                            Text(RatingText.summary(rating: offer.carrierRating, count: offer.carrierRatingCount)).font(.caption).foregroundColor(.orange) // "★ 4.5 (8)" / "Yeni"
                             Spacer() // Spacer [SWIFT]: kalan boşluğu doldurur
                             Text("\(Int(offer.amount))₺").bold() // Int(): 48000.0 yerine 48000
                         }
@@ -68,6 +69,7 @@ struct ListingOffersView: View {
                             // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
                             Button("Reddet") { Task { await viewModel.decide(offer, accept: false) } }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu | ⮕ ListingOffersViewModel.decide(accept: false) → OfferService.decide → POST .../reject | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder) | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
                             Button("Kabul et") { Task { await viewModel.decide(offer, accept: true) } }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu | ⮕ ListingOffersViewModel.decide(accept: true) → OfferService.decide → POST .../accept
+                            Button("Profil") { viewModel.profileCarrierId = offer.carrierId }.buttonStyle(.bordered) // ViewModel'deki profileCarrierId'yi doldurur → CarrierProfileView açılır
                             Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
                         }
                     }
@@ -105,5 +107,6 @@ struct ListingOffersView: View {
         // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil? List satırının içindeki NavigationLink, satırdaki Reddet/Kabul/Sohbet düğmelerini bozar (hepsi sayfaya götürür).
         // Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat'i doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat"
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te | .navigationDestination [SWIFT]: bir değer dolunca ekrana geçer
+        .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) } // item: Hashable olmalı (String) | BAĞLANTI: Views/CarrierProfileView.swift
     }
 }

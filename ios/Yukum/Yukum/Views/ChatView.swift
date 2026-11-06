@@ -45,6 +45,7 @@ struct ChatView: View {
     // showCompleteConfirm: "İşi Bitir ve Sil" onay penceresi | bu işlem daha ağır (iki tarafta durumu değiştirir), ayrı ve daha açıklayıcı bir pencereyle sorulur
     // ⮕ KULLANIM [showCompleteConfirm]: YAZAR: ChatView › body | bağlar(okur+yazar): ChatView › body
     @State private var showCompleteConfirm = false
+    @State private var showRating = false // işi bitirince puan sayfası açık mı (yalnız Yük Veren tarafı)
 
     // init: açılış bilgisi (ChatContext) dışarıdan verilir, ViewModel burada oluşturulur
     init(context: ChatContext) {
@@ -127,9 +128,13 @@ struct ChatView: View {
             Text("Mesajlar yalnızca sizin ekranınızdan silinir. Karşı taraf görmeye devam eder, iş ve teklif yerinde kalır.")
         }
         // 2. onay penceresi: işi bitir | .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | daha önemli işlemler için (bitirmek iki tarafı etkiler)
+        // Puan sayfası: iş tamamlanınca açılır (Yük Veren) | gönderilse de "Şimdi değil" denmiş olsa da sayfa kapanınca sohbet ekranı da kapanır (iş zaten bitti, teklif listeden silindi)
+        .sheet(isPresented: $showRating, onDismiss: { dismiss() }) {
+            RatingView(offerId: viewModel.context.offerId, carrierName: viewModel.context.title)
+        }
         .alert("İş bitsin mi?", isPresented: $showCompleteConfirm) {
             Button("Bitir ve Sil", role: .destructive) { // seçilince ViewModel işi tamamlar; başarılıysa teklif listemizden silindiği için sohbetten geri dönülür
-                Task { if await viewModel.complete() { dismiss() } } // önceki ekran görününce .task ile listeyi kendisi yeniler | ⮕ ChatViewModel.complete() → ChatService.complete
+                Task { if await viewModel.complete() { if viewModel.context.canReview { showRating = true } else { dismiss() } } } // Yük Veren: önce puan sayfası, kapanınca sohbet de kapanır | Taşımacı: doğrudan geri // önceki ekran görününce .task ile listeyi kendisi yeniler | ⮕ ChatViewModel.complete() → ChatService.complete
             }
             Button("Vazgeç", role: .cancel) { }
         } message: {

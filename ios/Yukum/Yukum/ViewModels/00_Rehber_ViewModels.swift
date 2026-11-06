@@ -15,8 +15,10 @@
 //  ListingDetailViewModel    ListingDetailView için. Tutarı kontrol eder → OfferService.create → POST /listings/{id}/offers
 //  CreateListingViewModel    CreateListingView için. Formu kontrol eder → ListingService.create → POST /listings (il/ilçe için CityService)
 //  ListingOffersViewModel    ListingOffersView için. OfferService.listingOffers / decide (kabul-red), ListingService.cancel (ilanı kaldır)
-//  MyOffersViewModel         MyOffersView için. OfferService.myOffers, markSeen, hide
+//  MyOffersViewModel         MyOffersView için. OfferService.myOffers, markSeen, hide, withdraw (geri çek), create (tutar değiştir), advance (iş aşaması)
 //  OldOffersViewModel        OldOffersView için. OfferService.shipperHistory, hide
+//  CarrierProfileViewModel   CarrierProfileView için. ReviewService.carrierProfile (ortalama puan + yorumlar)
+//  RatingViewModel           RatingView için. ReviewService.create (1–5 puan + yorum)
 //  ChatViewModel             ChatView için. ChatService.messages / send / clear, OfferService.complete; mesajları belirli aralıkla yeniler
 //  ChatContext               ViewModel değil, küçük kural kutusu: sohbeti kim yazabilir/bitirebilir (rol + teklif durumu). Teklif ekranlarındaki ViewModel'ler üretir, ChatViewModel kullanır
 //

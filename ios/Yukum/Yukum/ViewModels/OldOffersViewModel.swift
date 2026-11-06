@@ -30,6 +30,8 @@ final class OldOffersViewModel {
     // ⮕ ZİNCİR: Views/OldOffersView: .navigationDestination(item: $viewModel.chat) { ChatView(context:) } | DOLDURAN: openChat(_:)
     // ⮕ KULLANIM [chat]: YAZAR: OldOffersViewModel › openChat() | bağlar(okur+yazar): OldOffersView › body
     var chat: ChatContext?
+    var profileCarrierId: String? // dolunca CarrierProfileView açılır (chat ile aynı kalıp)
+    var ratingOffer: ShipperHistoryOffer? // dolunca RatingView sayfası alttan açılır (.sheet(item:))
 
     init(service: OfferServicing = OfferService()) { self.service = service }
 
@@ -65,4 +67,8 @@ final class OldOffersViewModel {
     // stageTitle: Yük Veren'in izlediği aşama yazısı (Taşımacı ilerletir) | JobStage'e çevrilemezse boş
     // ZİNCİR: Views/OldOffersView "Kabul ettin · Yolda" ← API stage alanı (GET /offers/history)
     func stageTitle(_ offer: ShipperHistoryOffer) -> String { (JobStage(rawValue: offer.stage) ?? .notStarted).title }
+
+    // KURAL: yalnız TAMAMLANMIŞ ve henüz PUANLANMAMIŞ iş puanlanır | sunucu da denetler (409)
+    // ZİNCİR: Views/OldOffersView: if viewModel.canRate(offer) { "Puan ver" } → ratingOffer dolar → RatingView
+    func canRate(_ offer: ShipperHistoryOffer) -> Bool { offer.status == "Completed" && !offer.reviewed }
 }

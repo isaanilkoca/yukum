@@ -35,6 +35,8 @@ final class ListingOffersViewModel {
     // ⮕ ZİNCİR: Views/ListingOffersView: .navigationDestination(item: $viewModel.chat) { ChatView(context:) } | DOLDURAN: openChat(_:)
     // ⮕ KULLANIM [chat]: YAZAR: ListingOffersViewModel › openChat() | bağlar(okur+yazar): ListingOffersView › body
     var chat: ChatContext?
+    // profileCarrierId: dolunca CarrierProfileView açılır, nil olunca kapanır (chat ile aynı kalıp: List satırında NavigationLink çalışmaz)
+    var profileCarrierId: String?
 
     init(listing: Listing, offerService: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
         self.listing = listing

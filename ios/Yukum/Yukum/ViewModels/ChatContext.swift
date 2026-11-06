@@ -27,6 +27,7 @@ struct ChatContext: Hashable {
     let canComplete: Bool // "İşi Bitir ve Sil" seçeneği çıksın mı | yalnız KABUL EDİLMİŞ işte VE aşama "Teslim edildi" ise (sunucu kuralı: önce teslim)
     // ⮕ KULLANIM [canWrite]: okur: ChatContext › forCarrier(), ChatContext › forShipperPending(), ChatContext › forShipperHistory()
     let canWrite: Bool // yazma kutusu açık mı | reddedilmiş/tamamlanmış/iptal edilmişte kapalı, yalnız eski mesajlar okunur (API de 409 verir)
+    var canReview = false // işi bitirince puan sayfası açılsın mı | yalnız Yük Veren tarafında true | var + varsayılan değer: eski kurucular (canReview yazmayanlar) bozulmaz
 
     // Taşımacı kendi teklifinin sohbetini açıyor (Tekliflerim): yazı yalnız bekleyen ve kabul edilende, bitirme yalnız kabul edilende
     // ⮕ ZİNCİR: Taşımacı kendi teklifinin sohbetini açıyor ← MyOffersViewModel.openChat(_:) ← Views/MyOffersView "Sohbet" düğmesi
@@ -48,6 +49,6 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [forShipperHistory]: çağırır: OldOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forShipperHistory(_ offer: ShipperHistoryOffer) -> ChatContext {
         ChatContext(offerId: offer.id, title: offer.carrierName,
-                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Accepted")
+                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Accepted", canReview: true)
     }
 }
