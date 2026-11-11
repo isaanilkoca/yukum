@@ -4,7 +4,9 @@ using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Accounts;
 
@@ -17,7 +19,9 @@ public sealed class DeleteAccountHandler(
     IAccountService accounts,
     IRepository<Listing> listings,
     IRepository<Offer> offers,
+    IRepository<Notification> notifications,
     IEngagementRepository engagement,
+    INotificationRepository notificationData,
     IUnitOfWork unitOfWork,
     TimeProvider time) : ICommandHandler<DeleteAccountCommand, bool>
 {
@@ -49,6 +53,7 @@ public sealed class DeleteAccountHandler(
             foreach (var offer in await offers.ListAsync(o => openIds.Contains(o.ListingId) && o.Status == OfferStatus.Pending, asNoTracking: false, ct))
             {
                 offer.Status = OfferStatus.Cancelled; offer.DecidedAt = now; offer.CarrierSeen = false; offer.HiddenByShipper = true;
+                notifications.Add(NotificationFactory.ListingCancelled(offer.CarrierId, open.First(l => l.Id == offer.ListingId), offer.Id)); // Taşımacı "İlan kaldırıldı" bildirimi alır
             }
 
             // Taşımacı: bekleyen teklifleri geri çekilir (ilan sahibi artık cevaplanamaz bir teklif görmez).
@@ -59,6 +64,7 @@ public sealed class DeleteAccountHandler(
 
             await unitOfWork.SaveChangesAsync(ct);
             await engagement.DeleteUserDataAsync(command.UserId, ct);   // favoriler + görüntülenme izleri: kişisel davranış verisi, tamamen silinir
+            await notificationData.DeleteUserDataAsync(command.UserId, ct); // kendi bildirimleri de silinir (karşı taraflara giden bildirimler kalır)
             await accounts.AnonymizeAsync(command.UserId, ct);
         }, cancellationToken);
         return true;

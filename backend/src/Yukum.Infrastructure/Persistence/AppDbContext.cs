@@ -6,6 +6,7 @@ using Yukum.Domain.Accounts;
 using Yukum.Domain.Common;
 using Yukum.Domain.Geography;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 using Yukum.Infrastructure.Identity;
 
 namespace Yukum.Infrastructure.Persistence;
@@ -61,6 +62,9 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
 
     /// <summary>İlan görüntülenmeleri (kişi başına günde bir).</summary>
     public DbSet<ListingView> ListingViews => Set<ListingView>();
+
+    /// <summary>Uygulama içi bildirimler (zil + liste). Aynı zamanda ileride push için gönderilecekler kutusu.</summary>
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.

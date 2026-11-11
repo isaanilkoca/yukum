@@ -105,3 +105,13 @@
 - **Giriş:** `POST /auth/login` gövdesine `role` (`Shipper`/`Carrier`) eklendi; iOS giriş ekranında rol seçici. Rol yoksa ve tek hesap varsa o hesaba girilir; iki hesap varsa 400. Hesap varlığı yine yalnız doğru şifreden sonra anlaşılır (zamanlama ve mesaj eşitliği korunur).
 - **Neden iki ayrı hesap, tek hesap + iki rol değil:** Mevcut model "kullanıcının tam bir rolü var" üzerine kurulu (JWT rolü, profiller, tüm yetki kontrolleri). Çok rollü tek hesap bunların hepsini yeniden yazmayı gerektirirdi; ayrı hesap, değişikliği kayıt ve girişe sınırlar.
 - **Geri dönüş maliyeti:** Orta. İki rollü e-postalar varken eski tek sütunlu indekse dönmek mümkün değil (migration `Down` bunu belirtir).
+
+## K-023 — Bildirimler: uygulama içi, olayla aynı işlemde yazılır, push'a hazır (12 Kasım 2026)
+- **Karar:** Tek `Notifications` tablosu (kime, tür, başlık, metin, ilan/teklif, `ReadAt`, `PushedAt`). 4 uç: liste (sayfalı), okunmamış sayısı, okundu, hepsi okundu. Bildirimi **olayı yapan handler** aynı `SaveChanges`'te yazar (teklif/kabul/aşama/tamamlama/puan/ilan kaldırma/hesap silmede açık ilan).
+- **Neden aynı işlemde:** "Teklif kaydedildi ama bildirim yazılamadı" tutarsızlığı olmaz (transactional outbox fikri). Metinler tek yerde (`NotificationFactory`).
+- **Push (APNs) yok:** Apple'ın ücretli geliştirici hesabı gerekir. Tasarım buna hazır: `PushedAt` boş satırlar "gönderilecekler kutusu"; sonradan cihaz jetonu ucu + arka plan işçisi eklenir, tablo değişmez.
+- **Neden arka plan işçisi (worker) yazılmadı:** Gönderilecek bir yer yok; kullanılmayan kod olurdu.
+- **Gizlilik:** Metinler karşı tarafın adını/telefonunu içermez. Hesap silinince kişinin kendi bildirimleri silinir.
+- **Sohbet mesajı bildirimi dışarıda:** Liste kalabalıklaşır; sohbetin zaten kendi ekranı var.
+- **Geri dönüş maliyeti:** Düşük. Tür sayı olarak saklanır (sona ekle).
+

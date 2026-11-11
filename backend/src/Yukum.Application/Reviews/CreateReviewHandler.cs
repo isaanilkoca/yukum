@@ -3,7 +3,9 @@ using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Reviews;
 
@@ -13,6 +15,7 @@ public sealed class CreateReviewHandler(
     IRepository<Offer> offers,
     IRepository<Listing> listings,
     IRepository<Review> reviews,
+    IRepository<Notification> notifications,
     ICarrierDirectory carriers,
     IUnitOfWork unitOfWork) : ICommandHandler<CreateReviewCommand, ReviewDto>
 {
@@ -44,6 +47,7 @@ public sealed class CreateReviewHandler(
         await unitOfWork.ExecuteInTransactionAsync(async ct =>
         {
             reviews.Add(review);
+            notifications.Add(NotificationFactory.ReviewReceived(offer.CarrierId, listing, offer.Id, review.Rating)); // yorumla aynı işlemde
             await unitOfWork.SaveChangesAsync(ct);                       // OfferId benzersiz indeksi: yarış durumunda ikinci yorum burada reddedilir
             await carriers.AddRatingAsync(offer.CarrierId, review.Rating, ct);
         }, cancellationToken);

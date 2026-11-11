@@ -2,7 +2,9 @@ using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Offers;
 
@@ -29,7 +31,7 @@ public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepo
 }
 
 /// <summary>Yük Veren teklifi kabul eder ya da reddeder. Kabulde ilan atanır, diğer bekleyen teklifler reddedilir.</summary>
-public sealed class DecideOfferHandler(IRepository<Listing> listings, IRepository<Offer> offers, IUnitOfWork unitOfWork, TimeProvider time)
+public sealed class DecideOfferHandler(IRepository<Listing> listings, IRepository<Offer> offers, IRepository<Notification> notifications, IUnitOfWork unitOfWork, TimeProvider time)
     : ICommandHandler<DecideOfferCommand, OfferDto>
 {
     /// <summary>Teklif/ilan yoksa ya da ilan başkasınınsa 404; teklif bekleyen ya da ilan açık değilse 409.</summary>
@@ -54,6 +56,7 @@ public sealed class DecideOfferHandler(IRepository<Listing> listings, IRepositor
         {
             offer.Status = OfferStatus.Accepted;
             listing.Status = ListingStatus.Assigned;
+            notifications.Add(NotificationFactory.OfferAccepted(offer.CarrierId, listing, offer.Id));
             // Aynı ilandaki diğer bekleyen teklifler otomatik reddedilir.
             var others = await offers.ListAsync(o => o.ListingId == listing.Id && o.Id != offer.Id && o.Status == OfferStatus.Pending,
                 asNoTracking: false, cancellationToken);
@@ -62,11 +65,13 @@ public sealed class DecideOfferHandler(IRepository<Listing> listings, IRepositor
                 other.Status = OfferStatus.Rejected;
                 other.DecidedAt = now;
                 other.CarrierSeen = false;
+                notifications.Add(NotificationFactory.OfferRejected(other.CarrierId, listing, other.Id, otherChosen: true));
             }
         }
         else
         {
             offer.Status = OfferStatus.Rejected;
+            notifications.Add(NotificationFactory.OfferRejected(offer.CarrierId, listing, offer.Id, otherChosen: false));
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

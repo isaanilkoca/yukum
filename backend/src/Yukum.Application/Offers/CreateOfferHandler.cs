@@ -2,7 +2,9 @@ using FluentValidation;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Offers;
 
@@ -11,6 +13,7 @@ public sealed class CreateOfferHandler(
     IValidator<CreateOfferCommand> validator,
     IRepository<Listing> listings,
     IRepository<Offer> offers,
+    IRepository<Notification> notifications,
     IUnitOfWork unitOfWork) : ICommandHandler<CreateOfferCommand, OfferDto>
 {
     // FONKSİYON ROLÜ: API'NİN İŞ MANTIĞI | OffersController çağırır: tutarı doğrular, ilan açık mı bakar, yeni teklif ekler ya da eskisinin tutarını günceller, DB'ye yazar
@@ -30,6 +33,7 @@ public sealed class CreateOfferHandler(
         var existing = (await offers.ListAsync(o => o.ListingId == command.ListingId && o.CarrierId == command.CarrierId,
             asNoTracking: false, cancellationToken)).FirstOrDefault();
 
+        var isNew = existing is null;
         if (existing is null)
         {
             existing = new Offer { ListingId = command.ListingId, CarrierId = command.CarrierId, Amount = command.Amount, Note = note };
@@ -45,6 +49,8 @@ public sealed class CreateOfferHandler(
             existing.HiddenByShipper = false;
         }
 
+        // Bildirim, teklifle AYNI SaveChanges'te yazılır (biri olmadan diğeri olmaz). Ekleme sırasında EF teklif numarasını üretmiş olur.
+        notifications.Add(NotificationFactory.OfferReceived(listing.ShipperId, listing, existing.Id, existing.Amount, updated: !isNew));
         await unitOfWork.SaveChangesAsync(cancellationToken);
         return new OfferDto(existing.Id, existing.ListingId, existing.Amount, existing.Note, existing.Status);
     }

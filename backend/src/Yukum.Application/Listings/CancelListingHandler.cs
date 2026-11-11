@@ -1,7 +1,9 @@
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Listings;
 
@@ -13,6 +15,7 @@ namespace Yukum.Application.Listings;
 public sealed class CancelListingHandler(
     IRepository<Listing> listings,
     IRepository<Offer> offers,
+    IRepository<Notification> notifications,
     IUnitOfWork unitOfWork,
     TimeProvider time) : ICommandHandler<CancelListingCommand, bool>
 {
@@ -39,6 +42,7 @@ public sealed class CancelListingHandler(
             offer.DecidedAt = now;
             offer.CarrierSeen = false;      // taşımacıda "Yeni" rozeti
             offer.HiddenByShipper = true;   // ilan sahibi ilanı kendisi kaldırdı, teklifler onun geçmişine düşmez
+            notifications.Add(NotificationFactory.ListingCancelled(offer.CarrierId, listing, offer.Id));
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

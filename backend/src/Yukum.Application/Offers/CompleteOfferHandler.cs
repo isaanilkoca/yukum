@@ -2,7 +2,9 @@ using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
+using Yukum.Application.Notifications;
 using Yukum.Domain.Listings;
+using Yukum.Domain.Notifications;
 
 namespace Yukum.Application.Offers;
 
@@ -15,6 +17,7 @@ public sealed class CompleteOfferHandler(
     IRepository<Offer> offers,
     IRepository<Listing> listings,
     IRepository<Message> messages,
+    IRepository<Notification> notifications,
     ICarrierDirectory carriers,
     IUnitOfWork unitOfWork) : ICommandHandler<CompleteOfferCommand, OfferDto>
 {
@@ -41,6 +44,9 @@ public sealed class CompleteOfferHandler(
 
         // Taşımacı bitirmediyse ona "Yeni" bildirimi (rozet) gider.
         if (!isCarrier) offer.CarrierSeen = false;
+
+        // Karşı tarafa haber: bitiren Taşımacı ise Yük Veren'e, bitiren Yük Veren ise Taşımacı'ya
+        notifications.Add(NotificationFactory.JobCompleted(isCarrier ? listing.ShipperId : offer.CarrierId, listing, offer.Id));
 
         // Silme yalnız bitirenin tarafında: teklif geçmişinden ve mesajlar.
         if (isCarrier) offer.HiddenByCarrier = true; else offer.HiddenByShipper = true;
