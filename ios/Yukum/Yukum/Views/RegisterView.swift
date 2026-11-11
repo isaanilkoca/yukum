@@ -23,7 +23,10 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): RegisterView › body | okur: RegisterView › body
+    
     @State private var viewModel = RegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
+    
+    @State private var showPrivacy = false // KVKK metni sayfası açık mı
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
@@ -51,6 +54,10 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
                     TextField("Firma Adı (isteğe bağlı)", text: $viewModel.companyName).textFieldStyle(.roundedBorder)
 
                     Toggle("KVKK metnini onaylıyorum", isOn: $viewModel.kvkkAccepted) // Toggle [SWIFT]: aç/kapa anahtarı | isOn: durum ViewModel'e true/false yazılır
+                    
+                   
+                    Button("KVKK metnini oku") { showPrivacy = true }.font(.footnote)
+                    .sheet(isPresented: $showPrivacy) { PrivacyView() }
 
                     if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // if let: errorMessage doluysa içini çıkarıp göster, nil ise satır çizilmez | .foregroundColor [SWIFT]: yazı rengi
 

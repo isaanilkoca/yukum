@@ -38,6 +38,8 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     
     @State private var showDeleteAccount = false // "Hesabı Sil" sayfası açık mı | true → .sheet görünür
     
+    @State private var showPrivacy = false // "Gizlilik ve KVKK" sayfası açık mı | true → .sheet görünür
+    
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
@@ -169,6 +171,12 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 
                 // Hesabı Sil: ayrı sayfa açar (şifre onayı orada) | role: .destructive [SWIFT]: kırmızı tehlikeli işlem düğmesi
                 // .buttonStyle(.borderedProminent) [SWIFT]: içi dolu düğme (Çıkış Yap ile aynı) | .tint(.red) [SWIFT]: dolgu rengini kırmızı yapar
+                
+                
+                // Gizlilik ve KVKK: sabit metin sayfası açar | .sheet aynı düğmeye bağlı (modifier her görünüme eklenebilir)
+                                Button("Gizlilik ve KVKK") { showPrivacy = true }.font(.footnote)
+                                    .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
+                
                 Button("Hesabı Sil", role: .destructive) { showDeleteAccount = true }.buttonStyle(.borderedProminent).tint(.red) // ⮕ aşağıdaki .sheet → Views/DeleteAccountView
 
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır

@@ -26,6 +26,8 @@ struct CarrierRegisterView: View {
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CarrierRegisterView › body | okur: CarrierRegisterView › body
     @State private var viewModel = CarrierRegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
+    
+    @State private var showPrivacy = false
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
@@ -61,6 +63,9 @@ struct CarrierRegisterView: View {
                     TextField("Plaka (isteğe bağlı)", text: $viewModel.plateNumber).textFieldStyle(.roundedBorder)
 
                     Toggle("KVKK Metnini onaylıyorum", isOn: $viewModel.kvkkAccepted) // aç/kapa anahtarı; $ ile true/false ViewModel'e yazılır
+                    
+                    Button("KVKK metnini oku") { showPrivacy = true }.font(.footnote)
+                                            .sheet(isPresented: $showPrivacy) { PrivacyView() }
 
                     // if let errorMessage: doluysa içini çıkarıp göster, nil ise bu satır hiç çizilmez
                     if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // .foregroundColor [SWIFT]: yazı rengi

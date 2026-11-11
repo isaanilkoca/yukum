@@ -24,6 +24,7 @@
 //  CarrierProfileView   CarrierProfileViewModel   Taşımacı profili: ★ ortalama, tamamlanan iş, yorumlar. ListingOffersView / OldOffersView "Profil" ile açar
 //  RatingView           RatingViewModel           Puan ver sayfası (alttan açılır). OldOffersView "Puan ver" ve ChatView (işi bitirince) açar
 //  DeleteAccountView    AccountViewModel          Hesabı sil sayfası (şifre onayı). HomeView 'Hesabı Sil' düğmesi .sheet ile açar; başarıda onDeleted → HomeView kapanır → giriş ekranı
+//  PrivacyView          (ViewModel yok)           Gizlilik ve KVKK sabit metin sayfası. HomeView 'Gizlilik ve KVKK' ve iki kayıt ekranındaki 'KVKK metnini oku' .sheet ile açar
 //  ChatView             ChatViewModel            teklif sohbeti. MyOffersView / ListingOffersView / OldOffersView açar
 //
 // API'ye giden kod BURADA YOK. Yolu: View → ViewModels/ → Models/Services/ → Models/Networking/APIClient → sunucu.
