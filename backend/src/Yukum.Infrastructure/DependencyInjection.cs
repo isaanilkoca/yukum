@@ -7,6 +7,11 @@ using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Accounts;
 using Yukum.Infrastructure.Identity;
 using Yukum.Infrastructure.Persistence;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Yukum.Application.Abstractions.Notifications;
+using Yukum.Application.Notifications;
+using Yukum.Infrastructure.Push;
 
 namespace Yukum.Infrastructure;
 
@@ -60,6 +65,20 @@ public static class DependencyInjection
         services.AddScoped<IPriceReferenceRepository, PriceReferenceRepository>();
         services.AddScoped<IEngagementRepository, EngagementRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
+
+        // Push (APNs): ayarlar "Apns" bölümünden. Kapalıyken (varsayılan) hiçbir şey doğrulanmaz; açıkken eksik ayar uygulama AÇILIRKEN hata verir.
+        services.AddOptions<ApnsOptions>().BindConfiguration("Apns")
+            .Validate(o => !o.Enabled || (o.KeyId.Length > 0 && o.TeamId.Length > 0 && o.BundleId.Length > 0),
+                "Apns:Enabled=true iken Apns:KeyId, Apns:TeamId ve Apns:BundleId tanımlı olmalı.")
+            .Validate(o => !o.Enabled || File.Exists(o.KeyPath), "Apns:KeyPath'teki .p8 dosyası bulunamadı.")
+            .ValidateOnStart();
+        services.AddSingleton<ApnsJwtFactory>();
+        // Tek HttpClient: APNs ile HTTP/2 bağlantısı açık tutulur (her push'ta yeniden bağlanmak Apple tarafından kısıtlanır)
+        services.AddSingleton<IPushSender>(sp => new ApnsPushSender(
+            new HttpClient(new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromMinutes(30) }) { Timeout = TimeSpan.FromSeconds(15) },
+            sp.GetRequiredService<ApnsJwtFactory>(), sp.GetRequiredService<IOptions<ApnsOptions>>(), sp.GetRequiredService<ILogger<ApnsPushSender>>()));
+        services.AddScoped<PushDispatcher>();
         // Kullanıcı adı okuyucu (teklif listesinde taşımacı adı).
         services.AddScoped<IUserDirectory, UserDirectory>();
         // Taşımacı profili (özet okuma + puan/iş sayacı güncelleme).

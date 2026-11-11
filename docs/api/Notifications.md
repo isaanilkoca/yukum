@@ -28,8 +28,16 @@ Taban adres `/api/v1`, jeton gerekir. **İki rol de** kullanır; herkes yalnız 
 
 Metinler karşı tarafın **adını/telefonunu içermez** (ilan başlığı ve tutar yeter). Bildirim, olayla **aynı işlemde** (transaction) yazılır; biri olmadan diğeri olmaz.
 
-## Push'a hazırlık (şimdilik kapalı)
-`Notifications.PushedAt` boş = telefona gönderilmedi. Push (APNs) ücretli Apple hesabı ister, henüz yok. Eklenince: cihaz jetonunu kaydeden bir uç + `PushedAt` boş satırları APNs'e gönderip dolduran arka plan işçisi. Tabloda değişiklik gerekmez.
+## Push (telefon bildirimi, APNs)
+- `PUT /notifications/device-token` gövde `{ "token": "<onaltılık APNs jetonu>", "deviceId": "<uygulamanın cihaz kimliği>", "sandbox": true }` → 204. **İdempotent:** her uygulama açılışında gönderilir. Aynı telefonda başka hesap giriş yaparsa adres o hesaba geçer. 400: jeton onaltılık değil / 64 karakterden kısa, `deviceId` boş.
+- `DELETE /notifications/device-token?deviceId=...` → 204. **Çıkış yapmadan hemen önce** çağrılır (jeton gerektiği için önce bu, sonra `/auth/logout`). Kayıt yoksa da 204.
+- `sandbox`: Xcode'dan kurulan geliştirme sürümü `true`, TestFlight/App Store `false` (Apple'ın iki ayrı sunucusu var; yanlış ortam = BadDeviceToken).
+
+**Sunucu tarafı:** Bildirim satırı olayla aynı işlemde yazılır (`PushedAt` boş). Arka plan işçisi (`PushWorker`, `Apns:PollSeconds` aralıkla) `PushDispatcher` ile bekleyenleri gönderir ve `PushedAt`'i doldurur. Geçersiz jeton silinir; geçici hata sonraki turda yeniden denenir; 1 saatten eski bildirim telefona gitmez (listede durur); telefonu kayıtlı olmayana gönderim yapılmaz.
+
+**Push yükü:** `aps.alert.title/body`, `aps.badge` = okunmamış sayısı, `aps.sound`; ayrıca `notificationId`, `type`, `listingId`, `offerId` (dokununca yönlendirme).
+
+**Ayar (`Apns` bölümü):** `Enabled` (varsayılan `false`: işçi çalışmaz), `KeyPath` (.p8 dosya yolu), `KeyId`, `TeamId`, `BundleId`, `PollSeconds`. Geliştirmede user-secrets, canlıda ortam değişkeni. `.p8` dosyası repoya konmaz.
 
 ## Hesap silme
-Silinen kişinin **kendi** bildirimleri silinir; karşı taraflara giden bildirimler (örn. "İlan kaldırıldı") kalır.
+Silinen kişinin **kendi** bildirimleri ve telefon push adresleri silinir; karşı taraflara giden bildirimler (örn. "İlan kaldırıldı") kalır.

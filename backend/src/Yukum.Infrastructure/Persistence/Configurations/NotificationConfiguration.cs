@@ -18,3 +18,17 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
         // Bilerek yabancı anahtar yok: kullanıcı satırı anonimleşir ama silinmez, bildirimler ise hesap silinirken kendisi silinir.
     }
 }
+
+/// <summary>"DeviceTokens" tablosu: jeton benzersiz (bir telefon adresi tek kullanıcıya ait); kullanıcıya göre arama için indeks.</summary>
+public class DeviceTokenConfiguration : IEntityTypeConfiguration<DeviceToken>
+{
+    /// <summary>Tabloyu tanımlar.</summary>
+    public void Configure(EntityTypeBuilder<DeviceToken> builder)
+    {
+        builder.ToTable("DeviceTokens");
+        builder.Property(d => d.Token).HasMaxLength(200).IsRequired();
+        builder.Property(d => d.DeviceId).HasMaxLength(100).IsRequired();
+        builder.HasIndex(d => d.Token).IsUnique();   // aynı adres iki kez kaydedilemez (veritabanı garantisi)
+        builder.HasIndex(d => d.UserId);             // "bu kullanıcının telefonları"
+    }
+}

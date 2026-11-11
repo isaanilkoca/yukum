@@ -22,6 +22,7 @@ public sealed class DeleteAccountHandler(
     IRepository<Notification> notifications,
     IEngagementRepository engagement,
     INotificationRepository notificationData,
+    IDeviceTokenRepository deviceTokens,
     IUnitOfWork unitOfWork,
     TimeProvider time) : ICommandHandler<DeleteAccountCommand, bool>
 {
@@ -65,6 +66,7 @@ public sealed class DeleteAccountHandler(
             await unitOfWork.SaveChangesAsync(ct);
             await engagement.DeleteUserDataAsync(command.UserId, ct);   // favoriler + görüntülenme izleri: kişisel davranış verisi, tamamen silinir
             await notificationData.DeleteUserDataAsync(command.UserId, ct); // kendi bildirimleri de silinir (karşı taraflara giden bildirimler kalır)
+            await deviceTokens.DeleteUserDataAsync(command.UserId, ct);     // telefon push adresleri: silinen hesaba bildirim gitmez
             await accounts.AnonymizeAsync(command.UserId, ct);
         }, cancellationToken);
         return true;

@@ -38,6 +38,17 @@ public class NotificationRepository(AppDbContext context) : INotificationReposit
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.ReadAt, now).SetProperty(n => n.UpdatedAt, now), cancellationToken);
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<Notification>> ListUnpushedAsync(int take, CancellationToken cancellationToken = default) =>
+        await context.Set<Notification>().AsNoTracking().Where(n => n.PushedAt == null)
+            .OrderBy(n => n.CreatedAt).ThenBy(n => n.Id).Take(take).ToListAsync(cancellationToken);
+
+    /// <inheritdoc />
+    public Task MarkPushedAsync(IReadOnlyCollection<Guid> ids, DateTime now, CancellationToken cancellationToken = default) =>
+        // PushedAt == null koşulu: iki işçi aynı satırı işaretlemeye çalışırsa ikincisi 0 satır etkiler
+        context.Set<Notification>().Where(n => ids.Contains(n.Id) && n.PushedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(n => n.PushedAt, now), cancellationToken);
+
+    /// <inheritdoc />
     public Task DeleteUserDataAsync(Guid userId, CancellationToken cancellationToken = default) =>
         context.Set<Notification>().Where(n => n.UserId == userId).ExecuteDeleteAsync(cancellationToken);
 }

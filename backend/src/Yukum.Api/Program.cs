@@ -130,6 +130,7 @@ builder.Services.AddRateLimiter(limiter =>
 });
 builder.Services.AddApplication();     // handler'lar (iş kuralları), kendiliğinden bulunup kaydedilir
 builder.Services.AddInfrastructure();  // veritabanı (SQL Server), repository'ler, saat servisi
+builder.Services.AddHostedService<Yukum.Api.Background.PushWorker>(); // arka plan: bekleyen bildirimleri telefona yollar (Apns:Enabled=false ise çalışmaz)
 
 // GET /health: uygulama ayakta mı ve veritabanına bağlanabiliyor mu?
 builder.Services.AddHealthChecks()

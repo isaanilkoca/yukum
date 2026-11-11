@@ -17,6 +17,12 @@ public interface INotificationRepository
     /// <summary>Okunmamışların hepsini okundu yapar. Kaç tane değiştiğini döner.</summary>
     Task<int> MarkAllReadAsync(Guid userId, DateTime now, CancellationToken cancellationToken = default);
 
+    /// <summary>Henüz push'a işlenmemiş (PushedAt boş) bildirimler, en eski önce, en çok <paramref name="take"/> adet.</summary>
+    Task<IReadOnlyList<Notification>> ListUnpushedAsync(int take, CancellationToken cancellationToken = default);
+
+    /// <summary>Verilen bildirimleri "push'a işlendi" yapar (PushedAt doldurulur): bir daha gönderilmez.</summary>
+    Task MarkPushedAsync(IReadOnlyCollection<Guid> ids, DateTime now, CancellationToken cancellationToken = default);
+
     /// <summary>Kullanıcının tüm bildirimlerini siler (hesap silme).</summary>
     Task DeleteUserDataAsync(Guid userId, CancellationToken cancellationToken = default);
 }

@@ -66,6 +66,9 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     /// <summary>Uygulama içi bildirimler (zil + liste). Aynı zamanda ileride push için gönderilecekler kutusu.</summary>
     public DbSet<Notification> Notifications => Set<Notification>();
 
+    /// <summary>Telefonların push adresleri (APNs cihaz jetonları).</summary>
+    public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
+
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.
     protected TimeProvider Time { get; }

@@ -115,3 +115,14 @@
 - **Sohbet mesajı bildirimi dışarıda:** Liste kalabalıklaşır; sohbetin zaten kendi ekranı var.
 - **Geri dönüş maliyeti:** Düşük. Tür sayı olarak saklanır (sona ekle).
 
+## K-024 — Push (APNs): outbox + arka plan işçisi, jeton tabanlı kimlik (12 Kasım 2026)
+- **Durum değişti:** Apple Developer Program üyeliği alındı (Team ID 73H886HWW8); K-023'teki "push yok" kısmı kalktı.
+- **Karar:** `DeviceTokens` tablosu (jeton benzersiz) + `PUT/DELETE /notifications/device-token`. Gönderim isteğin içinde DEĞİL: `PushWorker` (BackgroundService) `PushDispatcher` ile `Notifications.PushedAt` boş satırları APNs'e yollar.
+- **Neden istek içinde göndermiyoruz:** Apple yavaş ya da erişilemezse kullanıcının isteği (teklif verme) beklemez/başarısız olmaz; bildirim satırı olayla aynı işlemde yazıldığı için hiçbir olay kaybolmaz, gönderim sonra yeniden denenir (transactional outbox).
+- **Kimlik:** Sertifika (.p12, yılda bir yenilenir) yerine **jeton tabanlı** (.p8 anahtar, süresiz, tüm uygulamalarda geçerli). JWT ES256 elle üretilir (ek paket yok), 50 dk önbellek (Apple 20–60 dk ister).
+- **Soyutlama:** İş kuralı `IPushSender` arayüzünü bilir, Apple'ı bilmez; testte sahte gönderici (gerçek Apple çağrısı yok).
+- **Hata davranışı:** geçersiz jeton silinir; geçici hata sonraki turda; 1 saatten eski bildirim gönderilmez; telefonu olmayana gönderim yok.
+- **Bilinen sınır:** Tek sunucu örneği varsayılır. İki örnek aynı anda çalışırsa aynı bildirim iki kez gidebilir; çoklu örnekte satırlar önce "sahiplenilmeli" (UPDATE ... OUTPUT ya da kilit). Vitrin projesinde gerek yok.
+- **Gizli veri:** `.p8` repoda yok; yolu `Apns:KeyPath` ayarında (user-secrets / ortam değişkeni). `Apns:Enabled=false` varsayılan.
+- **Geri dönüş maliyeti:** Düşük. `Apns:Enabled=false` push'u kapatır, uygulama içi bildirimler aynen çalışır.
+

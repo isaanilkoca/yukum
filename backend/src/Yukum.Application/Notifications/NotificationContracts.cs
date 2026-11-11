@@ -19,3 +19,10 @@ public sealed record NotificationDto(Guid Id, NotificationType Type, string Titl
 
 /// <summary>Okunmamış bildirim sayısı.</summary>
 public sealed record UnreadNotificationCountDto(int Count);
+
+/// <summary>Komut: telefon push adresini (APNs cihaz jetonu) bu kullanıcıya kaydeder. Tekrar çağrılabilir (idempotent).</summary>
+public sealed record RegisterDeviceTokenCommand(Guid UserId, string? DeviceId, string? Token, bool Sandbox);
+
+/// <summary>Komut: kullanıcının bu cihazdaki push adresini siler (çıkış yaparken). Yoksa da başarılı.</summary>
+public sealed record RemoveDeviceTokenCommand(Guid UserId, string? DeviceId);
+
