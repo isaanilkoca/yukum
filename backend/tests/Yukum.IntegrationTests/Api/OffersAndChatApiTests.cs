@@ -1230,4 +1230,24 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.NoContent, carrierOk.StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, shipperOk.StatusCode);
     }
+
+    // K-021: hesap silinince puan ve yorum KALIR (karşı tarafın itibarı bozulmasın); yalnız yazarın adı anonimleşir.
+    [Fact]
+    public async Task A_deleted_shipper_keeps_the_rating_and_comment_on_the_carrier_profile_under_an_anonymous_name()
+    {
+        var c = await StartAsync();
+        var shipper = await NewAccount(c, true); var carrier = await NewUser(c, false);
+        var (offer, carrierId) = await CompletedJob(c, shipper.Token, carrier);
+        await Call(c, shipper.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/review", new { rating = 4, comment = "Zamanında teslim etti" });
+
+        var deleted = await DeleteAccount(c, shipper.Token, "Abcdefg1");
+        var profile = await Json(await Call(c, carrier, HttpMethod.Get, $"/api/v1/carriers/{carrierId}"));
+
+        Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
+        Assert.Equal(4m, profile.GetProperty("averageRating").GetDecimal());
+        Assert.Equal(1, profile.GetProperty("ratingCount").GetInt32());
+        var review = profile.GetProperty("reviews")[0];
+        Assert.Equal("Zamanında teslim etti", review.GetProperty("comment").GetString());   // yorum metni durur
+        Assert.DoesNotContain("Yuk Veren", review.GetProperty("shipperName").GetString()!);  // gerçek ad gitti
+    }
 }

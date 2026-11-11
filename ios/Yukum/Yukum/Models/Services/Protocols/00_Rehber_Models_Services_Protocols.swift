@@ -10,6 +10,7 @@
 //  AuthServicing     ← AuthService   (kullanan: Login/Register/CarrierRegister ViewModel)
 //  ListingServicing  ← ListingService
 //  ReviewServicing   ← ReviewService
+//  AccountServicing  ← AccountService
 //  OfferServicing    ← OfferService
 //  ChatServicing     ← ChatService
 //  CityServicing     ← CityService

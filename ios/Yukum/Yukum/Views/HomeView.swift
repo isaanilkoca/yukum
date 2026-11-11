@@ -35,6 +35,9 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     // ⮕ KULLANIM [openURL]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
+    
+    @State private var showDeleteAccount = false // "Hesabı Sil" sayfası açık mı | true → .sheet görünür
+    
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
@@ -163,6 +166,10 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                         .refreshable { await viewModel.load() } // aşağı çekince yenile
                     }
                 }
+                
+                // Hesabı Sil: ayrı sayfa açar (şifre onayı orada) | role: .destructive [SWIFT]: kırmızı tehlikeli işlem düğmesi
+                // .buttonStyle(.borderedProminent) [SWIFT]: içi dolu düğme (Çıkış Yap ile aynı) | .tint(.red) [SWIFT]: dolgu rengini kırmızı yapar
+                Button("Hesabı Sil", role: .destructive) { showDeleteAccount = true }.buttonStyle(.borderedProminent).tint(.red) // ⮕ aşağıdaki .sheet → Views/DeleteAccountView
 
                 Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
                     // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin) | BAĞLANTI: Models/Networking/AuthSession.swift → signOut
@@ -176,6 +183,10 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
             .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Models/Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
+            
+            // Hesap silme sayfası: başarılı olunca onDeleted çalışır → dismiss() bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranı (yerel oturum zaten silindi)
+            .sheet(isPresented: $showDeleteAccount) { DeleteAccountView(onDeleted: { dismiss() }) } // .sheet [SWIFT]: alttan açılan sayfa
+
             .sheet(isPresented: $showFilter) { // .sheet [SWIFT]: alttan açılan sayfa | showFilter true olunca görünür
                 OpenListingsFilterView(filter: viewModel.filter, cities: viewModel.cities) { viewModel.filter = $0 } // Uygula → ViewModel.filter → reloadKey → load()
             }

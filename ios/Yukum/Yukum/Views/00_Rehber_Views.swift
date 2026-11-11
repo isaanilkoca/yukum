@@ -23,6 +23,7 @@
 //  FavoritesView        FavoritesViewModel        Taşımacının favori ilanları. HomeView sol üst kalp ikonu açar; satır → ListingDetailView
 //  CarrierProfileView   CarrierProfileViewModel   Taşımacı profili: ★ ortalama, tamamlanan iş, yorumlar. ListingOffersView / OldOffersView "Profil" ile açar
 //  RatingView           RatingViewModel           Puan ver sayfası (alttan açılır). OldOffersView "Puan ver" ve ChatView (işi bitirince) açar
+//  DeleteAccountView    AccountViewModel          Hesabı sil sayfası (şifre onayı). HomeView 'Hesabı Sil' düğmesi .sheet ile açar; başarıda onDeleted → HomeView kapanır → giriş ekranı
 //  ChatView             ChatViewModel            teklif sohbeti. MyOffersView / ListingOffersView / OldOffersView açar
 //
 // API'ye giden kod BURADA YOK. Yolu: View → ViewModels/ → Models/Services/ → Models/Networking/APIClient → sunucu.

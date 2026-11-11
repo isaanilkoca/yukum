@@ -96,6 +96,7 @@
 - **Neden POST:** Gövdeli (şifre) DELETE isteklerini bazı istemci ve vekiller düşürür.
 - **Kabul edilen kuyruk:** Erişim jetonu silindikten sonra en çok 15 dk geçerli (stateless); yenileme jetonları anında iptal.
 - **Geri dönüş maliyeti:** Orta. Fiziksel silmeye geçmek yabancı anahtarları ve geçmiş ekranlarını yeniden tasarlamayı gerektirir.
+- **Puan ve yorum silinmez (kullanıcı kararı, 11 Kasım):** Yük Veren hesabını silse de Taşımacı'nın puanı ve yorum metni kalır (itibar geçmişi; kullanıcılar geçmişte olanı görsün). Yalnız yazarın adı "Silinmiş Kullanıcı" olur. Test: `A_deleted_shipper_keeps_the_rating_and_comment...`.
 
 ## K-022 — Aynı e-posta/telefon iki rolde: bir Yük Veren + bir Taşımacı hesabı (11 Kasım 2026)
 - **Karar:** Aynı kişi aynı e-posta ve telefonla hem Yük Veren hem Taşımacı olarak kayıt olabilir; **aynı role ikinci hesap açılamaz**. K-017/K-018'deki "bir e-posta = tek hesap" kuralını günceller.

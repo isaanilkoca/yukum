@@ -10,6 +10,7 @@
 //  LoginRequest            giden: e-posta/telefon, şifre, role, deviceId. LoginViewModel hazırlar → AuthService.login gönderir
 //  LoginResponse           gelen: jetonlar + LoginUser. AuthService jetonları AuthSession'a verir, LoginViewModel user'ı alır
 //  LoginUser               giriş yapan kişi (ad, rol). HomeView'ın başlığı ve rol kararı bundan gelir
+//  DeleteAccountRequest    giden: hesap silme isteği ({ password }). AccountViewModel hazırlar → AccountService.deleteAccount gönderir
 //  RegisterRequest         giden: Yük Veren kaydı. RegisterViewModel → AuthService.register
 //  RegisterCarrierRequest  giden: Taşımacı kaydı (+ araç listesi). CarrierRegisterViewModel → AuthService.registerCarrier
 //  VehicleRequest          RegisterCarrierRequest içindeki araç (tür, kapasite, plaka)
