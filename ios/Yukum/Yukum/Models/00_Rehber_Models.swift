@@ -5,7 +5,7 @@
 
 // MVVM'de 'Model' = verinin kendisi + veriye ulaşan her şey. Burada 4 iş var, her biri bir alt klasörde:
 // 
-// VERİ KALIPLARI (JSON'un Swift hâli, kod yok sadece alanlar):  Auth/  Listings/  Offers/  Chat/  Geography/  Vehicles/
+// VERİ KALIPLARI (JSON'un Swift hâli, kod yok sadece alanlar):  Auth/  Listings/  Offers/  Chat/  Notifications/  Geography/  Vehicles/
 // API'YE KONUŞAN SERVİSLER:   Services/   (her fonksiyon bir API ucu)
 // SERVİSLERİN ORTAK KAPISI:   Networking/ (APIClient: gönder, jeton, hata çevirme)
 // YARDIMCILAR:                Security/ (Keychain, cihaz kimliği)  ·  Location/ (telefonun konumu)
@@ -15,6 +15,7 @@
 //  Listings/    ilan modelleri (Listing, CreateListingRequest, ListingResponse)
 //  Offers/      teklif modelleri (CarrierOffer, ListingOffer, ShipperHistoryOffer, CreateOfferRequest, OfferResponse, UnseenCount)
 //  Chat/        sohbet modelleri (ChatMessage, SendMessageRequest)
+//  Notifications/ bildirim modelleri (AppNotification, NotificationCount)
 //  Geography/   City, District
 //  Vehicles/    VehicleType (araç türleri, iki ekranda tek kaynak)
 //  Services/    AuthService, ListingService, OfferService, ChatService, CityService + Protocols/ (sözleşmeler)

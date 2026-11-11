@@ -21,6 +21,7 @@
 //  CarrierProfileViewModel   CarrierProfileView için. ReviewService.carrierProfile (ortalama puan + yorumlar)
 //  RatingViewModel           RatingView için. ReviewService.create (1–5 puan + yorum)
 //  AccountViewModel          DeleteAccountView için. AccountService.deleteAccount; başarıda oturumu kapatır (AuthSession.signOut), hatada oturum açık kalır
+//  NotificationsViewModel    NotificationsView için. NotificationService.list (sayfalı, loadMore), markRead (iyimser, hata olursa geri alır), markAllRead
 //  ChatViewModel             ChatView için. ChatService.messages / send / clear, OfferService.complete; mesajları belirli aralıkla yeniler
 //  ChatContext               ViewModel değil, küçük kural kutusu: sohbeti kim yazabilir/bitirebilir (rol + teklif durumu). Teklif ekranlarındaki ViewModel'ler üretir, ChatViewModel kullanır
 //
