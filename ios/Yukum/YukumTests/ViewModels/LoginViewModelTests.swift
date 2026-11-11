@@ -92,4 +92,14 @@ struct LoginViewModelTests {
         #expect(vm.errorMessage == "E-posta veya şifre hatalı.")
         #expect(LoginViewModel(auth: auth, session: session, deviceId: { "d" }, defaults: defaults).role == .shipper) // yanlış girişte hatırlanmaz
     }
+
+    @Test func login_treatsAWhitespaceOnlyIdentityAsEmpty_andDoesNotCallTheServer() async {
+        let (vm, auth, _) = loginVM()
+        vm.emailOrPhone = "   "; vm.password = "Abcdefg1"
+
+        await vm.login()
+
+        #expect(vm.errorMessage == "E-posta/telefon ve şifre gerekli.") // sunucudan başka bir hata beklemeden yerelde yakalanır
+        #expect(auth.loginBodies.isEmpty)
+    }
 }

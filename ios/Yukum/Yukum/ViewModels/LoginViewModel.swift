@@ -24,9 +24,10 @@ final class LoginViewModel {
     // ⮕ KULLANIM [session]: okur: LoginViewModel › restoreSession()
     private let session: SessionRestoring
     // ⮕ KULLANIM [deviceId]: okur: LoginViewModel › login(), LoginViewModelTests (test)
-    private let defaults: UserDefaults // son kullanılan hesap türünü saklar | testte ayrı bir UserDefaults verilir
-    private static let lastRoleKey = "lastLoginRole"
     private let deviceId: () -> String // () -> String: "çağrılınca metin veren fonksiyon" | gerçekte DeviceID.current, testte sabit değer
+    // ⮕ KULLANIM [defaults]: okur: LoginViewModel › init() | yazar: LoginViewModel › login()
+    private let defaults: UserDefaults // son kullanılan hesap türünü saklar | testte ayrı bir UserDefaults verilir
+    private static let lastRoleKey = "lastLoginRole" // UserDefaults anahtarı
 
     // ⮕ ZİNCİR: Views/LoginView: TextField("Email veya Telefon", text: $viewModel.emailOrPhone) | login() baş/son boşluğu temizleyip LoginRequest.emailOrPhone'a koyar
     // ⮕ KULLANIM [emailOrPhone]: okur: LoginViewModel › login(), LoginViewModelTests (test) | bağlar(okur+yazar): LoginView › body | YAZAR: LoginViewModelTests (test)
@@ -66,14 +67,14 @@ final class LoginViewModel {
     // `async`  → [Swift anahtar sözcüğü] bu fonksiyonun içinde `await` ile beklenebilir; bekleme sırasında ekran donmaz
     func restoreSession() async {
         // if let user = try? await session.restore() { loggedInUser = user }
-        //   session            → BİZİM değişken (satır 25, tipi SessionRestoring); gerçekte Models/Networking/AuthSession.shared
+        //   session            → BİZİM değişken, tipi SessionRestoring; gerçekte Models/Networking/AuthSession.shared
         //   session.restore()  → BİZİM fonksiyon (Models/Networking/AuthSession.swift): Keychain'deki yenileme jetonuyla sunucudan yeni jeton alır → LoginUser? döner
         //   await              → [Swift] cevap gelene kadar bekle
         //   try?               → [Swift] restore() hata fırlatırsa çökme, sonucu nil say (şifre formu görünür)
         //   if let user = ...  → [Swift] sonuç nil DEĞİLSE içindekini `user` adıyla al (user: yalnız bu süslü parantez içinde yaşar)
-        //   loggedInUser = user → BİZİM değişken (satır 47): dolunca LoginView'daki .fullScreenCover HomeView(user:) açar
+        //   loggedInUser = user → BİZİM değişken: dolunca LoginView'daki .fullScreenCover HomeView(user:) açar
         if let user = try? await session.restore() { loggedInUser = user }
-        // isRestoring → BİZİM değişken (satır 44): false olunca LoginView "Oturum açılıyor" çarkını kaldırır, form görünür
+        // isRestoring → BİZİM değişken: false olunca LoginView "Oturum açılıyor" çarkını kaldırır, form görünür
         isRestoring = false
     }
 
@@ -83,24 +84,25 @@ final class LoginViewModel {
     func login() async {
         // guard !emailOrPhone.isEmpty, !password.isEmpty else { ... return }
         //   guard  → [Swift] şart sağlanmazsa else bloğuna gir ve fonksiyondan çık (API'ye hiç gidilmez)
-        //   emailOrPhone, password → BİZİM değişkenler (satır 31, 34): LoginView'daki TextField/SecureField doğrudan bunlara yazar ($ bağı)
-        //   errorMessage → BİZİM değişken (satır 37): LoginView kırmızı yazı olarak gösterir
-        guard !emailOrPhone.isEmpty, !password.isEmpty else {
+        //   emailOrPhone, password → BİZİM değişkenler: LoginView'daki TextField/SecureField doğrudan bunlara yazar ($ bağı)
+        //   errorMessage → BİZİM değişken: LoginView kırmızı yazı olarak gösterir
+        // identity: baştaki/sondaki boşluk TEMİZLENMİŞ hâl | kontrol bu değere bakar (yalnız boşluktan oluşan giriş "boş" sayılır) ve istekte de aynısı gider
+        let identity = emailOrPhone.trimmingCharacters(in: .whitespaces)
+        guard !identity.isEmpty, !password.isEmpty else {
             errorMessage = "E-posta/telefon ve şifre gerekli."
             return
         }
-        // isLoading → BİZİM (satır 40): true iken LoginView düğmeyi kilitler | errorMessage = nil: eski hata silinir
+        // isLoading → BİZİM: true iken LoginView düğmeyi kilitler | errorMessage = nil: eski hata silinir
         isLoading = true
         errorMessage = nil
         // defer { ... } → [Swift] fonksiyondan HER çıkışta (başarı/hata/return) çalışır: düğme tekrar açılır
         defer { isLoading = false }
 
         // LoginRequest(...) → BİZİM model (Models/Auth/LoginRequest.swift): API'ye gidecek JSON paketi
-        //   .trimmingCharacters(in: .whitespaces) → [Swift/Foundation] baştaki-sondaki boşlukları keser
-        //   deviceId()    → BİZİM değişken (satır 27) fonksiyon gibi çağrılır: gerçekte Models/Security/DeviceID.current (Keychain'deki sabit cihaz kimliği)
-        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, role: role.rawValue, deviceId: deviceId())
+        //   deviceId()    → BİZİM değişken fonksiyon gibi çağrılır: gerçekte Models/Security/DeviceID.current (Keychain'deki sabit cihaz kimliği)
+        let body = LoginRequest(emailOrPhone: identity, password: password, role: role.rawValue, deviceId: deviceId())
         do {
-            // auth.login(body) → auth: BİZİM (satır 23, tipi AuthServicing) → gerçekte Models/Services/AuthService.login: isteği atar, jetonları AuthSession'a verir
+            // auth.login(body) → auth: BİZİM, tipi AuthServicing → gerçekte Models/Services/AuthService.login: isteği atar, jetonları AuthSession'a verir
             //   try await → [Swift] hata fırlatabilir + cevap gelene kadar bekle | response: LoginResponse (Models/Auth/LoginResponse.swift)
             let response = try await auth.login(body)
             password = "" // şifre bellekte/ekranda kalmasın
