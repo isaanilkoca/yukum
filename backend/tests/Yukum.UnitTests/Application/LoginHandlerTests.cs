@@ -2,6 +2,7 @@ using FluentValidation;
 using NSubstitute;
 using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Accounts;
+using Yukum.Domain.Accounts;
 using Yukum.Application.Common;
 
 namespace Yukum.UnitTests.Application;
@@ -31,7 +32,7 @@ public class LoginHandlerTests
     [Fact]
     public async Task Email_login_trims_and_lowercases_and_returns_the_token_and_user()
     {
-        _auth.VerifyCredentialsAsync("ali@x.com", null, "Abcdefg1", Arg.Any<CancellationToken>()).Returns(User);
+        _auth.VerifyCredentialsAsync("ali@x.com", null, "Abcdefg1", Arg.Any<UserType?>(), Arg.Any<CancellationToken>()).Returns(User);
 
         var response = await _handler.HandleAsync(Command("  ALI@X.com "));
 
@@ -49,7 +50,7 @@ public class LoginHandlerTests
     [InlineData("532-123-45-67")]
     public async Task Phone_login_is_normalized_to_plus90_whatever_the_format(string typed)
     {
-        _auth.VerifyCredentialsAsync(null, "+905321234567", "Abcdefg1", Arg.Any<CancellationToken>()).Returns(User);
+        _auth.VerifyCredentialsAsync(null, "+905321234567", "Abcdefg1", Arg.Any<UserType?>(), Arg.Any<CancellationToken>()).Returns(User);
 
         var response = await _handler.HandleAsync(Command(typed));
 
@@ -59,11 +60,11 @@ public class LoginHandlerTests
     [Fact]
     public async Task The_password_is_passed_exactly_as_typed()
     {
-        _auth.VerifyCredentialsAsync(Arg.Any<string?>(), Arg.Any<string?>(), " Abc Def1 ", Arg.Any<CancellationToken>()).Returns(User);
+        _auth.VerifyCredentialsAsync(Arg.Any<string?>(), Arg.Any<string?>(), " Abc Def1 ", Arg.Any<UserType?>(), Arg.Any<CancellationToken>()).Returns(User);
 
         await _handler.HandleAsync(Command("ali@x.com", " Abc Def1 "));
 
-        await _auth.Received(1).VerifyCredentialsAsync("ali@x.com", null, " Abc Def1 ", Arg.Any<CancellationToken>());
+        await _auth.Received(1).VerifyCredentialsAsync("ali@x.com", null, " Abc Def1 ", Arg.Any<UserType?>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -89,7 +90,7 @@ public class LoginHandlerTests
     [Fact]
     public async Task Failures_from_the_auth_service_pass_through_and_no_token_is_created()
     {
-        _auth.VerifyCredentialsAsync(Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+        _auth.VerifyCredentialsAsync(Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<UserType?>(), Arg.Any<CancellationToken>())
             .Returns<AuthUserDto>(
                 _ => throw new InvalidCredentialsException(),
                 _ => throw new AccountLockedException(TimeSpan.FromMinutes(15)),

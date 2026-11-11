@@ -111,14 +111,18 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
         await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            // Telefon önceden kayıtlı mı? (E-posta kontrolünü Identity kendisi yapar.)
-            if (await context.Users.AnyAsync(u => u.PhoneNumber == phone, cancellationToken))
+            // E-posta ve telefon BU ROL için önceden kayıtlı mı? Başka rolde kayıtlı olması engel değildir (K-022: aynı kişi hem Yük Veren hem Taşımacı olabilir).
+            var normalizedEmail = users.NormalizeEmail(email);
+            if (await context.Users.AnyAsync(u => u.NormalizedEmail == normalizedEmail && u.UserType == type, cancellationToken))
+                throw new ConflictException(EmailTakenMessage);
+            if (await context.Users.AnyAsync(u => u.PhoneNumber == phone && u.UserType == type, cancellationToken))
                 throw new ConflictException(PhoneTakenMessage);
 
-            // Yeni kullanıcı nesnesi. Giriş adı (UserName) e-postanın kendisidir.
+            // Yeni kullanıcı nesnesi. Giriş adı (UserName) Identity'de TEK BAŞINA benzersiz olmak zorunda; aynı e-posta iki rolde
+            // olabildiği için "e-posta_Rol" yapılır (örn. ali@x.com_Shipper). Kullanıcı bunu hiç görmez: giriş e-posta/telefon + rolle yapılır.
             var user = new AppUser
             {
-                UserName = email,
+                UserName = $"{email}_{type}",
                 Email = email,
                 PhoneNumber = phone,
                 FullName = fullName,

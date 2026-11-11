@@ -64,7 +64,8 @@ public sealed record RegisteredUserDto(Guid Id, string FullName, string Email, U
 /// <param name="Password">Şifre.</param>
 /// <param name="DeviceId">Cihazın kimliği (iOS'ta kalıcı bir UUID). Oturum jetonları cihaz bazında yönetilir (D4).</param>
 /// <param name="DeviceName">Cihazın adı (opsiyonel, örn. "Anıl'ın iPhone'u").</param>
-public sealed record LoginCommand(string? EmailOrPhone, string? Password, string? DeviceId, string? DeviceName);
+public sealed record LoginCommand(string? EmailOrPhone, string? Password, string? DeviceId, string? DeviceName,
+    string? Role = null); // "Shipper" ya da "Carrier": aynı e-posta iki rolde kayıtlı olabilir, istemci hangisine gireceğini söyler (K-022)
 
 /// <summary>Giriş yapmış kullanıcının istemciye gösterilen özeti.</summary>
 /// <param name="Id">Kullanıcı numarası.</param>

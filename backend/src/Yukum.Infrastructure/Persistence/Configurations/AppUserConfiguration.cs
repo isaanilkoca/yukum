@@ -17,12 +17,11 @@ public class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
         builder.Property(u => u.FullName).IsRequired().HasMaxLength(150);
         builder.Property(u => u.AvatarUrl).HasMaxLength(500);
 
-        // Aynı e-posta iki kez kayıt olamaz (büyük/küçük harf fark etmez: Identity normalleştirilmiş halini saklar).
-        // Identity'nin hazır "EmailIndex" indeksi (adı değişmez) benzersiz yapılır; ikinci bir indeks açılmaz.
-        builder.HasIndex(u => u.NormalizedEmail).IsUnique();
+        // E-posta ROL BAŞINA benzersiz (K-022): aynı e-posta bir kez Yük Veren, bir kez Taşımacı olarak kayıt olabilir; aynı role ikinci hesap olamaz.
+        // Büyük/küçük harf fark etmez (Identity normalleştirilmiş halini saklar). Identity'nin hazır "EmailIndex" indeksi artık yalnız arama içindir.
+        builder.HasIndex(u => new { u.NormalizedEmail, u.UserType }).IsUnique();
 
-        // Aynı telefon iki kez kullanılamaz. SQL Server benzersiz indeksi boş (NULL) değerleri filtreler,
-        // yani telefonsuz birden çok kullanıcı olabilir.
-        builder.HasIndex(u => u.PhoneNumber).IsUnique();
+        // Telefon da ROL BAŞINA benzersiz. SQL Server benzersiz indeksi boş (NULL) telefonu filtreler (silinmiş hesaplar telefonsuzdur).
+        builder.HasIndex(u => new { u.PhoneNumber, u.UserType }).IsUnique();
     }
 }

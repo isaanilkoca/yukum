@@ -1,4 +1,5 @@
 using Yukum.Application.Accounts;
+using Yukum.Domain.Accounts;
 
 namespace Yukum.Application.Abstractions.Identity;
 
@@ -19,5 +20,5 @@ public interface IAuthService
     /// <exception cref="Common.InvalidCredentialsException">Kullanıcı yok ya da şifre yanlış (ayırt edilemez).</exception>
     /// <exception cref="Common.AccountLockedException">Hesap geçici olarak kilitli.</exception>
     /// <exception cref="Common.ForbiddenException">Şifre doğru ama hesap devre dışı ya da engelli.</exception>
-    Task<AuthUserDto> VerifyCredentialsAsync(string? email, string? phone, string password, CancellationToken cancellationToken = default);
+    Task<AuthUserDto> VerifyCredentialsAsync(string? email, string? phone, string password, UserType? type, CancellationToken cancellationToken = default);
 }

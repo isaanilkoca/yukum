@@ -7,6 +7,7 @@ Her madde için: **durum** (Tamam / Kabul edilen risk / Canlıdan önce yapılac
 |---|---|---|
 | Şifre saklama | Tamam | ASP.NET Identity, PBKDF2 hash; düz şifre hiçbir yerde tutulmaz. Politika: 8–128 karakter, büyük + küçük harf + rakam |
 | Kullanıcı yokken zamanlama farkı | Tamam | `AuthService`: kullanıcı yoksa da sahte hash doğrulaması (cevap süresinden hesap varlığı anlaşılmaz) |
+| Aynı e-posta iki rolde (K-022) | Tamam | Kilit, şifre, oturum rol başına ayrı; testler: `SameEmailTwoRolesApiTests` (rol başına benzersizlik, ayrı şifre, kilit ve silmenin yalnız o hesabı etkilemesi) |
 | Giriş hata mesajı | Tamam | Tek genel mesaj ("E-posta veya şifre hatalı"); test: `AuthServiceTests` |
 | Hesap kilidi | Tamam | 10 hatalı denemede 5 dk, 423 + `Retry-After` (K-020) |
 | Hız sınırı | Tamam | Giriş/kayıt/yenileme/hesap silme: IP başına dakikada 30 (`"auth"` politikası) |

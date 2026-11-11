@@ -2,6 +2,7 @@ using FluentValidation;
 using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Abstractions.Messaging;
 using Yukum.Application.Common;
+using Yukum.Domain.Accounts;
 
 namespace Yukum.Application.Accounts;
 
@@ -9,6 +10,13 @@ namespace Yukum.Application.Accounts;
 public sealed class LoginHandler(IValidator<LoginCommand> validator, IAuthService auth, ITokenService tokens, IRefreshTokenService refreshTokens)
     : ICommandHandler<LoginCommand, LoginResponse>
 {
+    /// <summary>"Shipper"/"Carrier" yazısını rol türüne çevirir (Admin ve geçersiz değerler kabul edilmez).</summary>
+    internal static bool TryParseRole(string? text, out UserType type)
+    {
+        type = default;
+        return Enum.TryParse(text?.Trim(), ignoreCase: true, out type) && type is UserType.Shipper or UserType.Carrier;
+    }
+
     /// <summary>
     /// Alan eksikse <see cref="ValidationException"/>; kullanıcı/şifre yanlışsa <see cref="InvalidCredentialsException"/>;
     /// kilitliyse <see cref="AccountLockedException"/>; hesap devre dışıysa <see cref="ForbiddenException"/> fırlatır.
@@ -37,7 +45,8 @@ public sealed class LoginHandler(IValidator<LoginCommand> validator, IAuthServic
 
         // Şifreye dokunulmaz (boşluk ve büyük/küçük harf anlamlıdır).
         // 3) Şifre denetimi, hatalı deneme sayacı ve kilit burada (Infrastructure/AuthService.cs). Başarısızsa istisna fırlatır.
-        var user = await auth.VerifyCredentialsAsync(email, phone, command.Password!, cancellationToken);
+        UserType? role = TryParseRole(command.Role, out var parsed) ? parsed : null;
+        var user = await auth.VerifyCredentialsAsync(email, phone, command.Password!, role, cancellationToken);
         // 4) Şifre doğruysa 15 dakikalık JWT erişim jetonu üret (Infrastructure/JwtTokenService.cs).
         var token = tokens.CreateAccessToken(user);
 

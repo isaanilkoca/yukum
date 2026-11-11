@@ -43,7 +43,7 @@ public class AuthServiceTests(SqlServerFixture sql)
     private static async Task<AuthUserDto> LoginAsync(TestDatabase db, string? email, string? phone, string password)
     {
         await using var scope = NewScope(db);
-        return await scope.ServiceProvider.GetRequiredService<IAuthService>().VerifyCredentialsAsync(email, phone, password);
+        return await scope.ServiceProvider.GetRequiredService<IAuthService>().VerifyCredentialsAsync(email, phone, password, null);
     }
 
     [Fact]

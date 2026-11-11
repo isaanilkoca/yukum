@@ -54,7 +54,7 @@
 ## K-017 — Kayıt uçları: şifre kuralı, telefon biçimi, tek işlem, hata biçimi (25 Ekim 2026)
 - **Karar:**
   1. **Şifre:** 8–128 karakter, en az bir büyük harf, bir küçük harf, bir rakam; sembol zorunlu değil. Kural **tek yerde** (`PasswordPolicy`, Application) tutulur; hem kayıt doğrulaması (Türkçe mesajlar) hem Identity (`PasswordPolicyValidator`, ikinci savunma) aynı koddan okur. Identity'nin kendi büyük/küçük harf seçenekleri kapalıdır.
-  2. **Telefon:** yalnız Türkiye cep telefonu; her yazılış `+905XXXXXXXXX` biçimine çevrilip saklanır ve benzersizdir. **E-posta:** küçük harfe çevrilip saklanır, benzersizdir. Bir e-posta/telefon tek hesaptur (Yük Veren ve Taşımacı arasında da).
+  2. ~~**Her e-posta tek hesap**~~ → **K-022 ile değişti: e-posta ve telefon ROL başına benzersiz.** **Telefon:** yalnız Türkiye cep telefonu; her yazılış `+905XXXXXXXXX` biçimine çevrilip saklanır ve benzersizdir. **E-posta:** küçük harfe çevrilip saklanır, benzersizdir. Bir e-posta/telefon tek hesaptur (Yük Veren ve Taşımacı arasında da).
   3. **Kayıt tek işlemdir** (kullanıcı + rol + profil + araçlar + çalışma illeri): bir adım başarısız olursa hiçbiri kaydedilmez. Eşzamanlı çift kayıt veritabanının benzersiz indeksi ile yakalanır ve 409'a çevrilir.
   4. **Taşımacı kaydında en az 1 araç zorunlu**, çalışma illeri opsiyoneldir. Yük Veren'de il zorunlu, ilçe saklanmaz (K-016).
   5. **Hata biçimi:** doğrulama → 400 (başlık "Doğrulama hatası", `errors` sözlüğü, camelCase alan adları, liste için `vehicles[1].capacityKg`); çakışma → 409 "Çakışma"; kayıt yok → 404. FluentValidation hataları ve MVC model hataları aynı 400 biçimini kullanır. Kayıt cevabı 201 + kullanıcı özeti; **oturum açılmaz** (giriş D3).
@@ -96,3 +96,11 @@
 - **Neden POST:** Gövdeli (şifre) DELETE isteklerini bazı istemci ve vekiller düşürür.
 - **Kabul edilen kuyruk:** Erişim jetonu silindikten sonra en çok 15 dk geçerli (stateless); yenileme jetonları anında iptal.
 - **Geri dönüş maliyeti:** Orta. Fiziksel silmeye geçmek yabancı anahtarları ve geçmiş ekranlarını yeniden tasarlamayı gerektirir.
+
+## K-022 — Aynı e-posta/telefon iki rolde: bir Yük Veren + bir Taşımacı hesabı (11 Kasım 2026)
+- **Karar:** Aynı kişi aynı e-posta ve telefonla hem Yük Veren hem Taşımacı olarak kayıt olabilir; **aynı role ikinci hesap açılamaz**. K-017/K-018'deki "bir e-posta = tek hesap" kuralını günceller.
+- **İki ayrı hesap:** Şifre, hatalı deneme sayacı ve kilit, oturumlar, ilanlar/teklifler/puanlar, hesap silme birbirinden bağımsız. Birini kilitlemek ya da silmek diğerini etkilemez.
+- **Veritabanı:** `Users` üzerinde `(NormalizedEmail, UserType)` ve `(PhoneNumber, UserType)` benzersiz indeksleri (eski tek sütunlu benzersiz indeksler kalktı). Identity'nin kendi benzersiz e-posta denetimi kapatıldı (`RequireUniqueEmail=false`); kontrol `AccountService`'te (rol başına) + indeks (yarış durumunda). Identity `UserName` tek başına benzersiz olmak zorunda: artık `e-posta_Rol` (örn. `ali@x.com_Shipper`). Mevcut hesaplar migration `EmailAndPhoneUniquePerRole` içindeki SQL ile yeni biçime taşındı.
+- **Giriş:** `POST /auth/login` gövdesine `role` (`Shipper`/`Carrier`) eklendi; iOS giriş ekranında rol seçici. Rol yoksa ve tek hesap varsa o hesaba girilir; iki hesap varsa 400. Hesap varlığı yine yalnız doğru şifreden sonra anlaşılır (zamanlama ve mesaj eşitliği korunur).
+- **Neden iki ayrı hesap, tek hesap + iki rol değil:** Mevcut model "kullanıcının tam bir rolü var" üzerine kurulu (JWT rolü, profiller, tüm yetki kontrolleri). Çok rollü tek hesap bunların hepsini yeniden yazmayı gerektirirdi; ayrı hesap, değişikliği kayıt ve girişe sınırlar.
+- **Geri dönüş maliyeti:** Orta. İki rollü e-postalar varken eski tek sütunlu indekse dönmek mümkün değil (migration `Down` bunu belirtir).

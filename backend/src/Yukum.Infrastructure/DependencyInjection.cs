@@ -84,8 +84,8 @@ public static class DependencyInjection
                 options.Password.RequireDigit = false;
                 options.Password.RequireNonAlphanumeric = false;
 
-                // Her e-posta tek hesap. Giriş adı e-postanın kendisidir.
-                options.User.RequireUniqueEmail = true;
+                // E-posta ROL BAŞINA tek hesap (K-022). Giriş adı (UserName) "e-posta_Rol" olur, ikisi birlikte benzersizdir.
+                options.User.RequireUniqueEmail = false; // Identity'nin "e-posta tek hesap" denetimi kapalı: aynı e-posta bir Yük Veren + bir Taşımacı olabilir. Benzersizlik (e-posta, rol) olarak AccountService + indeksle sağlanır (K-022)
 
                 // 10 yanlış denemede 5 dakika kilit (K-020; ilk karar K-018'de 5 deneme / 15 dk idi).
                 // Dengeyi şöyle kurduk: gerçek kullanıcı birkaç yazım hatasıyla kilitlenmesin, parola tahmin eden saldırgan ise

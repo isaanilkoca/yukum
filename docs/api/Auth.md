@@ -13,8 +13,8 @@ iOS tarafı bu karta göre yazılır. Backend bunu test ediyor (`AuthRegisterApi
 | Alan | Kural |
 |---|---|
 | `fullName` | Zorunlu, 2–150 karakter. Ad-soyad ya da firma adı. |
-| `email` | Zorunlu, geçerli biçim, en çok 254. Küçük harfe çevrilip saklanır; **bir e-posta tek hesap**. |
-| `phone` | Zorunlu, Türkiye cep telefonu. `0532 123 45 67`, `532-123-4567`, `+90 532 123 45 67` gibi biçimler kabul edilir, `+905321234567` olarak saklanır. **Bir telefon tek hesap.** |
+| `email` | Zorunlu, geçerli biçim, en çok 254. Küçük harfe çevrilip saklanır; **bir e-posta, ROL başına tek hesap** (aynı e-posta bir kez Yük Veren, bir kez Taşımacı olabilir; K-022). |
+| `phone` | Zorunlu, Türkiye cep telefonu. `0532 123 45 67`, `532-123-4567`, `+90 532 123 45 67` gibi biçimler kabul edilir, `+905321234567` olarak saklanır. **Bir telefon, ROL başına tek hesap.** |
 | `password` | Zorunlu, **8–128 karakter; en az bir büyük harf, bir küçük harf, bir rakam**. Sembol zorunlu değil. Türkçe harfler geçerlidir (`Şifre1234`). |
 | `kvkkAccepted` | Zorunlu, **`true`** olmalı. Onay anı sunucuda saklanır. |
 
@@ -181,12 +181,14 @@ struct RegisteredUser: Codable, Identifiable {
   "emailOrPhone": "ali@example.com",
   "password": "Abcdefg1",
   "deviceId": "7B3F2C4E-0000-0000-0000-000000000001",
-  "deviceName": "Anıl'ın iPhone'u"
+  "deviceName": "Anıl'ın iPhone'u",
+  "role": "Shipper"
 }
 ```
 
 | Alan | Zorunlu | Kural |
 |---|---|---|
+| `role` | Hayır | `Shipper` ya da `Carrier` (büyük/küçük harf fark etmez). Aynı e-posta/telefon iki rolde kayıtlıysa **hangi hesaba girileceğini bu alan belirler**; iOS her zaman gönderir. Gönderilmezse ve tek hesap varsa o hesaba girilir, iki hesap varsa **400** ("giriş yapmak istediğin hesabı seç"). `Admin` ya da başka değer 400. |
 | `emailOrPhone` | Evet | E-posta (büyük/küçük harf fark etmez) **ya da** cep telefonu (`0532 123 45 67`, `+90 532…` gibi her yazılış). İçinde `@` varsa e-posta sayılır. |
 | `password` | Evet | Kayıttaki şifre. Giriş ekranında şifre karmaşıklığı denetlemeyin; sunucu karar verir. |
 | `deviceId` | Evet | Cihaza ait **kalıcı** kimlik (örn. bir kez üretip Keychain'e yazdığınız UUID), en çok 100 karakter. Oturum jetonları cihaz bazında yönetilir (D4). |

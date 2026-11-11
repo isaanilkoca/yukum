@@ -23,6 +23,10 @@ public sealed class LoginValidator : AbstractValidator<LoginCommand>
             .NotEmpty().WithMessage("Şifre boş olamaz.")
             .Must(v => v!.Length <= PasswordPolicy.MaxLength).WithMessage($"Şifre en fazla {PasswordPolicy.MaxLength} karakter olabilir.");
 
+        // Rol opsiyonel; verilmişse Shipper ya da Carrier olmalı (büyük/küçük harf fark etmez).
+        RuleFor(c => c.Role).Must(r => string.IsNullOrWhiteSpace(r) || LoginHandler.TryParseRole(r, out _))
+            .WithMessage("Rol Shipper ya da Carrier olmalı.");
+
         // Cihaz kimliği zorunlu (oturum jetonları cihaz bazlı yönetilecek, D4).
         RuleFor(c => c.DeviceId).Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Cihaz kimliği boş olamaz.")

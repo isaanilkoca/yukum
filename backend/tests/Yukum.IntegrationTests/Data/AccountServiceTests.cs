@@ -59,7 +59,7 @@ public class AccountServiceTests(SqlServerFixture sql)
         var users = read.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
         var user = await users.FindByIdAsync(dto.Id.ToString());
         Assert.NotNull(user);
-        Assert.Equal("ali@x.com", user.UserName);
+        Assert.Equal("ali@x.com_Shipper", user.UserName);   // giriş adı "e-posta_Rol" (K-022: aynı e-posta iki rolde olabilir)
         Assert.Equal("+905321234567", user.PhoneNumber);
         Assert.Equal(UserType.Shipper, user.UserType);
         Assert.True(user.IsActive);
@@ -123,7 +123,7 @@ public class AccountServiceTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task An_email_already_registered_is_a_conflict_whatever_the_letter_case_or_user_type()
+    public async Task An_email_already_registered_is_a_conflict_whatever_the_letter_case_but_only_within_the_same_user_type()
     {
         var (db, time) = await NewDatabaseAsync();
         await using (var scope = NewScope(db, time))
@@ -135,9 +135,10 @@ public class AccountServiceTests(SqlServerFixture sql)
         var sameType = await Assert.ThrowsAsync<ConflictException>(() => accounts.RegisterShipperAsync(Shipper("ALI@X.COM", "+905000000001")));
         Assert.Equal("Bu e-posta adresiyle zaten bir hesap var.", sameType.Message);
 
+        // K-022: aynı e-posta DİĞER rolde serbest (büyük/küçük harf fark etmez)
         await using var third = NewScope(db, time);
-        await Assert.ThrowsAsync<ConflictException>(
-            () => third.ServiceProvider.GetRequiredService<IAccountService>().RegisterCarrierAsync(Carrier("Ali@x.com", "+905000000002")));
+        var otherRole = await third.ServiceProvider.GetRequiredService<IAccountService>().RegisterCarrierAsync(Carrier("Ali@x.com", "+905000000002"));
+        Assert.Equal(UserType.Carrier, otherRole.UserType);
     }
 
     [Fact]
@@ -149,7 +150,7 @@ public class AccountServiceTests(SqlServerFixture sql)
 
         await using var second = NewScope(db, time);
         var error = await Assert.ThrowsAsync<ConflictException>(
-            () => second.ServiceProvider.GetRequiredService<IAccountService>().RegisterCarrierAsync(Carrier("veli@x.com", "+905321234567")));
+            () => second.ServiceProvider.GetRequiredService<IAccountService>().RegisterShipperAsync(Shipper("veli@x.com", "+905321234567")));   // aynı rol + aynı telefon
 
         Assert.Equal("Bu telefon numarasıyla zaten bir hesap var.", error.Message);
     }
@@ -163,10 +164,11 @@ public class AccountServiceTests(SqlServerFixture sql)
 
         await using (var second = NewScope(db, time))
             await Assert.ThrowsAsync<ConflictException>(
-                () => second.ServiceProvider.GetRequiredService<IAccountService>().RegisterCarrierAsync(Carrier("veli@x.com", "+905321234567")));
+                () => second.ServiceProvider.GetRequiredService<IAccountService>().RegisterShipperAsync(Shipper("veli@x.com", "+905321234567")));
 
         await using var read = db.NewContext();
-        Assert.Equal(1, await read.Users.CountAsync());
+        Assert.Equal(1, await read.Users.CountAsync());          // reddedilen kayıttan hiçbir şey kalmadı
+        Assert.Equal(1, await read.ShipperProfiles.CountAsync());
         Assert.Equal(0, await read.CarrierProfiles.CountAsync());
         Assert.Equal(0, await read.Vehicles.CountAsync());
     }
@@ -212,7 +214,7 @@ public class AccountServiceTests(SqlServerFixture sql)
         Assert.Equal(10, options.Lockout.MaxFailedAccessAttempts);
         Assert.Equal(TimeSpan.FromMinutes(5), options.Lockout.DefaultLockoutTimeSpan);
         Assert.Equal(8, options.Password.RequiredLength);
-        Assert.True(options.User.RequireUniqueEmail);
+        Assert.False(options.User.RequireUniqueEmail); // e-posta benzersizliği Identity'de değil, (e-posta, rol) indeksinde (K-022)
     }
 
     [Fact]

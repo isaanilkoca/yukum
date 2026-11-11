@@ -1,8 +1,11 @@
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Yukum.Application.Abstractions.Identity;
 using Yukum.Application.Accounts;
 using Yukum.Application.Common;
+using Yukum.Domain.Accounts;
 
 namespace Yukum.Infrastructure.Identity;
 
@@ -19,12 +22,18 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
     private static readonly Lazy<string> DummyHash = new(() => new PasswordHasher<AppUser>().HashPassword(new AppUser(), "zamanlama-icin-sahte-sifre"));
 
     /// <inheritdoc />
-    public async Task<AuthUserDto> VerifyCredentialsAsync(string? email, string? phone, string password, CancellationToken cancellationToken = default)
+    public async Task<AuthUserDto> VerifyCredentialsAsync(string? email, string? phone, string password, UserType? type, CancellationToken cancellationToken = default)
     {
         // Kullanıcıyı bul: e-postayla (Identity büyük harfli normalleştirilmiş sütunda arar) ya da telefonla.
-        var user = email is not null
-            ? await users.FindByEmailAsync(email)
-            : await users.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phone, cancellationToken);
+        // Aynı e-posta/telefon iki rolde olabilir (K-022): istemci rolü gönderir ve yalnız o rolün hesabı aranır.
+        // Rol gönderilmemişse ve tek eşleşme varsa o hesap, birden fazlaysa istemci rol seçmeli (400).
+        var normalizedEmail = email is not null ? users.NormalizeEmail(email) : null;
+        var matches = await users.Users
+            .Where(u => (normalizedEmail != null ? u.NormalizedEmail == normalizedEmail : u.PhoneNumber == phone) && (type == null || u.UserType == type))
+            .Take(2).ToListAsync(cancellationToken);
+        if (matches.Count > 1)
+            throw new ValidationException([new ValidationFailure("role", "Bu bilgiyle iki hesap var; giriş yapmak istediğin hesabı (Yük Veren / Taşımacı) seç.")]);
+        var user = matches.SingleOrDefault();
 
         // Kullanıcı yok: yine de bir şifre doğrulaması yapılır ki cevap süresi gerçek kullanıcıyla aynı olsun (zamanlama saldırısı).
         if (user is null)

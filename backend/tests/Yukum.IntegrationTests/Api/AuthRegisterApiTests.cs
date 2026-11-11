@@ -190,14 +190,17 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task A_carrier_cannot_reuse_a_shippers_email()
+    public async Task A_carrier_can_reuse_a_shippers_email_but_two_carriers_cannot_share_one()
     {
+        // K-022: e-posta ROL başına benzersiz. Aynı kişi hem Yük Veren hem Taşımacı olabilir; aynı role ikinci hesap olamaz.
         var (client, _) = await StartAsync();
         await client.PostAsJsonAsync("/api/v1/auth/register/shipper", ShipperBody("ayni@x.com", "0532 123 45 67"));
 
-        var response = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", CarrierBody("ayni@x.com", "0533 222 11 00"));
+        var carrier = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", CarrierBody("ayni@x.com", "0533 222 11 00"));
+        var secondCarrier = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", CarrierBody("ayni@x.com", "0533 999 88 77"));
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, carrier.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, secondCarrier.StatusCode);
     }
 
     // ---------- Taşımacı ----------
