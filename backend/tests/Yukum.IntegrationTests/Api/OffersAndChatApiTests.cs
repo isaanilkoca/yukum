@@ -1250,4 +1250,41 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal("Zamanında teslim etti", review.GetProperty("comment").GetString());   // yorum metni durur
         Assert.DoesNotContain("Yuk Veren", review.GetProperty("shipperName").GetString()!);  // gerçek ad gitti
     }
+
+    // İki yön: silinen Yük Veren'in işleri Taşımacı'nın geçmişinde, silinen Taşımacı'nın işleri/puanı Yük Veren'in geçmişinde ve profilinde KALIR.
+    [Fact]
+    public async Task Completed_jobs_stay_in_the_history_of_the_other_side_after_either_account_is_deleted()
+    {
+        var c = await StartAsync();
+        var shipper = await NewAccount(c, true); var carrier = await NewAccount(c, false);
+        var listing = await NewListing(c, shipper.Token);
+        var offer = await NewOffer(c, carrier.Token, listing);
+        await Call(c, shipper.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        await Deliver(c, carrier.Token, offer);
+        await Call(c, shipper.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");   // işi Yük Veren bitirir → Taşımacı listesinde kalır
+        await Call(c, shipper.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/review", new { rating = 5, comment = "Çok iyi" });
+
+        // 1) Yük Veren silinir → Taşımacı geçmişinde iş durur
+        Assert.Equal(HttpStatusCode.NoContent, (await DeleteAccount(c, shipper.Token, "Abcdefg1")).StatusCode);
+        var carrierHistory = await Json(await Call(c, carrier.Token, HttpMethod.Get, "/api/v1/offers/mine"));
+        var mine = carrierHistory.EnumerateArray().Single(x => x.GetProperty("id").GetString() == offer);
+        Assert.Equal("Completed", mine.GetProperty("status").GetString());
+        Assert.False(string.IsNullOrEmpty(mine.GetProperty("shipperName").GetString()));
+
+        // 2) Aynı iş için yeni bir Yük Veren + Taşımacı işi: Taşımacı silinir → Yük Veren geçmişinde iş ve profil durur
+        var shipper2 = await NewAccount(c, true); var carrier2 = await NewAccount(c, false);
+        var (offer2, carrier2Id) = await CompletedJob(c, shipper2.Token, carrier2.Token);
+        await Call(c, shipper2.Token, HttpMethod.Post, $"/api/v1/offers/{offer2}/review", new { rating = 3, comment = "Orta" });
+        Assert.Equal(HttpStatusCode.NoContent, (await DeleteAccount(c, carrier2.Token, "Abcdefg1")).StatusCode);
+
+        var shipperHistory = await Json(await Call(c, shipper2.Token, HttpMethod.Get, "/api/v1/offers/history"));
+        var row = shipperHistory.EnumerateArray().Single(x => x.GetProperty("id").GetString() == offer2);
+        var profile = await Call(c, shipper2.Token, HttpMethod.Get, $"/api/v1/carriers/{carrier2Id}");
+
+        Assert.False(string.IsNullOrEmpty(row.GetProperty("carrierName").GetString()));
+        Assert.Equal(HttpStatusCode.OK, profile.StatusCode);
+        var body = await Json(profile);
+        Assert.Equal(3m, body.GetProperty("averageRating").GetDecimal());
+        Assert.Equal("Orta", body.GetProperty("reviews")[0].GetProperty("comment").GetString());
+    }
 }
