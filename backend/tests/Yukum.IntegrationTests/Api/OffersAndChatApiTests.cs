@@ -1125,4 +1125,109 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
         Assert.Equal(0, stats.GetProperty("offerCount").GetInt32());
     }
+
+    // ---------- hesap silme ----------
+    private sealed record Account(string Token, string Email, string RefreshToken, string DeviceId);
+
+    // NewUser'ın ayrıntılı hâli: silme sonrası "eski bilgilerle giriş olmuyor mu" diye bakabilmek için e-posta/yenileme jetonu da döner.
+    private static async Task<Account> NewAccount(HttpClient c, bool shipper)
+    {
+        var token = await NewUser(c, shipper);
+        var email = $"u{_counter}@x.com";   // NewUser'ın az önce kullandığı sayaç
+        var deviceId = "dx" + _counter;
+        var login = await Json(await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId, deviceName = "t" }));
+        return new Account(login.GetProperty("accessToken").GetString()!, email, login.GetProperty("refreshToken").GetString()!, deviceId);
+    }
+
+    private static Task<HttpResponseMessage> DeleteAccount(HttpClient c, string token, string? password) =>
+        Call(c, token, HttpMethod.Post, "/api/v1/account/delete", new { password });
+
+    [Fact]
+    public async Task Deleting_a_shipper_cancels_open_listings_anonymizes_the_account_and_frees_the_email()
+    {
+        var c = await StartAsync();
+        var shipper = await NewAccount(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper.Token);
+        var offer = await NewOffer(c, carrier, listing);
+
+        var delete = await DeleteAccount(c, shipper.Token, "Abcdefg1");
+        var oldLogin = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = shipper.Email, password = "Abcdefg1", deviceId = shipper.DeviceId, deviceName = "t" });
+        var refresh = await c.PostAsJsonAsync("/api/v1/auth/refresh", new { refreshToken = shipper.RefreshToken, deviceId = shipper.DeviceId });
+        var openForCarrier = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        var carrierOffers = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
+        var reRegister = await c.PostAsJsonAsync("/api/v1/auth/register/shipper",
+            new { fullName = "Yeni Hesap", email = shipper.Email, phone = "05329998877", password = "Abcdefg1", kvkkAccepted = true });
+
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, oldLogin.StatusCode);              // eski bilgilerle giriş yok
+        Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);               // oturumlar kapandı
+        Assert.Equal(0, openForCarrier.GetArrayLength());                             // açık ilan kaldırıldı
+        Assert.Equal("Cancelled", carrierOffers[0].GetProperty("status").GetString());   // bekleyen teklif iptal oldu
+        Assert.Equal("Silinmiş Kullanıcı", carrierOffers[0].GetProperty("shipperName").GetString());   // ad anonimleşti
+        Assert.Equal(HttpStatusCode.Created, reRegister.StatusCode);                  // aynı e-posta yeniden kullanılabilir
+    }
+
+    [Fact]
+    public async Task Deleting_a_carrier_withdraws_pending_offers_and_removes_favorites_and_views()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewAccount(c, false);
+        var listing = await NewListing(c, shipper);
+        await NewOffer(c, carrier.Token, listing);
+        await Call(c, carrier.Token, HttpMethod.Put, $"/api/v1/listings/{listing}/favorite");
+        await Call(c, carrier.Token, HttpMethod.Post, $"/api/v1/listings/{listing}/view");
+
+        var delete = await DeleteAccount(c, carrier.Token, "Abcdefg1");
+        var stats = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/stats"));
+        var offers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
+
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+        Assert.Equal(0, stats.GetProperty("favoriteCount").GetInt32());
+        Assert.Equal(0, stats.GetProperty("viewCount").GetInt32());
+        Assert.Equal(0, stats.GetProperty("offerCount").GetInt32());      // geri çekilen teklif sayılmaz
+        Assert.Equal(0, offers.GetArrayLength());                          // Yük Veren cevaplanamaz teklif görmez
+    }
+
+    [Fact]
+    public async Task Deleting_needs_the_right_password_and_a_wrong_one_does_not_end_the_session()
+    {
+        var c = await StartAsync();
+        var shipper = await NewAccount(c, true);
+
+        var wrong = await DeleteAccount(c, shipper.Token, "Yanlis123");
+        var empty = await DeleteAccount(c, shipper.Token, "");
+        var anonymous = await Call(c, null, HttpMethod.Post, "/api/v1/account/delete", new { password = "Abcdefg1" });
+        var stillWorks = await Call(c, shipper.Token, HttpMethod.Get, "/api/v1/listings/mine");
+        var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = shipper.Email, password = "Abcdefg1", deviceId = "dz", deviceName = "t" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, wrong.StatusCode);                    // 401 değil: iOS oturumu bitirmesin
+        Assert.Contains("Şifre hatalı", await wrong.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.BadRequest, empty.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, stillWorks.StatusCode);                       // hesap ve oturum sağlam
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task A_user_with_an_active_job_cannot_delete_until_it_is_completed()
+    {
+        var c = await StartAsync();
+        var shipper = await NewAccount(c, true); var carrier = await NewAccount(c, false);
+        var listing = await NewListing(c, shipper.Token);
+        var offer = await NewOffer(c, carrier.Token, listing);
+        await Call(c, shipper.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");   // aktif iş
+
+        var shipperBlocked = await DeleteAccount(c, shipper.Token, "Abcdefg1");
+        var carrierBlocked = await DeleteAccount(c, carrier.Token, "Abcdefg1");
+
+        await Deliver(c, carrier.Token, offer);
+        await Call(c, carrier.Token, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var carrierOk = await DeleteAccount(c, carrier.Token, "Abcdefg1");
+        var shipperOk = await DeleteAccount(c, shipper.Token, "Abcdefg1");
+
+        Assert.Equal(HttpStatusCode.Conflict, shipperBlocked.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, carrierBlocked.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, carrierOk.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, shipperOk.StatusCode);
+    }
 }

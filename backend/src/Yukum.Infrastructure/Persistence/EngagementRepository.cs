@@ -45,6 +45,13 @@ public class EngagementRepository(AppDbContext context) : IEngagementRepository
     }
 
     /// <inheritdoc />
+    public async Task DeleteUserDataAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await context.Set<FavoriteListing>().Where(f => f.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await context.Set<ListingView>().Where(v => v.ViewerId == userId).ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<ListingStats> GetStatsAsync(Guid listingId, CancellationToken cancellationToken = default)
     {
         // Üç ayrı COUNT: her biri kendi indeksinden okunur (ListingId). Geri çekilen teklif "teklif gelmiş" sayılmaz.

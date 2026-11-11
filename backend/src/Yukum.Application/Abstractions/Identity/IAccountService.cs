@@ -19,4 +19,13 @@ public interface IAccountService
     /// </summary>
     /// <exception cref="Common.ConflictException">E-posta ya da telefon zaten kayıtlı.</exception>
     Task<RegisteredUserDto> RegisterCarrierAsync(RegisterCarrierCommand command, CancellationToken cancellationToken = default);
+
+    /// <summary>Verilen şifre bu kullanıcınınki mi? (Kilit sayacını artırmaz; hesap silme onayı için.)</summary>
+    Task<bool> VerifyPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Hesabı anonimleştirir (kayıt silinmez): ad, e-posta, telefon, şifre, profil ve araç plakaları temizlenir, hesap pasifleşir,
+    /// tüm oturumlar (yenileme jetonları) kapatılır. Aynı e-posta/telefon yeniden kullanılabilir hâle gelir.
+    /// </summary>
+    Task AnonymizeAsync(Guid userId, CancellationToken cancellationToken = default);
 }

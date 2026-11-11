@@ -9014,8 +9014,12 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CarrierId", "Status");
+
                     b.HasIndex("ListingId", "CarrierId")
                         .IsUnique();
+
+                    b.HasIndex("Status", "DecidedAt");
 
                     b.ToTable("Offers", (string)null);
                 });
@@ -9064,6 +9068,8 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("OfferId")
                         .IsUnique();
+
+                    b.HasIndex("ShipperId");
 
                     b.HasIndex("CarrierId", "CreatedAt");
 

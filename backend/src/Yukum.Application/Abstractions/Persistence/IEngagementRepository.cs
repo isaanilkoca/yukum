@@ -21,6 +21,9 @@ public interface IEngagementRepository
     /// <summary>Görüntülenmeyi yazar. Aynı kişi aynı gün için zaten yazılmışsa hiçbir şey yapmaz.</summary>
     Task RecordViewAsync(Guid listingId, Guid viewerId, DateOnly day, CancellationToken cancellationToken = default);
 
+    /// <summary>Kullanıcının tüm favori ve görüntülenme kayıtlarını siler (hesap silme).</summary>
+    Task DeleteUserDataAsync(Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>İlanın görüntülenme (benzersiz kişi-gün), favori ve teklif sayıları (geri çekilen teklifler sayılmaz).</summary>
     Task<ListingStats> GetStatsAsync(Guid listingId, CancellationToken cancellationToken = default);
 }

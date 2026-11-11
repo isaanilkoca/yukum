@@ -15,6 +15,7 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
 
         builder.HasOne<Offer>().WithMany().HasForeignKey(r => r.OfferId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(r => r.OfferId).IsUnique();                       // bir işe tek yorum: çifte gönderim veritabanında da durur
-        builder.HasIndex(r => new { r.CarrierId, r.CreatedAt });            // profil: bu Taşımacı'nın en yeni yorumları
+        builder.HasIndex(r => new { r.CarrierId, r.CreatedAt });
+        builder.HasIndex(r => r.ShipperId);                                 // Yük Veren geçmişinde "hangi işlere puan verdim" sorgusu            // profil: bu Taşımacı'nın en yeni yorumları
     }
 }

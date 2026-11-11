@@ -24,6 +24,46 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
     private const int UniqueConstraintViolation = 2627;
 
     /// <inheritdoc />
+    public async Task<bool> VerifyPasswordAsync(Guid userId, string password, CancellationToken cancellationToken = default)
+    {
+        var user = await users.FindByIdAsync(userId.ToString());
+        // CheckPasswordAsync: yalnız şifreyi karşılaştırır, hatalı deneme sayacını ve kilidi ETKİLEMEZ (giriş değil, onay)
+        return user is not null && await users.CheckPasswordAsync(user, password);
+    }
+
+    /// <inheritdoc />
+    public async Task AnonymizeAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await users.FindByIdAsync(userId.ToString()) ?? throw new NotFoundException("Hesap bulunamadı.");
+        var tag = userId.ToString("N");
+
+        // Kullanıcı satırı silinmez (teklif/ilan/puan gibi kayıtlar ona bağlı); kişisel alanlar boşaltılır.
+        // E-posta/kullanıcı adı numaraya göre benzersiz, ".invalid" uzantısı gerçek bir adres olamaz; böylece eski e-posta yeniden kayıt olabilir.
+        user.FullName = "Silinmiş Kullanıcı";
+        user.UserName = $"deleted-{tag}";
+        user.Email = $"deleted-{tag}@deleted.invalid";
+        user.PhoneNumber = null;
+        user.PasswordHash = null;                         // şifre kalmadı: bu hesapla giriş artık mümkün değil
+        user.AvatarUrl = null;
+        user.IsActive = false;
+        user.SecurityStamp = Guid.NewGuid().ToString();   // eski güvenlik damgası geçersiz olur
+        var result = await users.UpdateAsync(user);       // normalize alanlar (NormalizedEmail vb.) UserManager tarafından güncellenir
+        if (!result.Succeeded) throw new InvalidOperationException("Hesap anonimleştirilemedi: " + string.Join("; ", result.Errors.Select(e => e.Description)));
+
+        // Profil ve araç bilgileri (ticari kimlik, plaka) temizlenir; puan sayıları karşı tarafın kaydı olduğu için kalır.
+        await context.ShipperProfiles.Where(p => p.UserId == userId).ExecuteUpdateAsync(s => s
+            .SetProperty(p => p.CompanyName, (string?)null).SetProperty(p => p.TaxNumber, (string?)null)
+            .SetProperty(p => p.TaxOffice, (string?)null).SetProperty(p => p.About, (string?)null), cancellationToken);
+        await context.CarrierProfiles.Where(p => p.UserId == userId).ExecuteUpdateAsync(s => s.SetProperty(p => p.About, (string?)null), cancellationToken);
+        await context.Vehicles.Where(v => v.CarrierId == userId).ExecuteUpdateAsync(s => s.SetProperty(v => v.PlateNumber, (string?)null), cancellationToken);
+
+        // Tüm cihazlardaki oturumlar kapanır: yenileme jetonları iptal edilir (erişim jetonu en geç 15 dk içinde zaten sona erer).
+        var now = time.GetUtcNow().UtcDateTime;
+        await context.RefreshTokens.Where(t => t.UserId == userId && t.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), cancellationToken);
+    }
+
+    /// <inheritdoc />
     public Task<RegisteredUserDto> RegisterShipperAsync(RegisterShipperCommand command, CancellationToken cancellationToken = default) =>
         // Ortak akışı (CreateAsync) çağırır; yalnız 'profil nasıl eklenir' kısmı farklıdır (sondaki lambda: user => ...).
         CreateAsync(UserType.Shipper, RoleNames.Shipper, command.FullName!, command.Email!, command.Phone!, command.Password!,

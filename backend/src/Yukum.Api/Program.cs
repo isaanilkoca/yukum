@@ -26,6 +26,9 @@ using Yukum.Api.Validation;
 // builder: uygulamanın KURULUM aşaması. Ayarlar (appsettings.json, user-secrets, ortam değişkenleri) burada otomatik yüklenir.
 var builder = WebApplication.CreateBuilder(args);
 
+// İstek gövdesi en çok 1 MB: bu API yalnız küçük JSON alır (ilan, teklif, mesaj). Varsayılan 30 MB; büyük gövdeyle bellek şişirme denemesini keser.
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 1_000_000);
+
 // Loglama (Serilog): ayarlar appsettings.json'daki "Serilog" bölümünden okunur (konsol + günlük dosya).
 // Serilog'u .NET'in varsayılan loglamasının yerine koyar. Logun nereye yazılacağı appsettings.json'daki "Serilog" bölümündedir.
 builder.Host.UseSerilog((context, configuration) =>
@@ -152,6 +155,14 @@ app.Use(async (context, next) =>
 {
     using (LogContext.PushProperty("TraceId", Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier))
         await next();
+});
+
+// Güvenlik başlıkları (her cevaba): nosniff = tarayıcı içerik türünü tahmin etmesin | no-store = kişisel veri içeren cevaplar ara katmanlarda/önbellekte saklanmasın
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.CacheControl = "no-store";
+    await next();
 });
 
 app.UseSerilogRequestLogging();  // her istek için tek satır log: yöntem, adres, durum kodu, süre

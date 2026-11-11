@@ -87,3 +87,12 @@
 - **Neden:** Gerçek kullanımda (test sırasında) birkaç yazım hatası hesabı 15 dakika kilitledi. Kullanıcı kilidin kolay devreye girmemesini istedi.
 - **Güvenlik dengesi:** Kilit tek koruma değil; giriş/kayıt/yenileme uçlarında IP başına dakikada 30 istek hız sınırı da var. 5 dk kilitle saldırgan en çok dakikada ~2 şifre dener, 10 deneme sonrası beklemek zorunda. Parola politikası (en az 8 karakter, büyük/küçük/rakam) aynı.
 - **Geri dönüş maliyeti:** Düşük (iki ayar sabiti). Canlıda kötüye kullanım görülürse sayılar sıkılaştırılır ya da her kilitte süre uzatılan (artan bekleme) yönteme geçilir.
+
+## K-021 — Hesap silme = anonimleştirme, şifre onaylı, aktif işte engelli (11 Kasım 2026)
+- **Karar:** `POST /api/v1/account/delete`. Kullanıcı satırı silinmez, kişisel alanlar boşaltılır ("Silinmiş Kullanıcı"); açık ilan/bekleyen teklifler temizlenir; favori ve görüntülenme kayıtları fiziksel silinir; tüm yenileme jetonları iptal. Hepsi tek işlemde (transaction).
+- **Neden fiziksel silme değil:** Teklif, sohbet, puan ve ilan kayıtları karşı tarafın geçmişidir; silmek onların kayıtlarını bozar ve yabancı anahtar ilişkilerini kırar. Anonimleştirme hem KVKK/Apple "silme hakkı"nı karşılar hem tutarlılığı korur.
+- **Şifre onayı:** Çalınmış bir jetonla hesap silinemesin diye. Yanlış şifre **400** (401 değil: iOS oturumu sonlandırmasın). Uç `"auth"` hız sınırı altında.
+- **Aktif iş engeli (409):** Kabul edilmiş, tamamlanmamış işi olan silemez; karşı tarafı yarı yolda bırakmamak için.
+- **Neden POST:** Gövdeli (şifre) DELETE isteklerini bazı istemci ve vekiller düşürür.
+- **Kabul edilen kuyruk:** Erişim jetonu silindikten sonra en çok 15 dk geçerli (stateless); yenileme jetonları anında iptal.
+- **Geri dönüş maliyeti:** Orta. Fiziksel silmeye geçmek yabancı anahtarları ve geçmiş ekranlarını yeniden tasarlamayı gerektirir.
