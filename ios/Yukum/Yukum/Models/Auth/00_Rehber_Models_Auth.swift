@@ -6,7 +6,8 @@
 // Kod yok, sadece alanlar. 'Request' = API'ye GİDEN paket, 'Response' = API'den GELEN cevap.
 // 
 //
-//  LoginRequest            giden: e-posta/telefon, şifre, deviceId. LoginViewModel hazırlar → AuthService.login gönderir
+//  LoginRole               seçenek: giriş ekranındaki hesap türü (Yük Veren / Taşımacı). Aynı e-posta iki rolde kayıtlı olabilir (K-022); LoginView Picker, LoginViewModel.role
+//  LoginRequest            giden: e-posta/telefon, şifre, role, deviceId. LoginViewModel hazırlar → AuthService.login gönderir
 //  LoginResponse           gelen: jetonlar + LoginUser. AuthService jetonları AuthSession'a verir, LoginViewModel user'ı alır
 //  LoginUser               giriş yapan kişi (ad, rol). HomeView'ın başlığı ve rol kararı bundan gelir
 //  RegisterRequest         giden: Yük Veren kaydı. RegisterViewModel → AuthService.register

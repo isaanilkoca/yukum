@@ -29,5 +29,6 @@ struct LoginRequest: Encodable { // LoginRequest [BİZİM]: paketin adı
     // ⮕ KULLANIM [password]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let password: String // şifre; giriş ekranında karmaşıklık denetlenmez, sunucu karar verir
     // ⮕ KULLANIM [deviceId]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
+    let role: String // "Shipper" / "Carrier" | aynı e-posta iki rolde kayıtlı olabilir (K-022): sunucu bu alana göre hangi hesaba gireceğini bilir | LoginRole.rawValue
     let deviceId: String // API cihaz kimliği ister (zorunlu) | Models/Security/DeviceID.swift → DeviceID.current: bu cihaza ait SABİT kimlik (Keychain'de) | sunucu yenileme jetonunu bu kimliğe bağlar
 }

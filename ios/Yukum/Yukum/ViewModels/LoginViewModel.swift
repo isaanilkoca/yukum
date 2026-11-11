@@ -24,6 +24,8 @@ final class LoginViewModel {
     // ⮕ KULLANIM [session]: okur: LoginViewModel › restoreSession()
     private let session: SessionRestoring
     // ⮕ KULLANIM [deviceId]: okur: LoginViewModel › login(), LoginViewModelTests (test)
+    private let defaults: UserDefaults // son kullanılan hesap türünü saklar | testte ayrı bir UserDefaults verilir
+    private static let lastRoleKey = "lastLoginRole"
     private let deviceId: () -> String // () -> String: "çağrılınca metin veren fonksiyon" | gerçekte DeviceID.current, testte sabit değer
 
     // ⮕ ZİNCİR: Views/LoginView: TextField("Email veya Telefon", text: $viewModel.emailOrPhone) | login() baş/son boşluğu temizleyip LoginRequest.emailOrPhone'a koyar
@@ -32,6 +34,9 @@ final class LoginViewModel {
     // ⮕ ZİNCİR: Views/LoginView: SecureField("Şifre", text: $viewModel.password) | LoginRequest.password | başarılı girişten sonra boşaltılır
     // ⮕ KULLANIM [password]: okur: LoginViewModel › login(), LoginViewModelTests (test) | YAZAR: LoginViewModel › login(), LoginViewModelTests (test) | bağlar(okur+yazar): LoginView › body
     var password = ""
+    // Hesap türü: aynı e-posta/telefon hem Yük Veren hem Taşımacı olabilir (K-022) | Views/LoginView'daki segment seçici buraya yazar
+    // İlk değer son başarılı girişte kullanılan tür (UserDefaults), yoksa Yük Veren
+    var role: LoginRole
     // ⮕ ZİNCİR: Views/LoginView: if let errorMessage → kırmızı yazı | "E-posta veya şifre hatalı." gibi sunucu mesajı
     // ⮕ KULLANIM [errorMessage]: YAZAR: LoginViewModel › login() | okur: LoginViewModelTests (test)
     var errorMessage: String? // nil: hata yok
@@ -46,10 +51,13 @@ final class LoginViewModel {
     // ⮕ KULLANIM [loggedInUser]: YAZAR: LoginViewModel › restoreSession(), LoginViewModel › login() | bağlar(okur+yazar): LoginView › body | okur: LoginViewModelTests (test)
     var loggedInUser: LoginUser? // giriş başarılıysa dolar → ekran HomeView'ı tam ekran açar | çıkışta ekran nil yapar
 
-    init(auth: AuthServicing = AuthService(), session: SessionRestoring = AuthSession.shared, deviceId: @escaping () -> String = { DeviceID.current }) { // @escaping [SWIFT]: closure fonksiyon bittikten sonra da saklanıp çağrılabilir
+    init(auth: AuthServicing = AuthService(), session: SessionRestoring = AuthSession.shared, deviceId: @escaping () -> String = { DeviceID.current }, defaults: UserDefaults = .standard) { // @escaping [SWIFT]: closure fonksiyon bittikten sonra da saklanıp çağrılabilir
         self.auth = auth
         self.session = session
         self.deviceId = deviceId
+        self.defaults = defaults
+        // ?? : soldaki nil ise sağdaki | UserDefaults.string(forKey:) [SWIFT, Foundation]: cihazda saklanan küçük ayar | rawValue'dan LoginRole'e çevrilemezse varsayılan
+        self.role = LoginRole(rawValue: defaults.string(forKey: Self.lastRoleKey) ?? "") ?? .shipper
     }
 
     // ═══ restoreSession() — BİZİM fonksiyon (burada tanımlı) ═══
@@ -90,12 +98,13 @@ final class LoginViewModel {
         // LoginRequest(...) → BİZİM model (Models/Auth/LoginRequest.swift): API'ye gidecek JSON paketi
         //   .trimmingCharacters(in: .whitespaces) → [Swift/Foundation] baştaki-sondaki boşlukları keser
         //   deviceId()    → BİZİM değişken (satır 27) fonksiyon gibi çağrılır: gerçekte Models/Security/DeviceID.current (Keychain'deki sabit cihaz kimliği)
-        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, deviceId: deviceId())
+        let body = LoginRequest(emailOrPhone: emailOrPhone.trimmingCharacters(in: .whitespaces), password: password, role: role.rawValue, deviceId: deviceId())
         do {
             // auth.login(body) → auth: BİZİM (satır 23, tipi AuthServicing) → gerçekte Models/Services/AuthService.login: isteği atar, jetonları AuthSession'a verir
             //   try await → [Swift] hata fırlatabilir + cevap gelene kadar bekle | response: LoginResponse (Models/Auth/LoginResponse.swift)
             let response = try await auth.login(body)
             password = "" // şifre bellekte/ekranda kalmasın
+            defaults.set(role.rawValue, forKey: Self.lastRoleKey) // bir dahaki sefer aynı tür seçili gelsin
             // response.user → LoginResponse içindeki LoginUser (ad, rol) → loggedInUser'a yazılır → LoginView HomeView'ı açar
             loggedInUser = response.user
         } catch {

@@ -38,6 +38,14 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                 Text("Yüküm").font(.largeTitle).bold() // başlık | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
 
+                // Hesap türü seçici: aynı e-posta/telefon hem Yük Veren hem Taşımacı olarak kayıtlı olabilir, hangisine girileceği buradan seçilir
+                // Picker [SWIFT]: seçim listesi | .pickerStyle(.segmented): yan yana iki parçalı anahtar | $viewModel.role: seçim doğrudan ViewModel'e yazılır
+                // ForEach(LoginRole.allCases): Models/Auth/LoginRole.swift'teki seçenekler | .tag: seçeneğin değeri
+                Picker("Hesap türü", selection: $viewModel.role) {
+                    ForEach(LoginRole.allCases) { role in Text(role.title).tag(role) }
+                }
+                .pickerStyle(.segmented)
+
                 // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .never: baş harf büyümesin | .emailAddress: @ kolay çıkan klavye
                 TextField("Email veya Telefon", text: $viewModel.emailOrPhone).textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).keyboardType(.emailAddress) // ⮕ LoginViewModel.emailOrPhone | .textFieldStyle [SWIFT]: yazı kutusu stili | .keyboardType [SWIFT]: klavye türü | .textInputAutocapitalization [SWIFT]: otomatik büyük harf ayarı
 
