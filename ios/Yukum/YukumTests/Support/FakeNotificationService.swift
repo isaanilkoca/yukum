@@ -19,6 +19,12 @@ final class FakeNotificationService: NotificationServicing {
     func markRead(id: String) async throws { markReadCalls.append(id); try markReadResult.get() }
     func markAllRead() async throws { markAllCalls += 1; try markAllResult.get() }
 
+    var deviceResult: Result<Void, Error> = .success(())
+    private(set) var registerCalls: [RegisterDeviceRequest] = []
+    private(set) var removeCalls: [String] = []
+    func registerDevice(_ body: RegisterDeviceRequest) async throws { registerCalls.append(body); try deviceResult.get() }
+    func removeDevice(deviceId: String) async throws { removeCalls.append(deviceId); try deviceResult.get() }
+
     static func item(_ id: String, isRead: Bool = false) -> AppNotification {
         AppNotification(id: id, type: "OfferReceived", title: "Yeni teklif", body: "Metin", listingId: "L1", offerId: "O1", isRead: isRead, createdAt: "2026-11-12T09:00:00Z")
     }

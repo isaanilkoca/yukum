@@ -16,4 +16,6 @@ protocol NotificationServicing {
     func unreadCount() async throws -> Int // GET /notifications/unread-count | zil rozeti
     func markRead(id: String) async throws // POST /notifications/{id}/read | 204
     func markAllRead() async throws // POST /notifications/read-all | 204
+    func registerDevice(_ body: RegisterDeviceRequest) async throws // PUT /notifications/device-token | push adresini kaydet | 204
+    func removeDevice(deviceId: String) async throws // DELETE /notifications/device-token?deviceId= | çıkışta sil | 204
 }

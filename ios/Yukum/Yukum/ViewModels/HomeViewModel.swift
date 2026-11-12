@@ -35,6 +35,9 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     private let listingService: ListingServicing
     // ⮕ KULLANIM [offerService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load()
     private let offerService: OfferServicing
+    private let notificationService: NotificationServicing // [BİZİM] bildirim servisi (sözleşme) | BAĞLANTI: Models/Services/NotificationService
+    var unreadNotifications = 0 // zil rozetindeki sayı | 0 ise rozet çizilmez | OKUR: HomeView toolbar
+    private let push: PushRegistering // [BİZİM] telefon bildirimi kaydı (sözleşme) | BAĞLANTI: Models/Notifications/PushManager
     // ⮕ KULLANIM [cityService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load(), HomeViewModel › cityFilterChanged()
     private let cityService: CityServicing
     // ⮕ KULLANIM [session]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › signOut()
@@ -83,12 +86,16 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     init(user: LoginUser,
          listingService: ListingServicing = ListingService(),
          offerService: OfferServicing = OfferService(),
+         notificationService: NotificationServicing = NotificationService(), // varsayılan parametre [SWIFT]: verilmezse gerçek servis, testte sahtesi
+         push: PushRegistering = PushManager.shared,
          cityService: CityServicing = CityService(),
          session: SessionSigningOut = AuthSession.shared,
          location: LocationProviding = LocationManager()) {
         self.user = user
         self.listingService = listingService
         self.offerService = offerService
+        self.notificationService = notificationService
+        self.push = push
         self.cityService = cityService
         self.session = session
         self.location = location
@@ -113,6 +120,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ ZİNCİR: Views/HomeView: Button("Çıkış Yap") { Task { await viewModel.signOut(); dismiss() } } → Models/Networking/AuthSession.signOut() → POST /api/v1/auth/logout
     // ⮕ KULLANIM [signOut]: çağırır: HomeViewModel › signOut(), HomeView › body, HomeViewModelTests (test)
     func signOut() async { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz)
+        await push.unregister() // ÖNCE push adresi silinir (istek jeton ister), SONRA oturum kapanır
         await session.signOut() // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
     }
 
@@ -121,6 +129,18 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ÇAĞIRAN: View → .task(id:) (ekran açılınca/filtre değişince/konum bulununca) ve .refreshable (aşağı çekince)
     // ⮕ ZİNCİR: Views/HomeView: .task(id: reloadKey) ve List'lerdeki .refreshable | Yük Veren → ListingService.myListings() | Taşımacı → ListingService.openListings(...) + CityService.cities() + OfferService.unseenCount()
     // ⮕ KULLANIM [load]: çağırır: HomeView › body, HomeViewModelTests (test)
+    // loadUnread: zil sayısını tazeler | try? [SWIFT]: hata olursa nil (rozet için hata gösterilmez, eski sayı kalır)
+    // ÇAĞIRAN: HomeView .onAppear (ekran her göründüğünde, bildirim listesinden dönüşte de) | API: GET /api/v1/notifications/unread-count
+    func loadUnread() async {
+        if let count = try? await notificationService.unreadCount() {
+            unreadNotifications = count
+            push.setBadge(count) // uygulama simgesindeki sayı zil ile aynı kalsın
+        }
+    }
+
+    // enablePush: giriş yapılmış ana ekran açılınca | izin penceresi + Apple kaydı + adresi sunucuya gönderme ⮕ PushManager.enable()
+    func enablePush() async { await push.enable() }
+
     func load() async {
         listError = nil // eski hata yazısını temizle | NEDEN: load her yenilemede çalışır; temizlemezsek bir kez çıkan hata sonraki BAŞARILI yüklemeden sonra da ekranda kalırdı
         do {

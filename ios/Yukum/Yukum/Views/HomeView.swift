@@ -40,6 +40,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     
     @State private var showPrivacy = false // "Gizlilik ve KVKK" sayfası açık mı | true → .sheet görünür
     
+    @State private var showNotifications = false // true → bildirim listesi açılır (telefondaki bildirime dokununca)
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
@@ -200,6 +201,19 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             }
             .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık | .navigationTitle [SWIFT]: üst çubuk başlığı
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
+                // Zil: iki rolde de görünür | NavigationLink [SWIFT]: basınca ekranı bu yığına iter (Geri kendiliğinden gelir) ⮕ Views/NotificationsView
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink { NotificationsView() } label: {
+                        Image(systemName: "bell") // SF Symbols: zil
+                            .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun sağ üstüne rozet çizer
+                                if viewModel.unreadNotifications > 0 { // 0 ise rozet yok | ⮕ HomeViewModel.unreadNotifications ← NotificationService.unreadCount()
+                                    Text("\(viewModel.unreadNotifications)").font(.caption2).foregroundColor(.white)
+                                        .padding(4).background(Color.red).clipShape(Circle()) // kırmızı yuvarlak
+                                        .offset(x: 10, y: -10) // köşeye kaydır
+                                }
+                            }
+                    }
+                }
                 if viewModel.isShipper { // yalnız Yük Veren ilan açabilir
                     ToolbarItem(placement: .topBarTrailing) { // ToolbarItem [SWIFT]: çubuktaki bir eleman | placement: nerede durur | .topBarTrailing: sağ üst köşe
                         NavigationLink { // basınca süslü parantezdeki ekrana geçer
@@ -241,6 +255,15 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // .task(id:) [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
             // NE İŞE YARAR: il/ilçe Picker'ı, "Yakınımdakiler" anahtarı ya da konum değişince liste kendiliğinden yeniden çekilir, ayrı "Ara" düğmesi gerekmez | teklif verip/karar verip dönünce de liste ve rozet yenilenir
             // id: ViewModel.reloadKey → filtre + anahtar + konumu birleştiren yazı | bu yazı değişince blok yeniden çalışır
+            // Push: giriş yapılmış ekran açılınca izin + kayıt ⮕ HomeViewModel.enablePush() → PushManager.enable()
+            .task { await viewModel.enablePush() }
+            // Telefondaki bildirime dokunuldu (App/AppDelegate yayınlar) → liste açılır | .navigationDestination(isPresented:) [SWIFT]: Bool true olunca ekranı yığına iter
+            .onReceive(NotificationCenter.default.publisher(for: .pushTapped)) { _ in showNotifications = true }
+            .navigationDestination(isPresented: $showNotifications) { NotificationsView() }
+            // Uygulama açıkken bildirim geldi → zil sayısını tazele
+            .onReceive(NotificationCenter.default.publisher(for: .pushReceived)) { _ in Task { await viewModel.loadUnread() } }
+            // .onAppear [SWIFT]: ekran HER göründüğünde çalışır (bildirim listesinden Geri ile dönünce de) → rozet güncel kalır
+            .onAppear { Task { await viewModel.loadUnread() } }
             .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
                 await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
             }

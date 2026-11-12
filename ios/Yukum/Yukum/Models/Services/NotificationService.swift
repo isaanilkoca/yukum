@@ -37,6 +37,17 @@ struct NotificationService {
         try await api.sendNoContent(.post, "/api/v1/notifications/read-all", fallback: "Bildirimler güncellenemedi.")
     }
 
+    // registerDevice: telefonun push adresini bu kullanıcıya kaydeder | PUT: "bu cihazın adresi şu olsun" (tekrar çağrılabilir)
+    // ÇAĞIRAN: Models/Notifications/PushManager.sendIfReady()
+    func registerDevice(_ body: RegisterDeviceRequest) async throws {
+        try await api.sendNoContent(.put, "/api/v1/notifications/device-token", body: body, fallback: "Bildirim kaydı yapılamadı.")
+    }
+
+    // removeDevice: çıkışta adresi siler | deviceId adrese ?'li yazılır (UUID: özel karakter içermez)
+    func removeDevice(deviceId: String) async throws {
+        try await api.sendNoContent(.delete, "/api/v1/notifications/device-token?deviceId=\(deviceId)", fallback: "Bildirim kaydı silinemedi.")
+    }
+
     static let pageSize = 20 // static [SWIFT]: türe ait sabit | API en çok 50 kabul eder
 }
 
