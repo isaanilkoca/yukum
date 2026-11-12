@@ -22,6 +22,7 @@ struct AppNotification: Decodable, Identifiable {
     let offerId: String? // ilgili teklif
     var isRead: Bool // var: tek değişebilen alan | satıra basınca ekranda hemen "okundu" gösterilir (iyimser güncelleme)
     let createdAt: String // "2026-11-11T21:00:00Z" yazısı | saat gösterimi Views tarafında
+    var createdDate: Date? { ISO8601DateFormatter().date(from: createdAt) } // bu bir hesaplanan özellik jsondan okunmaz createAt ten üretilir
 }
 
 
