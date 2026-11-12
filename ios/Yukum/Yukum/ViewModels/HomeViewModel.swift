@@ -129,6 +129,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ÇAĞIRAN: View → .task(id:) (ekran açılınca/filtre değişince/konum bulununca) ve .refreshable (aşağı çekince)
     // ⮕ ZİNCİR: Views/HomeView: .task(id: reloadKey) ve List'lerdeki .refreshable | Yük Veren → ListingService.myListings() | Taşımacı → ListingService.openListings(...) + CityService.cities() + OfferService.unseenCount()
     // ⮕ KULLANIM [load]: çağırır: HomeView › body, HomeViewModelTests (test)
+    // ZİNCİR (zil): HomeView .onAppear → loadUnread() → NotificationService.unreadCount() → GET /api/v1/notifications/unread-count → unreadNotifications → HomeView toolbar rozeti
     // loadUnread: zil sayısını tazeler | try? [SWIFT]: hata olursa nil (rozet için hata gösterilmez, eski sayı kalır)
     // ÇAĞIRAN: HomeView .onAppear (ekran her göründüğünde, bildirim listesinden dönüşte de) | API: GET /api/v1/notifications/unread-count
     func loadUnread() async {
@@ -138,6 +139,7 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
         }
     }
 
+    // ZİNCİR (push): HomeView .task → enablePush() → PushManager.enable() → izin + Apple kaydı → App/AppDelegate adresi alır → PushManager.didReceive → PUT /api/v1/notifications/device-token
     // enablePush: giriş yapılmış ana ekran açılınca | izin penceresi + Apple kaydı + adresi sunucuya gönderme ⮕ PushManager.enable()
     func enablePush() async { await push.enable() }
 

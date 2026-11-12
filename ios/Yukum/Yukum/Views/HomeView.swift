@@ -257,6 +257,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // id: ViewModel.reloadKey → filtre + anahtar + konumu birleştiren yazı | bu yazı değişince blok yeniden çalışır
             // Push: giriş yapılmış ekran açılınca izin + kayıt ⮕ HomeViewModel.enablePush() → PushManager.enable()
             .task { await viewModel.enablePush() }
+            // NEDEN ANONS (NotificationCenter): AppDelegate bir View değil, HomeView'ın @State'ine ulaşamaz → olayı anons eder, dinleyen ekran kendi durumunu değiştirir (sessionExpired ile aynı kalıp)
             // Telefondaki bildirime dokunuldu (App/AppDelegate yayınlar) → liste açılır | .navigationDestination(isPresented:) [SWIFT]: Bool true olunca ekranı yığına iter
             .onReceive(NotificationCenter.default.publisher(for: .pushTapped)) { _ in showNotifications = true }
             .navigationDestination(isPresented: $showNotifications) { NotificationsView() }

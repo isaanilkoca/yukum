@@ -9,7 +9,14 @@ import UserNotifications // [SWIFT] bildirim izni ve simge sayısı
 // │ SUNUCU: bildirim satırı yazılır → PushWorker → Apple (APNs) → telefon | bkz. docs/api/Notifications.md
 // └──────────────────────────────────────────────────────────────────────
 
-// Adres (2) ile giriş (1) hangi sırayla gelirse gelsin çalışır: adres ancak İKİSİ de hazırsa gönderilir (isActive + token)
+// NEDEN İKİ BAYRAK (token + isActive): adres ile giriş FARKLI zamanlarda gelir.
+//   - Adres: uygulama açılınca Apple'dan (kullanıcı henüz giriş yapmamış olabilir)
+//   - Giriş: kullanıcı ne zaman isterse (adres henüz gelmemiş olabilir)
+//   İkisi ayrı tutulur, adres ancak İKİSİ de hazırsa gönderilir (sendIfReady). İki sıra da testli: YukumTests/ViewModels/PushTests
+// NEDEN PROTOCOL (PushRegistering): HomeViewModel izin penceresine/Apple'a doğrudan dokunursa test edilemez; sözleşme sayesinde testte FakePush verilir
+// NEDEN CLOSURE PARAMETRELERİ (requestSystem, applyBadge): sistemle konuşan iki satır dışarıdan verilir → PushManager'ın kendisi de sunucusuz/penceresiz test edilir
+// BİLİNEN SINIRLAR: (1) oturum zorla düşerse (sessionExpired) unregister çağrılmaz, adres sunucuda kalır → aynı telefonda yeniden girişte düzelir
+//                   (2) uygulama tamamen kapalıyken bildirime dokunulursa uygulama açılır ama liste kendiliğinden açılmaz (anonsu dinleyen HomeView henüz yok)
 final class PushManager: PushRegistering {
     static let shared = PushManager() // static let [SWIFT]: tek ortak örnek | AppDelegate ve HomeViewModel AYNI nesneyle konuşur
 
@@ -42,7 +49,8 @@ final class PushManager: PushRegistering {
         await sendIfReady() // giriş yapılmışsa şimdi gönder
     }
 
-    // unregister: çıkıştan ÖNCE çağrılır (silme isteği jeton ister) | try? [SWIFT]: hata olsa da çıkış engellenmez
+    // unregister: çıkıştan ÖNCE çağrılır | SIRA ÖNEMLİ: silme isteği erişim jetonu ister; önce oturum kapansaydı istek jetonsuz kalır, çıkan kullanıcıya bildirim gitmeye devam ederdi
+    // try? [SWIFT]: hata olsa da çıkış engellenmez | guard isActive: iki kez çağrılırsa ikinci istek atılmaz
     func unregister() async {
         guard isActive else { return }
         isActive = false

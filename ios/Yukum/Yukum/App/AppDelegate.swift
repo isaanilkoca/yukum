@@ -2,6 +2,8 @@ import UIKit
 import UserNotifications
 
 // SwiftUI'da uygulama olayları (push adresi geldi, bildirime dokunuldu) View'lara gelmez; Apple bunları UIApplicationDelegate'e yollar.
+// NEDEN SINIF + NSObject: bu Apple'ın UIKit dönemi sözleşmesi (UIApplicationDelegate); Objective-C tabanlı olduğu için struct olamaz, NSObject'ten türemek zorunda.
+// delegate [SWIFT/UIKit kalıbı]: "olay olunca şu nesnenin şu fonksiyonunu çağır" | fonksiyon adları Apple'ın belirlediği adlardır, değiştirilemez.
 // YukumApp bu sınıfı @UIApplicationDelegateAdaptor ile bağlar. Burada mantık yok: olay alınır, PushManager'a ya da anons panosuna aktarılır.
 // BAĞLANTI: App/YukumApp.swift (bağlar) → Models/Notifications/PushManager (adres) | Views/HomeView (.onReceive: pushTapped, pushReceived)
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
