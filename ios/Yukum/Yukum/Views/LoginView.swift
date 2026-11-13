@@ -14,6 +14,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Açılışta otomatik giriş  →  viewModel.restoreSession()          →  AuthSession.restore()           →  POST /api/v1/auth/refresh        →  LoginResponse → LoginUser
 // │ Hata yazısı              →  viewModel.errorMessage              →  APIError.userMessage            →  (sunucu Türkçe mesajı)           →  APIErrorResponse
 // │ Ana sayfayı açma         →  viewModel.loggedInUser (dolunca)    →  fullScreenCover → HomeView(user:)  →  -                             →  LoginUser
+// │ Arka plan (animasyon)    →  (ViewModel yok)                      →  Design/TapedBoxBackground.swift: düşen koliler + ekran bantları | renkler: Design/DesignPalette.swift
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş ekranı (uygulamanın ilk ekranı). Akış: alanları doldur → kontrol et → AuthService.login → HomeView
@@ -27,46 +28,101 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): LoginView › body | okur: LoginView › body
     @State private var viewModel = LoginViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
 
+    // colorScheme: telefon açık modda mı koyu modda mı | @Environment [SWIFT]: sistemin verdiği ortam bilgisini okur
+    // ⮕ KULLANIM [colorScheme]: okur: LoginView › body (palette seçimi)
+    @Environment(\.colorScheme) private var colorScheme
+
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
 
         // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'e yazsın diye)
         @Bindable var viewModel = viewModel
 
+        // palette: tasarım renkleri (Design/DesignPalette.swift) | telefonun açık/koyu moduna göre seçilir
+        let palette = Palette(isDark: colorScheme == .dark)
+
         NavigationStack { // NavigationStack [SWIFT]: ekranlar arası geçiş + geri oku yönetir | "Kayıt ol" NavigationLink'i bunun içinde çalışır
-            VStack(spacing: 40) { // elemanları alt alta dizer | VStack [SWIFT]: elemanları alt alta dizer
+            // TASARIM (L): ekranın TAMAMININ arkasında koli sahnesi + bantlar durur; yazılar ve alanlar onun üstünde, ekrana yayılmıştır.
+            // ZStack [SWIFT]: elemanları üst üste dizer (arkadan öne) → önce arka plan, sonra form.
+            // Animasyonun tüm kodu Design/ klasöründe (rehber: Design/00_Rehber_Design.swift); bu ekran yalnız TapedBoxBackground()'u çağırır.
+            // Alanların/düğmelerin bağlandığı yerler (viewModel.x, login()) DEĞİŞMEDİ; yalnız görünümleri değişti.
+            ZStack {
+            TapedBoxBackground() // Design/TapedBoxBackground.swift → koliler düşer, durunca ekran bantlanır
 
-                Text("Yüküm").font(.largeTitle).bold() // başlık | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
+            VStack(spacing: 14) { // elemanları alt alta dizer | VStack [SWIFT]: elemanları alt alta dizer
 
-                // Hesap türü seçici: aynı e-posta/telefon hem Yük Veren hem Taşımacı olarak kayıtlı olabilir, hangisine girileceği buradan seçilir
-                // Picker [SWIFT]: seçim listesi | .pickerStyle(.segmented): yan yana iki parçalı anahtar | $viewModel.role: seçim doğrudan ViewModel'e yazılır
-                // ForEach(LoginRole.allCases): Models/Auth/LoginRole.swift'teki seçenekler | .tag: seçeneğin değeri
-                Picker("Hesap türü", selection: $viewModel.role) {
-                    ForEach(LoginRole.allCases) { role in Text(role.title).tag(role) }
-                }
-                .pickerStyle(.segmented)
+                Spacer().frame(height: 36) // üstten sabit boşluk | Spacer [SWIFT]: boşluk
 
-                // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .never: baş harf büyümesin | .emailAddress: @ kolay çıkan klavye
-                TextField("Email veya Telefon", text: $viewModel.emailOrPhone).textFieldStyle(.roundedBorder).textInputAutocapitalization(.never).keyboardType(.emailAddress) // ⮕ LoginViewModel.emailOrPhone | .textFieldStyle [SWIFT]: yazı kutusu stili | .keyboardType [SWIFT]: klavye türü | .textInputAutocapitalization [SWIFT]: otomatik büyük harf ayarı
+                Text("Yüküm") // başlık
+                    .font(.system(size: 54, weight: .heavy, design: .rounded)) // .font [SWIFT]: yazı boyutu/stili | rounded: yuvarlak hatlı
+                    .foregroundStyle(palette.title) // renk Design/DesignPalette.swift'ten (gece krem, gündüz koyu kahve)
+                    .shadow(color: .black.opacity(palette.isDark ? 0.6 : 0), radius: 10) // bandın/kolinin üstünde okunaklı kalsın
+                Text("Yükün yolda, aklın rahat.")
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(palette.title.opacity(0.75))
 
-                SecureField("Şifre", text: $viewModel.password).textFieldStyle(.roundedBorder) // SecureField [SWIFT]: yazılan nokta nokta görünür
+                Spacer() // esnek boşluk: başlık yukarıda, form kartı aşağıda kalır (ekran boyuna göre açılır)
 
-                if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // if let: doluysa kırmızı yaz, nil ise çizilmez | .foregroundColor [SWIFT]: yazı rengi
+                // FORM KARTI: opak kart arka planı (koliler, bantlar) tamamen keser → kullanıcı nereye ne yazacağını tek bakışta görür.
+                // FormCard ve LabeledInput: Design/FormStyle.swift (yalnız GÖRÜNÜM; alanların kendisi ve bağları aşağıda, bu dosyada)
+                FormCard {
 
-                HStack(spacing: 50) { // yan yana iki eleman | HStack [SWIFT]: elemanları yan yana dizer
-
-                    // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır | Task [SWIFT]: düğmede await (bekleme) kullanmamızı sağlar; ekran donmaz
-                    // kontrol, paket hazırlama ve istek ViewModel.login()'de | sonuç: başarıda viewModel.loggedInUser dolar, hatada errorMessage dolar
-                    Button("Giriş yap") { Task { await viewModel.login() } } // ⮕ LoginViewModel.login() → AuthService.login → POST /api/v1/auth/login
-                        .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli
-
-                    NavigationLink("Kayıt ol") { // NavigationLink [SWIFT]: kendisi düğme, basınca süslü parantezdeki ekrana geçer (Button içine konmaz)
-                        RoleSelectionView() // Views/RoleSelectionView.swift → Yük Veren / Taşımacı seçimi
+                    // Hesap türü seçici: aynı e-posta/telefon hem Yük Veren hem Taşımacı olarak kayıtlı olabilir, hangisine girileceği buradan seçilir
+                    // Picker [SWIFT]: seçim listesi | .pickerStyle(.segmented): yan yana iki parçalı anahtar | $viewModel.role: seçim doğrudan ViewModel'e yazılır
+                    // ForEach(LoginRole.allCases): Models/Auth/LoginRole.swift'teki seçenekler | .tag: seçeneğin değeri
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("Hesap türü").font(.footnote.weight(.semibold)).foregroundStyle(palette.label) // etiket: seçicinin ne olduğunu söyler
+                        Picker("Hesap türü", selection: $viewModel.role) {
+                            ForEach(LoginRole.allCases) { role in Text(role.title).tag(role) }
+                        }
+                        .pickerStyle(.segmented)
                     }
 
-                }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
+                    // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .never: baş harf büyümesin | .emailAddress: @ kolay çıkan klavye
+                    LabeledInput(label: "E-posta veya telefon", systemImage: "envelope.fill") {
+                        TextField("E-posta ya da telefon numaranız", text: $viewModel.emailOrPhone).textInputAutocapitalization(.never).keyboardType(.emailAddress) // ⮕ LoginViewModel.emailOrPhone | .keyboardType [SWIFT]: klavye türü | .textInputAutocapitalization [SWIFT]: otomatik büyük harf ayarı
+                    }
 
-            }.padding()
+                    LabeledInput(label: "Şifre", systemImage: "lock.fill") {
+                        SecureField("Şifreniz", text: $viewModel.password) // SecureField [SWIFT]: yazılan nokta nokta görünür | ⮕ LoginViewModel.password
+                    }
+
+                    // if let: doluysa göster, nil ise çizilmez | simge + kırmızı yazı: hata olduğu renk görmeyen kullanıcıya da belli olsun
+                    if let errorMessage = viewModel.errorMessage {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill") // Label [SWIFT]: simge + yazı
+                            .font(.footnote.weight(.semibold)).foregroundStyle(.red) // .foregroundStyle [SWIFT]: yazı rengi
+                    }
+
+                    // Button [SWIFT]: tıklanınca ilk süslü parantezdeki kod çalışır; label: düğmenin görünümü | Task [SWIFT]: düğmede await (bekleme) kullanmamızı sağlar; ekran donmaz
+                    // kontrol, paket hazırlama ve istek ViewModel.login()'de | sonuç: başarıda viewModel.loggedInUser dolar, hatada errorMessage dolar
+                    Button { Task { await viewModel.login() } } label: { // ⮕ LoginViewModel.login() → AuthService.login → POST /api/v1/auth/login
+                        Text("Giriş yap")
+                            .font(.headline)
+                            .foregroundStyle(palette.buttonText)
+                            .frame(maxWidth: .infinity) // .frame(maxWidth: .infinity) [SWIFT]: yatayda tüm genişliği kapla
+                            .frame(height: 54)
+                            .background(palette.accent, in: .rect(cornerRadius: 14)) // koli bandı turuncusu (DesignPalette.accent)
+                    }
+                    .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli
+                    .padding(.top, 4)
+
+                    NavigationLink { // NavigationLink [SWIFT]: kendisi düğme, basınca ilk süslü parantezdeki ekrana geçer (Button içine konmaz) | label: görünümü
+                        RoleSelectionView() // Views/RoleSelectionView.swift → Yük Veren / Taşımacı seçimi
+                    } label: {
+                        Text("Hesabın yok mu? **Kayıt ol**") // ** ** [SWIFT]: Markdown kalın yazı
+                            .font(.subheadline)
+                            .foregroundStyle(palette.label)
+                            .frame(maxWidth: .infinity) // kartın ortasına hizala
+                    }
+                }
+
+                Spacer() // alttaki esnek boşluk: üstteki Spacer ile birlikte kartı ekranın ortasına doğru taşır (kart en alta yapışmaz)
+                    .frame(maxHeight: 110) // en fazla 110 nokta açılır → kart tam ortada değil, ortanın biraz altında durur
+
+            }
+            .padding(.horizontal, 20) // .padding [SWIFT]: etrafında boşluk bırakır
+            .padding(.bottom, 12)
+            } // ZStack sonu
         }
 
         // OTOMATİK GİRİŞ | .task [SWIFT]: ekran açılınca bir kez çalışır

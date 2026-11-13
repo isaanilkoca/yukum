@@ -19,7 +19,17 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 struct ContentView: View { // ContentView [BİZİM] ad | View [SWIFT]: "bu struct bir ekrandır" sözleşmesi
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // body [SWIFT] zorunlu: ekranın içeriği | some View: "bir ekran parçası döner"
+        #if DEBUG // [SWIFT] yalnız geliştirme derlemesinde derlenir; App Store sürümünde bu blok YOKTUR
+        // PROTOTİP KAPISI (geçici): "-truckPreview" argümanıyla başlatılırsa kamyon dolum sahnesini tek başına göster.
+        // Sahne bir ekrana bağlanınca bu blok silinir. Çalıştırma: xcrun simctl launch booted com.isaanilkoca.Yukum -truckPreview
+        if ProcessInfo.processInfo.arguments.contains("-truckPreview") {
+            TruckLoadPreview() // Design/TruckLoadView.swift
+        } else {
+            LoginView()
+        }
+        #else
         LoginView() // uygulamanın ilk ekranı: giriş | () = örnek üret
+        #endif
     }
 }
 
