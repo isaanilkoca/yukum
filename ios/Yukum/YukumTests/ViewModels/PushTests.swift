@@ -13,6 +13,17 @@ struct PushTests {
 
     private let rawToken = Data([0x0a, 0xff, 0x01, 0x10])
 
+    // Soğuk açılış: dokunuş, ana ekran kurulmadan önce gelir; not saklanmalı ve yalnız BİR kez okunmalı
+    @Test func tapWhileTheHomeScreenIsNotReadyIsKeptAndReadOnlyOnce() {
+        let manager = PushManager(service: FakeNotificationService(), requestSystem: {}, applyBadge: { _ in })
+        #expect(!manager.takePendingTap()) // dokunuş yokken liste açılmaz
+
+        manager.noteTap()
+
+        #expect(manager.takePendingTap()) // ana ekran açılınca okur
+        #expect(!manager.takePendingTap()) // ikinci okuyuşta yok: liste iki kez açılmaz
+    }
+
     @Test func tokenBytesBecomeLowercaseHexWithLeadingZeros() {
         #expect(PushManager.hex(rawToken) == "0aff0110")
     }

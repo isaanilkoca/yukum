@@ -59,6 +59,26 @@ final class PushManager: PushRegistering {
 
     func setBadge(_ count: Int) { applyBadge(count) }
 
+    // ── BEKLEYEN DOKUNUŞ ────────────────────────────────────────────────────────────
+    // SORUN (gerçek cihazda görüldü, 13 Kasım): uygulama TAMAMEN KAPALIYKEN bildirime basılınca ana ekran açılıyor, bildirim listesi açılmıyordu.
+    // NEDEN: AppDelegate dokunuşu anons panosuyla (NotificationCenter, .pushTapped) duyuruyor. Anons, o an DİNLEYEN varsa işe yarar; saklanmaz.
+    //   Soğuk açılışta sıra şöyle: uygulama başlar → Apple "dokunuldu" der → anons yapılır → (oturum yenilenir) → HomeView ancak ŞİMDİ kurulur.
+    //   HomeView dinlemeye başladığında anons çoktan geçmiştir. Uygulama arka plandayken sorun yoktu: HomeView zaten ayakta ve dinliyordu.
+    // ÇÖZÜM: dokunuş ayrıca burada bir bayrakta saklanır. HomeView açılınca "bekleyen dokunuş var mı" diye sorar (takePendingTap).
+    // ZİNCİR: AppDelegate.didReceive(response) → noteTap() + .pushTapped anonsu → HomeView (.task ya da .onReceive) → takePendingTap() → showNotifications = true
+    private(set) var pendingTap = false
+
+    // noteTap: bildirime dokunuldu, not al | ÇAĞIRAN: App/AppDelegate
+    func noteTap() { pendingTap = true }
+
+    // takePendingTap: bekleyen dokunuş varsa true döner VE bayrağı indirir ("al ve sil") → aynı dokunuş listeyi iki kez açmaz
+    // defer [SWIFT]: return'den SONRA çalışır; önce eski değer döner, sonra bayrak false olur
+    // ÇAĞIRAN: Views/HomeView (.task: soğuk açılış | .onReceive: uygulama zaten açıkken)
+    func takePendingTap() -> Bool {
+        defer { pendingTap = false }
+        return pendingTap
+    }
+
     private func sendIfReady() async {
         guard isActive, let token else { return } // ikisi de hazır değilse bekle
         try? await service.registerDevice(RegisterDeviceRequest(token: token, deviceId: DeviceID.current, sandbox: Self.isSandbox))

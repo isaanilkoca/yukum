@@ -32,7 +32,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     }
 
     // Kullanıcı bildirime DOKUNDU: bildirim listesini aç
+    // İki adım: (1) not al → uygulama kapalıyken dokunulduysa HomeView henüz yok, anonsu kaçırır; açılınca bu notu okur (PushManager.takePendingTap)
+    //           (2) anons et → uygulama zaten açıksa HomeView hemen duyar
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        PushManager.shared.noteTap()
         NotificationCenter.default.post(name: .pushTapped, object: nil)
     }
 }

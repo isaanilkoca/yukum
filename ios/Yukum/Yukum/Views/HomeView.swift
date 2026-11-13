@@ -205,11 +205,17 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink { NotificationsView() } label: {
                         Image(systemName: "bell") // SF Symbols: zil
-                            .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun sağ üstüne rozet çizer
+                            // ROZET YERLEŞİMİ (13 Kasım düzeltmesi): önceden rozet .offset ile zilin DIŞINA itiliyordu.
+                            // .offset [SWIFT] yalnız çizimi kaydırır, kapladığı yeri büyütmez → üst çubuk rozeti "yok" sayıp + düğmesini hemen yanına koyuyordu, sayı + ile üst üste biniyordu.
+                            // Şimdi önce zilin çevresine yer açılır (.frame), rozet o alanın İÇİNDE sağ üst köşeye oturur → çubuk bu genişliği bilir, + düğmesini öteye koyar.
+                            .frame(width: 40, height: 34) // .frame [SWIFT]: kapladığı alan | zil ortada kalır, köşede rozete yer açılır
+                            .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: bu alanın sağ üstüne rozet çizer
                                 if viewModel.unreadNotifications > 0 { // 0 ise rozet yok | ⮕ HomeViewModel.unreadNotifications ← NotificationService.unreadCount()
-                                    Text("\(viewModel.unreadNotifications)").font(.caption2).foregroundColor(.white)
-                                        .padding(4).background(Color.red).clipShape(Circle()) // kırmızı yuvarlak
-                                        .offset(x: 10, y: -10) // köşeye kaydır
+                                    // 99'dan büyükse "99+": rozet sınırsız genişleyip yine taşmasın
+                                    Text(viewModel.unreadNotifications > 99 ? "99+" : "\(viewModel.unreadNotifications)")
+                                        .font(.caption2).fontWeight(.bold).foregroundColor(.white)
+                                        .padding(.horizontal, 5).frame(minWidth: 18, minHeight: 18) // minWidth = minHeight: tek hanede tam daire
+                                        .background(Color.red).clipShape(Capsule()) // Capsule [SWIFT]: uçları yuvarlak şekil; iki-üç hanede yana uzar, daire gibi kırpmaz
                                 }
                             }
                     }
@@ -257,9 +263,14 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // id: ViewModel.reloadKey → filtre + anahtar + konumu birleştiren yazı | bu yazı değişince blok yeniden çalışır
             // Push: giriş yapılmış ekran açılınca izin + kayıt ⮕ HomeViewModel.enablePush() → PushManager.enable()
             .task { await viewModel.enablePush() }
+            // SOĞUK AÇILIŞ: uygulama kapalıyken bildirime basıldıysa anons bu ekran kurulmadan önce yapılmıştır (kaçtı); bekleyen notu burada okuruz
+            // ⮕ PushManager.takePendingTap() (neden gerektiği orada yazılı)
+            .task { if PushManager.shared.takePendingTap() { showNotifications = true } }
             // NEDEN ANONS (NotificationCenter): AppDelegate bir View değil, HomeView'ın @State'ine ulaşamaz → olayı anons eder, dinleyen ekran kendi durumunu değiştirir (sessionExpired ile aynı kalıp)
             // Telefondaki bildirime dokunuldu (App/AppDelegate yayınlar) → liste açılır | .navigationDestination(isPresented:) [SWIFT]: Bool true olunca ekranı yığına iter
-            .onReceive(NotificationCenter.default.publisher(for: .pushTapped)) { _ in showNotifications = true }
+            .onReceive(NotificationCenter.default.publisher(for: .pushTapped)) { _ in
+                if PushManager.shared.takePendingTap() { showNotifications = true } // notu da al: yoksa bir sonraki açılışta liste bir kez daha açılırdı
+            }
             .navigationDestination(isPresented: $showNotifications) { NotificationsView() }
             // Uygulama açıkken bildirim geldi → zil sayısını tazele
             .onReceive(NotificationCenter.default.publisher(for: .pushReceived)) { _ in Task { await viewModel.loadUnread() } }
