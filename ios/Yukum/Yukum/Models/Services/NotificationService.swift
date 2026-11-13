@@ -37,6 +37,12 @@ struct NotificationService {
         try await api.sendNoContent(.post, "/api/v1/notifications/read-all", fallback: "Bildirimler güncellenemedi.")
     }
 
+    // delete: bildirimi sunucudan KALICI siler | cevap 204 | sunucu idempotent: bildirim zaten yoksa da 204 döner, hata vermez
+    // ÇAĞIRAN: ViewModels/NotificationsViewModel.delete(_:)
+    func delete(id: String) async throws {
+        try await api.sendNoContent(.delete, "/api/v1/notifications/\(id)", fallback: "Bildirim silinemedi.")
+    }
+
     // registerDevice: telefonun push adresini bu kullanıcıya kaydeder | PUT: "bu cihazın adresi şu olsun" (tekrar çağrılabilir)
     // ÇAĞIRAN: Models/Notifications/PushManager.sendIfReady()
     func registerDevice(_ body: RegisterDeviceRequest) async throws {

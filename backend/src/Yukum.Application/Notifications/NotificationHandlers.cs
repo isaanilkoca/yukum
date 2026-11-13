@@ -49,3 +49,16 @@ public sealed class MarkAllNotificationsReadHandler(INotificationRepository noti
     public Task<int> HandleAsync(MarkAllNotificationsReadCommand command, CancellationToken cancellationToken = default) =>
         notifications.MarkAllReadAsync(command.UserId, time.GetUtcNow().UtcDateTime, cancellationToken);
 }
+
+/// <summary>
+/// Tek bildirimi siler. Okundu'dan FARKI: yoksa/başkasınınsa da başarılı döner (404 yok).
+/// NEDEN: silmenin amacı "bu bildirim listemde olmasın"; zaten yoksa amaç gerçekleşmiştir. İstemci aynı isteği iki kez gönderse
+/// (zayıf bağlantıda tekrar) hata görmez. Başkasının bildirimi için de aynı cevap döndüğünden varlığı sızmaz, satıra da dokunulmaz.
+/// </summary>
+public sealed class DeleteNotificationHandler(INotificationRepository notifications)
+    : ICommandHandler<DeleteNotificationCommand, bool>
+{
+    /// <summary>true: bir satır silindi | false: silinecek bir şey yoktu. İkisi de hata değildir.</summary>
+    public async Task<bool> HandleAsync(DeleteNotificationCommand command, CancellationToken cancellationToken = default) =>
+        await notifications.DeleteAsync(command.UserId, command.NotificationId, cancellationToken) > 0;
+}

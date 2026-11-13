@@ -38,6 +38,13 @@ public class NotificationRepository(AppDbContext context) : INotificationReposit
             .ExecuteUpdateAsync(s => s.SetProperty(n => n.ReadAt, now).SetProperty(n => n.UpdatedAt, now), cancellationToken);
 
     /// <inheritdoc />
+    public Task<int> DeleteAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default) =>
+        // Tek SQL DELETE (SELECT yok). UserId koşulu güvenliğin kendisi: başkasının bildirimi bu sorguya hiç girmez.
+        // Kalıcı silme (IsDeleted değil): bildirim iş kaydı değil, kullanıcının kendi kutusu; hesap silmede de böyle (DeleteUserDataAsync).
+        // Henüz push'a gitmemiş bir bildirim silinirse PushWorker onu artık bulamaz, yani gönderilmez: istenen davranış.
+        context.Set<Notification>().Where(n => n.Id == notificationId && n.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+
+    /// <inheritdoc />
     public async Task<IReadOnlyList<Notification>> ListUnpushedAsync(int take, CancellationToken cancellationToken = default) =>
         await context.Set<Notification>().AsNoTracking().Where(n => n.PushedAt == null)
             .OrderBy(n => n.CreatedAt).ThenBy(n => n.Id).Take(take).ToListAsync(cancellationToken);

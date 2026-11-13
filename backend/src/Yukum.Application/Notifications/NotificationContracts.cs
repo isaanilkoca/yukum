@@ -14,6 +14,9 @@ public sealed record MarkNotificationReadCommand(Guid UserId, Guid NotificationI
 /// <summary>Komut: hepsini okundu yap.</summary>
 public sealed record MarkAllNotificationsReadCommand(Guid UserId);
 
+/// <summary>Komut: tek bildirimi sil (kullanıcı listeden kaldırdı).</summary>
+public sealed record DeleteNotificationCommand(Guid UserId, Guid NotificationId);
+
 /// <summary>Listedeki bir bildirim. IsRead = ReadAt dolu.</summary>
 public sealed record NotificationDto(Guid Id, NotificationType Type, string Title, string Body, Guid? ListingId, Guid? OfferId, bool IsRead, DateTime CreatedAt);
 

@@ -26,6 +26,7 @@ import Observation
 // │ loadMore()    →  service.list(page: page+1) →  GET /api/v1/notifications?page=2...     →  items'a eklenir
 // │ markRead()    →  service.markRead(id:)      →  POST /api/v1/notifications/{id}/read    →  satır okundu (iyimser, hata olursa geri alınır)
 // │ markAllRead() →  service.markAllRead()      →  POST /api/v1/notifications/read-all     →  hepsi okundu
+// │ delete()      →  service.delete(id:)        →  DELETE /api/v1/notifications/{id}       →  satır listeden kalkar (iyimser, hata olursa geri konur)
 // │ SAHTESİ   : YukumTests/Support/FakeNotificationService | TEST: YukumTests/ViewModels/NotificationsViewModelTests
 
 @Observable // değişkenler değişince bunları okuyan ekran kendiliğinden yenilenir
@@ -101,6 +102,28 @@ final class NotificationsViewModel { //  bu sınıftan türetilemez
                if let message = error.userMessage { errorMessage = message }
            }
        }
+
+    // delete: satırı sola kaydırıp "Sil"e basınca | iyimser güncelleme: önce satır ekrandan kalkar, sonra sunucuya sorulur; reddedilirse geri konur
+    // ZİNCİR: NotificationsView .swipeActions → delete(_:) → NotificationService.delete(id:) → DELETE /api/v1/notifications/{id}
+    // NEDEN totalCount da azalıyor: hasMore = items.count < totalCount. Yalnız items azalsaydı fark bir artar,
+    //   "daha var" sanılıp gereksiz bir sayfa isteği atılırdı. İkisi birlikte azalınca fark aynı kalır.
+    // NEDEN geri koyarken index saklanıyor: satır sona değil, silindiği YERE dönmeli (liste zamana göre sıralı).
+    //   min(index, items.count): beklerken liste kısalmış olabilir (yenileme); sınırı aşan yere eklemek çökertir.
+    // Zil rozeti burada güncellenmez: HomeView geri dönüldüğünde (.onAppear) sayıyı sunucudan yeniden okur.
+    func delete(_ item: AppNotification) async {
+        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return } // listede yoksa (çift dokunuş) istek atma
+        items.remove(at: index) // .remove(at:) [SWIFT]: o sıradaki elemanı diziden çıkarır
+        totalCount -= 1
+        do {
+            try await service.delete(id: item.id)
+        } catch {
+            if !items.contains(where: { $0.id == item.id }) { // beklerken liste yenilenip satır zaten geri geldiyse ikinci kez ekleme
+                items.insert(item, at: min(index, items.count)) // .insert(_:at:) [SWIFT]: araya ekler
+                totalCount += 1
+            }
+            if let message = error.userMessage { errorMessage = message }
+        }
+    }
    }
     
 

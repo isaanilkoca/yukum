@@ -19,6 +19,10 @@ final class FakeNotificationService: NotificationServicing {
     func markRead(id: String) async throws { markReadCalls.append(id); try markReadResult.get() }
     func markAllRead() async throws { markAllCalls += 1; try markAllResult.get() }
 
+    var deleteResult: Result<Void, Error> = .success(())
+    private(set) var deleteCalls: [String] = []
+    func delete(id: String) async throws { deleteCalls.append(id); try deleteResult.get() }
+
     var deviceResult: Result<Void, Error> = .success(())
     private(set) var registerCalls: [RegisterDeviceRequest] = []
     private(set) var removeCalls: [String] = []

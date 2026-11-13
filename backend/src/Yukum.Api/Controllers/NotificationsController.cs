@@ -7,7 +7,7 @@ using Yukum.Application.Notifications;
 
 namespace Yukum.Api.Controllers;
 
-/// <summary>Uygulama içi bildirimler: liste, okunmamış sayısı, okundu işaretleme. Her giriş yapmış kullanıcı (iki rol) yalnız KENDİ bildirimlerini görür.</summary>
+/// <summary>Uygulama içi bildirimler: liste, okunmamış sayısı, okundu işaretleme, silme. Her giriş yapmış kullanıcı (iki rol) yalnız KENDİ bildirimlerini görür.</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Authorize]
@@ -16,6 +16,7 @@ public class NotificationsController(
     IQueryHandler<GetUnreadNotificationCountQuery, UnreadNotificationCountDto> unread,
     ICommandHandler<MarkNotificationReadCommand, bool> markRead,
     ICommandHandler<MarkAllNotificationsReadCommand, int> markAllRead,
+    ICommandHandler<DeleteNotificationCommand, bool> delete,
     ICommandHandler<RegisterDeviceTokenCommand, bool> registerDevice,
     ICommandHandler<RemoveDeviceTokenCommand, bool> removeDevice) : ControllerBase
 {
@@ -51,6 +52,17 @@ public class NotificationsController(
     public async Task<IActionResult> ReadAll(CancellationToken cancellationToken)
     {
         await markAllRead.HandleAsync(new MarkAllNotificationsReadCommand(CurrentUserId), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Bildirimi kalıcı siler. Yoksa ya da başkasınınsa da 204 (idempotent, varlık sızdırılmaz); başkasının bildirimine dokunulmaz.</summary>
+    // DELETE /api/v1/notifications/{id}
+    // {id:guid} kısıtı sayesinde aşağıdaki "device-token" adresiyle karışmaz: "device-token" bir GUID değildir, bu uca düşmez.
+    [HttpDelete("api/v{version:apiVersion}/notifications/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        await delete.HandleAsync(new DeleteNotificationCommand(CurrentUserId, id), cancellationToken);
         return NoContent();
     }
 

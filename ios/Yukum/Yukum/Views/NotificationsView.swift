@@ -13,6 +13,7 @@ import SwiftUI
 // │ Son satır görününce            →  viewModel.loadMore()    →  GET /api/v1/notifications?page=2...
 // │ Satıra basınca                 →  viewModel.markRead()    →  POST /api/v1/notifications/{id}/read
 // │ "Tümünü oku"                   →  viewModel.markAllRead() →  POST /api/v1/notifications/read-all
+// │ Satırı sola kaydır → "Sil"     →  viewModel.delete()      →  DELETE /api/v1/notifications/{id}
 
 struct NotificationsView: View {
     
@@ -31,6 +32,17 @@ struct NotificationsView: View {
                     row(item)
                 }
                 .buttonStyle(.plain) // .plain [SWIFT]: düğme görünümü yok (yazılar maviye dönmesin)
+                // .swipeActions [SWIFT]: satır sola kaydırılınca çıkan düğmeler | yalnız List içindeki satırda çalışır
+                // role: .destructive [SWIFT]: "yıkıcı işlem" → düğme kırmızı olur, satır kaybolurken silme animasyonu oynar
+                // Tam kaydırma (sonuna kadar çekme) ilk düğmeyi kendiliğinden çalıştırır: Mail'deki davranış (allowsFullSwipe varsayılanı true)
+                // Onay sorulmuyor: bildirim iş kaydı değil; teklif/iş yerinde durur, yalnız haberi silinir
+                .swipeActions {
+                    Button(role: .destructive) {
+                        Task { await viewModel.delete(item) }
+                    } label: {
+                        Label("Sil", systemImage: "trash") // Label [SWIFT]: yazı + ikon birlikte
+                    }
+                }
                 .task { // .task [SWIFT]: bu satır ekrana gelince çalışır
                     if item.id == viewModel.items.last?.id { await viewModel.loadMore() } // son satır göründü → sonraki sayfa | last? : liste boşsa nil
                 }

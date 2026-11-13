@@ -87,4 +87,34 @@ struct NotificationsViewModelTests {
         #expect(viewModel.hasUnread) // geri alındı
         #expect(viewModel.errorMessage == "Bildirimler güncellenemedi.")
     }
+
+    @Test func deleteRemovesTheRowAndKeepsHasMoreCorrect() async {
+        let service = FakeNotificationService()
+        service.pages[1] = FakeNotificationService.page(["a", "b", "c"], total: 3)
+        let viewModel = NotificationsViewModel(service: service)
+        await viewModel.load()
+        let removed = viewModel.items[1]
+
+        await viewModel.delete(removed)
+        await viewModel.delete(removed) // listede yok: istek atılmaz
+
+        #expect(viewModel.items.map(\.id) == ["a", "c"])
+        #expect(viewModel.totalCount == 2)
+        #expect(!viewModel.hasMore) // toplam da azaldı: gereksiz sayfa isteği olmaz
+        #expect(service.deleteCalls == ["b"])
+    }
+
+    @Test func deleteIsUndoneInPlaceWhenTheServerRefuses() async {
+        let service = FakeNotificationService()
+        service.pages[1] = FakeNotificationService.page(["a", "b", "c"], total: 3)
+        service.deleteResult = .failure(APIError(message: "Bildirim silinemedi."))
+        let viewModel = NotificationsViewModel(service: service)
+        await viewModel.load()
+
+        await viewModel.delete(viewModel.items[1])
+
+        #expect(viewModel.items.map(\.id) == ["a", "b", "c"]) // sona değil, eski yerine döndü
+        #expect(viewModel.totalCount == 3)
+        #expect(viewModel.errorMessage == "Bildirim silinemedi.")
+    }
 }

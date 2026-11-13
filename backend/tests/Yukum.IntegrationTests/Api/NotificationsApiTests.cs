@@ -154,6 +154,29 @@ public class NotificationsApiTests(SqlServerFixture sql)
     }
 
     [Fact]
+    public async Task Deleting_removes_only_own_notification_updates_the_badge_and_is_idempotent()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        await NewOffer(c, carrier, listing); await NewOffer(c, carrier, listing, 900);
+        Assert.Equal(2, await Unread(c, shipper));
+        var id = (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/notifications"))).GetProperty("items")[0].GetProperty("id").GetString();
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, carrier, HttpMethod.Delete, $"/api/v1/notifications/{id}")).StatusCode); // başkası: cevap aynı (sızdırmaz)
+        Assert.Equal(2, await Unread(c, shipper));                                                                                     // ama satıra dokunulmadı
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Delete, $"/api/v1/notifications/{id}")).StatusCode);
+        var after = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/notifications"));
+        Assert.Equal(1, after.GetProperty("totalCount").GetInt32());
+        Assert.DoesNotContain(after.GetProperty("items").EnumerateArray(), n => n.GetProperty("id").GetString() == id);
+        Assert.Equal(1, await Unread(c, shipper));                                                                                     // okunmamış silinince rozet de düşer
+
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Delete, $"/api/v1/notifications/{id}")).StatusCode); // ikinci kez de başarılı
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Call(c, null, HttpMethod.Delete, $"/api/v1/notifications/{id}")).StatusCode);
+    }
+
+    [Fact]
     public async Task The_list_is_paged_newest_first_without_repeats()
     {
         var c = await StartAsync();
