@@ -7,6 +7,8 @@
 // Views/ klasöründeki ekranlar buradaki parçaları arka plan / süs olarak kullanır.
 //
 // HİÇBİR ŞEY DIŞARIDAN ALINMADI: hazır model, resim dosyası, animasyon dosyası ya da ek kütüphane yok.
+//   TEK İSTİSNA: Design/Truck.usdz — hazır 3B tır modeli ("Truck" by ROY, Sketchfab, CC-BY 4.0). Lisans atıf ister → Views/PrivacyView › Atıflar (silinmez).
+//   Kullanan: TruckLoadView ve TruckRoadView (ikisinde de yalnız dorse).
 // Hepsi Apple'ın iOS içinde gelen üç aracıyla, kodla üretiliyor:
 //
 //   ARAÇ            NE İÇİN                                   BU PROJEDE NEREDE
@@ -25,6 +27,8 @@
 //  ScreenTape              ekranı geçen koli bandı (2B).
 //  FormStyle               form görünümü: opak kart (FormCard) + etiketli giriş kutusu (LabeledInput). Hareketli arka planda formu net ayırır.
 //  TapedBoxBackground      koli sahnesi + bantlar birlikte: ekranlar bunu arka plan olarak kullanır (Views/LoginView).
+//  TruckLoadView           Yük Veren ana ekranı: hazır modelin yalnız dorsesi, şeffaf kasaya yükler dizilir (+ TruckModel: modeli bir kez yükler).
+//  TruckRoadView           Taşımacı ana ekranı: dorse yoldan yükleme alanına geri geri yanaşır, yerdeki yığın arka kapıdan içeri alınır; bir kez oynar, durur. Ufuk 2B Canvas, sahne 3B.
 //
 // ── KOLİ NASIL YAPILDI (RealityKit) ─────────────────────────────────────────────
 //   1. ŞEKİL    : MeshResource.generateBox(size:cornerRadius:) → köşesi yuvarlatılmış kutu. Hazır fonksiyon; ölçüyü biz veririz.

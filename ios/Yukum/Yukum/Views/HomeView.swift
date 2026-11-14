@@ -10,6 +10,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, arkada tam ekran Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
+// │ Taşımacı tasarımı        →  carrierHome + carrierBackground (bu dosyanın sonunda): selamlama, "Yük ara" paneli (il/ilçe, Yakınımdakiler, Filtre), tabela başlık, rota kartları | arkada Design/TruckRoadView (dorse yanaşır, yük yığından alınır, bir kez oynar ve durur)
 // │ Hoş Geldin yazısı        →  viewModel.user                     →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
 // │ Taşımacı ilan listesi    →  viewModel.listings ← load()         →  ListingService.openListings()   →  GET /api/v1/listings?...         →  [Listing]
@@ -68,86 +69,9 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     shipperHome // ⮕ aşağıdaki extension HomeView › shipperHome (L tasarım, 13 Kasım)
 
                 } else { // Shipper değilse (Carrier)
-                    Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser) | NEDEN else içinde: Yük Veren'in selamlaması artık shipperHome'da
-                    if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // hata varsa kırmızı yaz (Yük Veren ile aynı değişken)
 
-                    HStack { // başlık solda, Filtre düğmesi sağda
-                        Text("Açık İlanlar").font(.title3).bold() // liste başlığı | boş olsa da görünsün diye if listings.isEmpty'nin DIŞINDA
-                        Spacer()
-                        Button { showFilter = true } label: { // basınca alttan Filtre sayfası açılır (.sheet aşağıda)
-                            Label(viewModel.filter.extraCount > 0 ? "Filtre (\(viewModel.filter.extraCount))" : "Filtre", systemImage: "line.3.horizontal.decrease.circle") // sayfadaki aktif filtre sayısı
-                        }
-                    }
+                    carrierHome // ⮕ aşağıdaki extension HomeView › carrierHome (L tasarım, 14 Kasım: yol + yük teslim alma teması) | işlev eskisiyle aynı: il/ilçe, Yakınımdakiler, Filtre, sayfalı liste
 
-                    // ─── FİLTRE: kalkış ili + ilçesi | NEDEN if listings.isEmpty'nin ÜSTÜNDE: filtre sonucu boş çıkarsa Picker'lar da kaybolmasın, kullanıcı filtreyi geri alabilsin ───
-                    HStack { // HStack [SWIFT]: yan yana dizer | il ve ilçe Picker'ları yan yana
-                        Picker("İl", selection: $viewModel.filter.fromCityId) { // Picker [SWIFT]: açılır liste | selection: seçilen değer ViewModel'deki filterCityId'ye yazılır ($ = iki yönlü bağ) | ⮕ HomeViewModel.filterCityId (Picker seçimi buraya yazılır)
-                            Text("Tüm İller").tag(0) // tag(0): "Tümü" seçeneği, değeri 0 = filtre yok | .tag [SWIFT]: Picker seçeneğinin değeri
-                            ForEach(viewModel.cities) { city in // ForEach [SWIFT]: listedeki her il için bir satır çizer | cities: ViewModel.load'da dolan liste | ⮕ HomeViewModel.cities ← CityService.cities() → [City]
-                                Text(city.name).tag(city.id) // city.name: ekranda görünen ad | tag(city.id): seçilince değişkene yazılacak numara
-                            }
-                        }
-                        .pickerStyle(.menu) // açılır menü görünümü | .pickerStyle [SWIFT]: seçici görünüm stili
-                        // .onChange [SWIFT]: değişkeni izler, değişince BİR KEZ çalışır | il değişince ViewModel ilçe seçimini sıfırlar ve yeni ilin ilçelerini çeker (mantık ViewModel'de, burada yalnız tetikleme)
-                        .onChange(of: viewModel.filter.fromCityId) { _, newId in // _ = eski değer (kullanmıyoruz) | newId = yeni değer
-                            Task { await viewModel.cityFilterChanged(to: newId) } // Task [SWIFT]: .onChange bekleyemez, internet isteği await ister; await yalnız Task içinde yazılır | ⮕ HomeViewModel.cityFilterChanged → CityService.districts(cityId:) → filterDistricts
-                        }
-                        if viewModel.filter.fromCityId != 0 { // il seçilmeden ilçe Picker'ı çizilmez
-                            Picker("İlçe", selection: $viewModel.filter.fromDistrictId) { // seçilen ilçe numarası ViewModel'e yazılır
-                                Text("Tüm İlçeler").tag(0) // 0 = ilçe filtresi yok
-                                ForEach(viewModel.filterDistricts) { district in // ViewModel.cityFilterChanged'in doldurduğu liste
-                                    Text(district.name).tag(district.id)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                        }
-                    }
-
-                    // Anahtarı aç → nearMe = true → .onChange → request() → izin penceresi → konum bulunur → coordinate dolar
-                    // → .task(id:) bunu fark edip yeniden çalışır → ViewModel.load(coordinate:) → sunucu sıralar → "12 km" görünür
-
-                    // ─── YAKINIMDAKİLER: telefonun konumuna göre en yakından uzağa sırala ───
-                    // Toggle [SWIFT]: aç/kapa anahtarı | isOn: $viewModel.nearMe → açınca nearMe true olur
-                    Toggle("Yakınımdakiler", isOn: $viewModel.nearMe) // ⮕ HomeViewModel.nearMe → true ise load() konumu API'ye (lat/lon) gönderir
-                        // .onChange: nearMe değişince BİR KEZ çalışır | on: yeni değer
-                        // açıldıysa konum motoruna "izin sor ve konumu bul" deriz (izin ya da konum gelene kadar liste eskisi gibi kalır, gelince .task(id:) listeyi yeniler)
-                        .onChange(of: viewModel.nearMe) { _, on in
-                            viewModel.nearMeChanged(to: on) // konum isteme kararı ViewModel'de | ⮕ HomeViewModel.nearMeChanged → Models/Location/LocationManager.request()
-                        } // NOT: ekrana bir şey ÇİZEN kod (Text, HStack) .onChange'in içine yazılmaz, çünkü orası "olunca çalışacak iş" bloğu, çizim bloğu değil | mesajlar aşağıda, dışarıda
-
-                    // izin/konum mesajları: viewModel.isLocationDenied ve locationError (kaynak Models/Location/LocationManager, @Observable) değişince bu bloklar kendiliğinden yeniden değerlendirilir
-                    if viewModel.isLocationDenied { // izin reddedilmişse (kodla tekrar sorulamaz, yalnız Ayarlar'dan açılır)
-                        HStack {
-                            Text("Konum izni kapalı").font(.caption).foregroundColor(.red)
-                            // Button: basınca iOS Ayarlar uygulamasında bu uygulamanın sayfasını açar | UIApplication.openSettingsURLString: Apple'ın hazır "ayarlar" adresi
-                            Button("Ayarları aç") { openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption) // UIApplication [SWIFT]: iOS uygulama nesnesi (Ayarlar adresi için)
-                        }
-                    } else if let message = viewModel.locationError { // else if: ya da | konum alınamadıysa (GPS yok vb.) hata yazısı
-                        Text(message).font(.caption).foregroundColor(.red)
-                    }
-
-                    if viewModel.listings.isEmpty { // liste boş mu
-                        Text("Şuan açılmış bir ilan yok.").foregroundColor(.secondary) // boşsa bu yazı görünür
-                    } else {
-                        List { // List [SWIFT]: bu kez içine ForEach + ek satır koyacağımız biçim
-                                                   ForEach(viewModel.listings) { listing in // ForEach [SWIFT]: her ilan için bir satır | ⮕ HomeViewModel.listings ← load()/loadMore()
-                                                       NavigationLink { // NavigationLink [SWIFT]: satıra basınca süslü parantezdeki ekrana geçer
-                                                           ListingDetailView(listing: listing) // Views/ListingDetailView.swift → basılan ilanı detay ekranına VERİYORUZ
-                                                       } label: { // label: satırın görünen kısmı
-                                                           ListingRow(listing: listing) // Views/ListingRow.swift
-                                                       }
-                                                       .onAppear { // .onAppear [SWIFT]: bu satır ekrana GİRİNCE çalışır
-                                                           if listing.id == viewModel.listings.last?.id { // son satır mı | ?. : liste boşsa nil
-                                                               Task { await viewModel.loadMore() } // Task [SWIFT]: async işi başlatır | ⮕ HomeViewModel.loadMore(): sonraki sayfa → GET ...?page=2
-                                                           }
-                                                       }
-                                                   }
-                                                   if viewModel.isLoadingMore { // ⮕ HomeViewModel.isLoadingMore: sayfa yüklenirken true
-                                                       ProgressView().frame(maxWidth: .infinity) // ProgressView [SWIFT]: dönen çark | listenin altında ortalı
-                                                   }
-                                               }
-                        .refreshable { await viewModel.load() } // aşağı çekince yenile
-                    }
                 }
                 
                 // Hesabı Sil: ayrı sayfa açar (şifre onayı orada) | role: .destructive [SWIFT]: kırmızı tehlikeli işlem düğmesi
@@ -169,8 +93,8 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 }.buttonStyle(.borderedProminent) // .buttonStyle [SWIFT]: düğme görünüm stili
 
             }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
-            // Yük Veren'de arka plan giriş ekranının renk geçişi (aynı palet) | Taşımacı ekranı henüz tasarlanmadı → sistem zemini kalır
-            .background { if viewModel.isShipper { shipperBackground } } // ⮕ aşağıdaki extension HomeView › shipperBackground (renk geçişi + 3B dorse)
+            // Tam ekran arka plan, role göre: Yük Veren → yukarıdan dolan dorse | Taşımacı → yanaşıp yükü yerden teslim alan dorse (14 Kasım)
+            .background { if viewModel.isShipper { shipperBackground } else { carrierBackground } } // ⮕ aşağıdaki extension'lar: shipperBackground / carrierBackground
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
             .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Models/Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
@@ -347,5 +271,245 @@ extension HomeView {
         }
         .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
         .allowsHitTesting(false) // [SWIFT] arka plan dokunuş almaz → dokunuşlar üstteki düğme ve kartlara gider
+    }
+}
+
+// ─── TAŞIMACI ANA EKRANI (L tasarım, 14 Kasım: yol + yük teslim alma teması) ──────────────────
+// NEDEN extension: Yük Veren ile aynı kalıp (shipperHome); body kısa kalsın, Taşımacı tasarımı tek yerde okunsun. Yeni Views dosyası açılmadı.
+// ZİNCİR: body → else (Carrier) → carrierHome → ScrollView: selamlama → "Yük ara" paneli → tabela başlık → rota kartları (LazyVStack, sayfalı)
+//         TÜM EKRANIN arkasında: carrierBackground → Design/TruckRoadView (yol + yükleme alanı; dorse yanaşır, yük alınır, sahne durur)
+// NE DEĞİŞMEDİ (işlev): il/ilçe Picker'ları + .onChange → cityFilterChanged | Yakınımdakiler + nearMeChanged | Filtre sayfası (showFilter) |
+//   son satır görününce loadMore | aşağı çekince load | satıra basınca ListingDetailView | HomeViewModel'e dokunulmadı.
+// NE DEĞİŞTİ (görünüm): List → yarı şeffaf kartlar (shipperHome'daki gibi) | ListingRow yerine rota kartı (carrierCard): Nereden ——🚚—— Nereye.
+//   ListingRow değişmedi (Yük Veren ve diğer ekranlar onu kullanmaya devam ediyor).
+extension HomeView {
+
+    // ⮕ KULLANIM [carrierHome]: kullanır: HomeView › body (else = Carrier dalı)
+    var carrierHome: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+
+                // 1) SELAMLAMA: Yük Veren ile aynı ölçü ve renkler, Taşımacı'ya göre söz
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("İyi yolculuklar, \(viewModel.user.displayName)").font(.title.bold()).foregroundStyle(palette.title) // ⮕ LoginUser.displayName
+                    Text("Yük hazır, yol senin.").font(.subheadline).foregroundStyle(palette.label.opacity(0.75))
+                }
+
+                // 2) YÜK ARA PANELİ: eski ekrandaki tüm filtre öğeleri tek yarı şeffaf kartta
+                carrierSearchPanel(palette: palette)
+
+                if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz (Yük Veren ile aynı değişken)
+
+                // 3) BAŞLIK: turuncu yol tabelası (yol çalışması tabelaları turuncudur → marka rengiyle aynı) | içte ince çerçeve: gerçek tabela kenarı
+                HStack(spacing: 8) {
+                    Image(systemName: "road.lanes")
+                    Text("AÇIK İLANLAR").font(.subheadline.weight(.heavy)).tracking(1.4) // .tracking [SWIFT]: harf aralığı (tabela yazısı gibi)
+                }
+                .foregroundStyle(palette.buttonText)
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                .background(palette.accent, in: .rect(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(palette.buttonText.opacity(0.8), lineWidth: 1.5).padding(3))
+
+                // 4) İLANLAR | ⮕ HomeViewModel.listings ← load()/loadMore() ← ListingService.openListings() → GET /api/v1/listings?...
+                if viewModel.listings.isEmpty {
+                    VStack(spacing: 8) { // boş durum: yol simgesi + yönlendirme (filtre yüzünden boşsa geri alınabilsin diye panel yukarıda kalır)
+                        Image(systemName: "road.lanes").font(.largeTitle).foregroundStyle(palette.accent.opacity(0.85))
+                        Text("Şu an açık ilan yok.").font(.headline).foregroundStyle(palette.title)
+                        Text("Filtreyi gevşet ya da biraz sonra tekrar bak.").font(.caption).foregroundStyle(palette.label.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 24)
+                    .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16))
+                } else {
+                    LazyVStack(spacing: 10) { // LazyVStack [SWIFT]: yalnız ekrana giren kartları kurar → sayfalı uzun listede hızlı
+                        ForEach(viewModel.listings) { listing in
+                            NavigationLink { ListingDetailView(listing: listing) } label: { // ⮕ Views/ListingDetailView.swift (değişmedi)
+                                carrierCard(listing, palette: palette)
+                            }
+                            .buttonStyle(.plain) // [SWIFT] NavigationLink yazıyı maviye boyamasın
+                            .onAppear { // son kart ekrana girince sonraki sayfa (eski List'teki ile aynı mantık)
+                                if listing.id == viewModel.listings.last?.id {
+                                    Task { await viewModel.loadMore() } // ⮕ HomeViewModel.loadMore(): GET ...?page=2
+                                }
+                            }
+                        }
+                        if viewModel.isLoadingMore { // ⮕ HomeViewModel.isLoadingMore
+                            ProgressView().tint(palette.accent).frame(maxWidth: .infinity).padding(.vertical, 8)
+                        }
+                    }
+                }
+            }
+        }
+        .scrollIndicators(.hidden)
+        .refreshable { await viewModel.load() } // aşağı çekince yenile
+    }
+
+    // BU GÖRÜNÜM: "Yük ara" paneli. Eski Taşımacı ekranındaki il/ilçe Picker'ları, Yakınımdakiler anahtarı, konum mesajları ve Filtre düğmesi
+    //   AYNI bağlarla (aynı $viewModel alanları, aynı .onChange'ler) burada. Yalnız görünüm değişti.
+    // NEDEN ayrı fonksiyon: carrierHome tek parça olunca Swift'in tür denetimi yavaşlıyor; ayrıca $ bağları için @Bindable gerekiyor.
+    // ⮕ KULLANIM [carrierSearchPanel]: kullanır: carrierHome
+    func carrierSearchPanel(palette: Palette) -> some View {
+        @Bindable var viewModel = viewModel // [SWIFT] @Bindable: $viewModel.alan ile iki yönlü bağ (Picker/Toggle seçimi doğrudan ViewModel'e yazılır)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Nereden yük alacaksın?", systemImage: "mappin.and.ellipse")
+                    .font(.subheadline.bold()).foregroundStyle(palette.title)
+                Spacer()
+                Button { showFilter = true } label: { // alttan Filtre sayfası (.sheet body'de)
+                    Label(viewModel.filter.extraCount > 0 ? "Filtre (\(viewModel.filter.extraCount))" : "Filtre", systemImage: "slider.horizontal.3") // sayfadaki aktif filtre sayısı
+                        .font(.footnote.bold()).foregroundStyle(palette.buttonText)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(palette.accent, in: .capsule)
+                }
+            }
+
+            // KALKIŞ İLİ + İLÇESİ (eskisiyle aynı bağ ve tetikleme) | .tint: menüdeki seçili yazının rengi
+            HStack(spacing: 8) {
+                Picker("İl", selection: $viewModel.filter.fromCityId) { // ⮕ HomeViewModel.filter.fromCityId
+                    Text("Tüm İller").tag(0) // 0 = filtre yok
+                    ForEach(viewModel.cities) { city in Text(city.name).tag(city.id) } // ⮕ HomeViewModel.cities ← CityService.cities()
+                }
+                .pickerStyle(.menu).tint(palette.title)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(palette.fieldSurface, in: .rect(cornerRadius: 10))
+                .onChange(of: viewModel.filter.fromCityId) { _, newId in // il değişince ilçe sıfırlanır + yeni ilçeler çekilir (mantık ViewModel'de)
+                    Task { await viewModel.cityFilterChanged(to: newId) } // ⮕ HomeViewModel.cityFilterChanged → CityService.districts(cityId:)
+                }
+                if viewModel.filter.fromCityId != 0 { // il seçilmeden ilçe çizilmez
+                    Picker("İlçe", selection: $viewModel.filter.fromDistrictId) {
+                        Text("Tüm İlçeler").tag(0)
+                        ForEach(viewModel.filterDistricts) { district in Text(district.name).tag(district.id) }
+                    }
+                    .pickerStyle(.menu).tint(palette.title)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(palette.fieldSurface, in: .rect(cornerRadius: 10))
+                }
+            }
+
+            // YAKINIMDAKİLER: aç → nearMe = true → .onChange → konum izni/konum → .task(id: reloadKey) listeyi yeniler → kartlarda "12 km"
+            Toggle(isOn: $viewModel.nearMe) {
+                Label("Yakınımdakiler", systemImage: "location.fill").font(.subheadline).foregroundStyle(palette.label)
+            }
+            .tint(palette.accent) // [SWIFT] açıkken anahtarın rengi
+            .onChange(of: viewModel.nearMe) { _, on in
+                viewModel.nearMeChanged(to: on) // ⮕ HomeViewModel.nearMeChanged → Models/Location/LocationManager.request()
+            }
+
+            // izin/konum mesajları (eskisiyle aynı koşullar)
+            if viewModel.isLocationDenied {
+                HStack {
+                    Text("Konum izni kapalı").font(.caption).foregroundColor(.red)
+                    Button("Ayarları aç") { openURL(URL(string: UIApplication.openSettingsURLString)!) }.font(.caption.bold()).tint(palette.accent)
+                }
+            } else if let message = viewModel.locationError {
+                Text(message).font(.caption).foregroundColor(.red)
+            }
+        }
+        .padding(14)
+        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 18)) // yarı şeffaf: arkadaki yol görünür
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(palette.cardBorder))
+    }
+
+    // BU GÖRÜNÜM: Taşımacı'nın ilan kartı = bir ROTA. Üstte başlık (+ bütçe, favori), ortada Nereden ——🚚—— Nereye, altta kg / tarih / mesafe çipleri,
+    //   teklif verdiyse durum rozeti. Gösterilen bilgiler ListingRow ile aynı (+ ilçe, bütçe, favori: zaten Listing'de geliyordu).
+    // ⮕ KULLANIM [carrierCard]: kullanır: carrierHome › ForEach
+    func carrierCard(_ listing: Listing, palette: Palette) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(listing.title).font(.headline).foregroundStyle(palette.title).lineLimit(1)
+                Spacer(minLength: 4)
+                if listing.isFavorite { Image(systemName: "heart.fill").font(.footnote).foregroundStyle(palette.accent) } // ⮕ Listing.isFavorite
+                if let budget = listing.budget { // bütçe girildiyse: Taşımacı için en önemli sayı → turuncu, kalın
+                    Text("\(Int(budget)) ₺").font(.subheadline.bold()).foregroundStyle(palette.accent)
+                }
+                Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(palette.accent)
+            }
+
+            // ROTA: iki uç arasında kesik çizgili yol, ortasında tır
+            HStack(spacing: 8) {
+                routeEnd(city: listing.fromCityName, district: listing.fromDistrictName, alignment: .leading, palette: palette)
+                ZStack {
+                    RouteDash().stroke(palette.label.opacity(0.45), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [6, 5])) // dash [SWIFT]: 6 nokta çizgi, 5 boşluk
+                    Image(systemName: "truck.box.fill").font(.caption).foregroundStyle(palette.accent)
+                        .padding(5).background(palette.cardSurface, in: .circle) // çizgiyi tırın altında keser
+                }
+                .frame(maxWidth: .infinity).frame(height: 24)
+                routeEnd(city: listing.toCityName, district: listing.toDistrictName, alignment: .trailing, palette: palette)
+            }
+
+            HStack(spacing: 6) {
+                infoChip("scalemass.fill", "\(listing.weightKg) kg", palette: palette)
+                infoChip("calendar", Self.trDate(listing.pickupDate), palette: palette)
+                if let km = listing.distanceKm { infoChip("location.fill", "\(Int(km)) km", palette: palette) } // yalnız Yakınımdakiler açıkken dolu
+            }
+
+            if let amount = listing.myOfferAmount { // teklif verdiysem: durum rozeti | "Rejected" kırmızı, değilse turuncu (ListingRow ile aynı kural)
+                let rejected = listing.myOfferStatus == "Rejected"
+                Label("Teklifin \(Int(amount)) ₺ · \(rejected ? "Reddedildi" : "Beklemede")", systemImage: rejected ? "xmark.circle.fill" : "hourglass")
+                    .font(.caption.bold())
+                    .foregroundStyle(rejected ? Color.red : palette.accent)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background((rejected ? Color.red : palette.accent).opacity(0.14), in: .capsule)
+            }
+        }
+        .padding(14)
+        .padding(.leading, 4) // soldaki turuncu şeride yer
+        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 16)) // yarı şeffaf: kaydırınca arkadaki yol görünür
+        .overlay(alignment: .leading) { // sol kenarda turuncu şerit: yol kenar çizgisi gibi
+            Capsule().fill(palette.accent).frame(width: 4).padding(.vertical, 14).padding(.leading, 6)
+        }
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.cardBorder))
+    }
+
+    // Rota ucu: il kalın, ilçe küçük | uzun adlar biraz küçülür, sığmazsa "…" | maxWidth: ortadaki yola yer kalsın
+    // ⮕ KULLANIM [routeEnd]: kullanır: carrierCard
+    func routeEnd(city: String, district: String, alignment: HorizontalAlignment, palette: Palette) -> some View {
+        VStack(alignment: alignment, spacing: 2) {
+            Text(city).font(.subheadline.bold()).foregroundStyle(palette.title)
+            Text(district).font(.caption2).foregroundStyle(palette.label.opacity(0.7))
+        }
+        .lineLimit(1).minimumScaleFactor(0.8) // [SWIFT] sığmazsa yazıyı %80'e kadar küçült
+        .frame(maxWidth: 112, alignment: alignment == .leading ? .leading : .trailing)
+    }
+
+    // Bilgi çipi: simge + kısa yazı, kapsül zemin
+    // ⮕ KULLANIM [infoChip]: kullanır: carrierCard
+    func infoChip(_ icon: String, _ text: String, palette: Palette) -> some View {
+        Label(text, systemImage: icon)
+            .font(.caption2.weight(.semibold)).foregroundStyle(palette.label.opacity(0.85))
+            .padding(.horizontal, 8).padding(.vertical, 4)
+            .background(palette.fieldSurface, in: .capsule)
+    }
+
+    // "2026-10-31" → "31.10.2026" | beklenmeyen biçimde gelirse olduğu gibi gösterir (ListingRow'daki gibi)
+    // ⮕ KULLANIM [trDate]: kullanır: carrierCard
+    static func trDate(_ text: String) -> String {
+        let parts = text.prefix(10).split(separator: "-") // prefix(10): saat eklenmiş gelse de yalnız tarih kısmı
+        guard parts.count == 3, parts[0].count == 4 else { return text }
+        return "\(parts[2]).\(parts[1]).\(parts[0])"
+    }
+
+    // BU GÖRÜNÜM: Taşımacı ekranının TAM EKRAN arka planı: yük teslim alma sahnesi, bir kez oynar (gökyüzü, dağlar, arazi de TruckRoadView'ın içinde çizilir).
+    // (14 Kasım) İlk sürümde bütün tır + sürekli akan yol vardı; kullanıcı istemedi: "yalnız dorse, yükün alınması, gelsin olsun dursun".
+    // BAĞLANTI: body'deki .background { ... else { carrierBackground } } | ⮕ Design/TruckRoadView.swift
+    // ⮕ KULLANIM [carrierBackground]: kullanır: HomeView › body (.background)
+    var carrierBackground: some View {
+        TruckRoadView()
+            .id(colorScheme) // açık/koyu değişince sahne yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
+            .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
+            .allowsHitTesting(false) // [SWIFT] dokunuş almaz → kartlara ve düğmelere gider
+    }
+}
+
+// Rota kartındaki yol çizgisi: yüksekliğin ortasından soldan sağa düz çizgi (kesik görünümü stroke'un dash'i verir)
+// ⮕ KULLANIM [RouteDash]: kullanır: HomeView › carrierCard
+private struct RouteDash: Shape { // Shape [SWIFT]: kodla çizilen şekil
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+        return path
     }
 }

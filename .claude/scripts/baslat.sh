@@ -17,7 +17,7 @@ docker exec yukum-sql bash -c '/opt/mssql-tools18/bin/sqlcmd -C -I -S localhost 
 
 # 3) API (5054 boşsa başlatır)
 if ! lsof -ti:5054 >/dev/null 2>&1; then
-  (dotnet run --project backend/src/Yukum.Api --launch-profile http >/tmp/yk-api.log 2>&1 &)
+  (ASPNETCORE_ENVIRONMENT=Development dotnet run --project backend/src/Yukum.Api --no-launch-profile --urls http://0.0.0.0:5054 >/tmp/yk-api.log 2>&1 &) # 0.0.0.0: telefon (gerçek cihaz) da ulaşsın | launch profile yalnız localhost dinliyordu → "sunucuya ulaşılamadı"
   for _ in $(seq 1 20); do curl -s -o /dev/null localhost:5054/api/v1/cities && break; sleep 2; done
 fi
 echo "API /cities: $(curl -s -o /dev/null -w '%{http_code}' localhost:5054/api/v1/cities) | /listings/mine (jetonsuz): $(curl -s -o /dev/null -w '%{http_code}' localhost:5054/api/v1/listings/mine) (beklenen 200 ve 401)"

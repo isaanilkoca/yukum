@@ -63,6 +63,22 @@ struct Palette {
     var cargoGlass: UIColor { isDark ? UIColor(red: 1.0, green: 0.93, blue: 0.82, alpha: 1) : UIColor(red: 0.55, green: 0.45, blue: 0.35, alpha: 1) } // şeffaf kasa camının rengi
     var cargoEdge: UIColor { isDark ? UIColor(red: 1.0, green: 0.88, blue: 0.66, alpha: 1) : UIColor(red: 0.45, green: 0.33, blue: 0.22, alpha: 1) }  // kasa kenar çizgileri
 
+    // Yol + yükleme sahnesi (Design/TruckRoadView.swift, Taşımacı ana ekranı, 14 Kasım) | aynı sıcak aile: kum rengi arazi, kahve tepeler, sıcak asfalt
+    //   GECE: koyu arazi, turuncu ufuk ışığı (uzaktaki şehir), yükleme alanının projektörü yanar. GÜNDÜZ: buğday tarlası rengi arazi, krem gökyüzü.
+    var land: Color { isDark ? Color(red: 0.085, green: 0.065, blue: 0.048) : Color(red: 0.86, green: 0.77, blue: 0.60) }        // ufkun altı (2B), asfalt sonda buna karışır
+    var landHaze: Color { isDark ? Color(red: 0.17, green: 0.11, blue: 0.065) : Color(red: 0.93, green: 0.86, blue: 0.72) }     // ufka yakın arazi: pus (daha açık)
+    var hillFar: Color { isDark ? Color(red: 0.12, green: 0.085, blue: 0.060) : Color(red: 0.84, green: 0.72, blue: 0.56) }     // uzak sıradağ
+    var hillNear: Color { isDark ? Color(red: 0.095, green: 0.070, blue: 0.050) : Color(red: 0.76, green: 0.62, blue: 0.45) }   // yakın tepeler
+    var horizonGlow: Color { isDark ? Color(red: 1.0, green: 0.52, blue: 0.16).opacity(0.42) : Color(red: 1.0, green: 0.78, blue: 0.45).opacity(0.60) } // ufuktaki ışık: gece şehir, gündüz güneş
+    var star: Color { Color(red: 1.0, green: 0.95, blue: 0.85) } // yalnız gece
+    var asphalt: UIColor { isDark ? UIColor(red: 0.075, green: 0.068, blue: 0.060, alpha: 1) : UIColor(red: 0.40, green: 0.37, blue: 0.34, alpha: 1) }
+    var concrete: UIColor { isDark ? UIColor(red: 0.20, green: 0.185, blue: 0.17, alpha: 1) : UIColor(red: 0.72, green: 0.69, blue: 0.64, alpha: 1) } // yükleme alanı zemini (asfalttan açık)
+    var roadLine: UIColor { isDark ? UIColor(red: 0.82, green: 0.79, blue: 0.72, alpha: 1) : UIColor(red: 0.99, green: 0.98, blue: 0.94, alpha: 1) } // şerit çizgisi (ışıktan etkilenmez)
+    var postWhite: UIColor { UIColor(red: 0.93, green: 0.92, blue: 0.89, alpha: 1) }   // yol kenarı dikmesi
+    var reflector: UIColor { UIColor(red: 1.0, green: 0.52, blue: 0.04, alpha: 1) }    // dikme reflektörü + yükleme alanı çizgisi: marka turuncusu
+    var floodlight: UIColor { UIColor(red: 1.0, green: 0.93, blue: 0.80, alpha: 1) }   // yükleme alanı projektörü
+    var floodIntensity: Float { isDark ? 900_000 : 0 } // yalnız gece yanar (gündüz güneş yeter)
+
     // Yük çeşitleri (Design/CargoKit.swift): tarım ürünleri ve gıda | gerçek ürün renkleri, kartonla aynı sıcak aile
     var crateWood: UIColor { UIColor(red: 0.66, green: 0.47, blue: 0.27, alpha: 1) }   // meyve kasası tahtası
     var palletWood: UIColor { UIColor(red: 0.78, green: 0.62, blue: 0.40, alpha: 1) }  // palet tahtası (açık çam)
