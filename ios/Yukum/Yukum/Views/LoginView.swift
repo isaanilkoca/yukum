@@ -158,7 +158,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
         // overlay [SWIFT]: ekranın ÜSTÜNE katman koyar | oturum aranırken giriş formunun üstünü örter ve dönen çark gösterir (form bir anlığına yanıp sönmesin)
         .overlay { // .overlay [SWIFT]: görünümün üstüne katman koyar
             if viewModel.isRestoring {
-                ZStack { Color(.systemBackground); ProgressView("Oturum açılıyor...") } // ZStack: üst üste dizer | .systemBackground: açık/koyu moda uyan zemin rengi | ZStack [SWIFT]: elemanları üst üste dizer | ProgressView [SWIFT]: dönen yükleme çarkı | Color [SWIFT]: renk
+                ZStack { ScreenBackground(); ProgressView("Oturum açılıyor...").tint(Palette(isDark: colorScheme == .dark).accent) } /* 15 Kasım: düz sistem zemini yerine tema zemini */ // ZStack: üst üste dizer | .systemBackground: açık/koyu moda uyan zemin rengi | ZStack [SWIFT]: elemanları üst üste dizer | ProgressView [SWIFT]: dönen yükleme çarkı | Color [SWIFT]: renk
             }
         }
         // BAĞLANTI: loggedInUser giriş başarılı olunca dolar → dolunca HomeView tam ekran açılır.
@@ -172,7 +172,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 //   Aynı ayarı burada da veriyoruz → ana ekrandaki ve girişteki düğme aynı anda, her yerde çalışır.
                 .preferredColorScheme(theme.colorScheme)
                 // .onAppear: ana ekran TAMAMEN açılınca → arkadaki giriş sahnesi kaldırılır (açılış kayması sırasında kaldırılsa arka plan bir an boş görünürdü)
-                .onAppear { homeShown = true; PerfLog.mark("giriş sahnesi kaldırıldı") }
+                .onAppear { homeShown = true }
         }
     }
 }

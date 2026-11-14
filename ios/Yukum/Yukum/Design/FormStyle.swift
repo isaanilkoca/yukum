@@ -135,3 +135,135 @@ struct FormMessage: View {
             .foregroundStyle(isError ? Color.red : Color.green)
     }
 }
+
+// ─── LİSTE / KART / DÜĞME PARÇALARI (15 Kasım: tüm ikincil ekranlar) ─────────────
+// NEDEN burada: Teklifler, Tekliflerim, Eski Teklifler, Bildirimler, Profil, Sohbet... hepsi aynı kartı, aynı düğmeyi kullanır.
+//   Görünüm tek yerden değişir; ekranlar yalnız .themedCard(), .themedRow(), ChipButtonStyle(.accent) yazar.
+
+// BU DEĞİŞTİRİCİ: yarı şeffaf, ince kenarlı kart (Taşımacı rota kartı ve Yük Veren ilan kartıyla aynı)
+// ⮕ KULLANIM [ThemedCard]: View.themedCard()
+struct ThemedCard: ViewModifier { // ViewModifier [SWIFT]: bir görünüme eklenen hazır süs paketi
+    @Environment(\.colorScheme) private var colorScheme
+    var padding: CGFloat = 14
+    func body(content: Content) -> some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        content
+            .padding(padding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 16))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.cardBorder))
+    }
+}
+
+// BU DEĞİŞTİRİCİ: List içindeki satırı karta çevirir (beyaz zemin ve ayırıcı çizgi yok) | kaydırma eylemleri (swipeActions) çalışmaya devam eder
+// ⮕ KULLANIM [ThemedRow]: View.themedRow()
+struct ThemedRow: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .themedCard()
+            .listRowBackground(Color.clear) // [SWIFT] satırın kendi zemini yok
+            .listRowSeparator(.hidden)      // [SWIFT] ayırıcı çizgi yok
+            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+    }
+}
+
+// BU DEĞİŞTİRİCİ: ikincil ekranın zemini: renk geçişi + haleler (ScreenBackground), List'in gri zemini gizli, vurgu turuncu
+// ⮕ KULLANIM [ThemedScreen]: View.themedScreen()
+struct ThemedScreen: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden) // [SWIFT] List/Form'un kendi zemini gizli → arkadaki ScreenBackground görünür
+            .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift
+    }
+}
+
+extension View {
+    func themedCard(padding: CGFloat = 14) -> some View { modifier(ThemedCard(padding: padding)) }
+    func themedRow() -> some View { modifier(ThemedRow()) }
+    func themedScreen() -> some View { modifier(ThemedScreen()) }
+}
+
+// BU STİL: küçük kapsül düğme | accent: dolu turuncu (ana eylem) | outline: turuncu çerçeve (ikincil) | danger: kiremit (ret, sil) | success: zeytin (kabul)
+// NEDEN ButtonStyle: List satırında düğmelere stil verilmezse satırın HER yeri düğme olur (dokununca hepsi birden çalışır); stil bunu önler.
+// configuration.isPressed [SWIFT]: parmak üstündeyken true → hafif küçülme (dokunma hissi)
+// ⮕ KULLANIM [ChipButtonStyle]: ListingOffersView, OldOffersView, MyOffersView, ChatView...
+struct ChipButtonStyle: ButtonStyle {
+    enum Kind { case accent, outline, danger, success }
+    var kind: Kind = .accent
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.isEnabled) private var isEnabled // [SWIFT] .disabled(true) iken false → soluk çizilir
+
+    init(_ kind: Kind = .accent) { self.kind = kind }
+
+    func makeBody(configuration: Configuration) -> some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        let (fill, text, stroke): (Color, Color, Color) = switch kind {
+            case .accent: (palette.accent, palette.buttonText, .clear)
+            case .outline: (palette.fieldSurface, palette.title, palette.accent.opacity(0.7))
+            case .danger: (palette.danger.opacity(0.16), palette.danger, palette.danger.opacity(0.5))
+            case .success: (palette.success, palette.isDark ? palette.buttonText : .white, .clear)
+        }
+        configuration.label
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(text)
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(fill, in: .capsule)
+            .overlay(Capsule().strokeBorder(stroke))
+            .scaleEffect(configuration.isPressed ? 0.95 : 1)
+            .opacity(isEnabled ? 1 : 0.45)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+// BU GÖRÜNÜM: durum rozeti (simge + yazı, renkli kapsül) | renk tek başına anlam taşımasın diye simge de var
+// ⮕ KULLANIM [StatusBadge]: OldOffersView, MyOffersView
+struct StatusBadge: View {
+    let text: String
+    let icon: String
+    let color: Color
+    var body: some View {
+        Label(text, systemImage: icon)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(color.opacity(0.15), in: .capsule)
+    }
+}
+
+// BU GÖRÜNÜM: boş liste durumu (simge + başlık + açıklama, yarı şeffaf kart) | ekranlar arası tek tip
+// ⮕ KULLANIM [EmptyStateCard]: ListingOffersView, OldOffersView, MyOffersView, NotificationsView
+struct EmptyStateCard: View {
+    let icon: String
+    let title: String
+    var detail: String? = nil
+    @Environment(\.colorScheme) private var colorScheme
+    var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        VStack(spacing: 8) {
+            Image(systemName: icon).font(.largeTitle).foregroundStyle(palette.accent.opacity(0.85))
+            Text(title).font(.headline).foregroundStyle(palette.title)
+            if let detail { Text(detail).font(.caption).foregroundStyle(palette.label.opacity(0.7)).multilineTextAlignment(.center) }
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 28).padding(.horizontal, 16)
+        .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16))
+    }
+}
+
+// BU GÖRÜNÜM: rota satırı (Nereden → Nereye, ilçeleriyle) | teklif kartlarında ortak
+// ⮕ KULLANIM [RouteLine]: OldOffersView, MyOffersView
+struct RouteLine: View {
+    let from: String, fromDistrict: String, to: String, toDistrict: String
+    @Environment(\.colorScheme) private var colorScheme
+    var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        HStack(spacing: 6) {
+            Image(systemName: "shippingbox.fill").font(.caption).foregroundStyle(palette.accent) // 15 Kasım: mappin.circle küçükte ünlem gibi görünüyordu
+            Text("\(from) / \(fromDistrict)").lineLimit(1)
+            Image(systemName: "arrow.right").font(.caption.bold()).foregroundStyle(palette.accent)
+            Text("\(to) / \(toDistrict)").lineLimit(1)
+        }
+        .font(.subheadline)
+        .foregroundStyle(palette.label)
+        .minimumScaleFactor(0.8)
+    }
+}

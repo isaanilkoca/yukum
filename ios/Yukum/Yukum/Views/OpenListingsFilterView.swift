@@ -30,37 +30,48 @@ struct OpenListingsFilterView: View {
         _toDate = State(initialValue: filter.pickupTo.flatMap(Self.parse) ?? Date())
     }
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    // GÖRÜNÜM (15 Kasım, L tasarım): Form korunur (seçiciler, tarih), ama zemini ScreenBackground, satırları yarı şeffaf kart rengi, vurgu turuncu.
+    //   İŞLEV DEĞİŞMEDİ: aynı taslak (draft), Temizle / Uygula.
     var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        let rowFill = palette.cardSurface.opacity(0.7)
         NavigationStack {
-            Form { // Form [SWIFT]: ayar tarzı gruplu liste
+            Form {
                 Section("Varış") {
                     Picker("Varış ili", selection: $draft.toCityId) {
-                        Text("Tümü").tag(0) // 0 = filtre yok
+                        Text("Tümü").tag(0)
                         ForEach(cities) { Text($0.name).tag($0.id) }
                     }
                 }
+                .listRowBackground(rowFill) // [SWIFT] bölümdeki tüm satırların zemini
                 Section("Fiyat (₺)") {
-                    // value + format [SWIFT]: yazıyı Int?'e çevirir | boş bırakılırsa nil = filtre yok
                     TextField("En az", value: $draft.minBudget, format: .number).keyboardType(.numberPad)
                     TextField("En çok", value: $draft.maxBudget, format: .number).keyboardType(.numberPad)
                 }
+                .listRowBackground(rowFill)
                 Section("Araç ve sıralama") {
                     Picker("Araç tipi", selection: $draft.vehicleType) {
-                        Text("Hepsi").tag("") // "" = filtre yok
+                        Text("Hepsi").tag("")
                         ForEach(VehicleType.allCases) { Text($0.title).tag($0.rawValue) }
                     }
                     Picker("Sıralama", selection: $draft.sort) {
-                        Text("Varsayılan").tag(ListingSort?.none) // nil = sunucu seçer
-                        ForEach(ListingSort.allCases) { Text($0.title).tag(ListingSort?.some($0)) } // Optional olduğu için tag da Optional
+                        Text("Varsayılan").tag(ListingSort?.none)
+                        ForEach(ListingSort.allCases) { Text($0.title).tag(ListingSort?.some($0)) }
                     }
                 }
+                .listRowBackground(rowFill)
                 Section("Yükleme tarihi") {
                     Toggle("Bu tarihten sonra", isOn: $useFrom)
                     if useFrom { DatePicker("Başlangıç", selection: $fromDate, displayedComponents: .date) }
                     Toggle("Bu tarihten önce", isOn: $useTo)
                     if useTo { DatePicker("Bitiş", selection: $toDate, displayedComponents: .date) }
                 }
+                .listRowBackground(rowFill)
             }
+            .foregroundStyle(palette.title)
+            .themedScreen() // ⮕ Design/FormStyle.swift
             .navigationTitle("Filtre")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -70,7 +81,6 @@ struct OpenListingsFilterView: View {
         }
     }
 
-    // clear: bu sayfadaki alanları boşaltır | kalkış ili/ilçesi ana ekranda durur, ona dokunulmaz
     private func clear() {
         draft = OpenListingsFilter(fromCityId: draft.fromCityId, fromDistrictId: draft.fromDistrictId)
         useFrom = false; useTo = false

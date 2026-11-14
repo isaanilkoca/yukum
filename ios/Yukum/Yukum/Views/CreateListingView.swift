@@ -38,6 +38,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
     // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemin hazır değerini al | dismiss: "bu ekranı kapat" komutu | ilan açılınca HomeView'a dönmek için
     @Environment(\.colorScheme) private var colorScheme // [SWIFT] açık/koyu mod → Palette
+    @State private var feedback: ActionFeedback? // işlem sonrası koli bantlama ⮕ Design/ActionFeedback.swift
 
     // TASARIM (14 Kasım, kullanıcı: "siyah arka plan ve mavi düğmeler ana renklerle uyumlu olsun"):
     //   giriş/kayıt ekranlarıyla aynı dil — renk geçişi arka plan, yarı saydam kartlar (FormCard), etiketli simgeli kutular (LabeledInput),
@@ -55,8 +56,8 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
         ZStack {
             // ARKA PLAN: giriş/kayıt ekranlarıyla aynı renk geçişi + iki bulanık ışık halesi (siyah düz zemin yerine)
             LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-            Ellipse().fill(palette.glowA).frame(width: 380, height: 320).blur(radius: 95).offset(x: -120, y: -220)
-            Ellipse().fill(palette.glowB).frame(width: 360, height: 300).blur(radius: 95).offset(x: 130, y: 220)
+            SoftGlow(color: palette.glowA, width: 380, height: 320).offset(x: -120, y: -220)
+            SoftGlow(color: palette.glowB, width: 360, height: 300).offset(x: 130, y: 220)
 
             ScrollView { // ScrollView [SWIFT]: uzun formda kaydırma
                 VStack(alignment: .leading, spacing: 16) {
@@ -144,7 +145,12 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
                     // Düğme yalnız TETİKLEYİCİ: kontroller, paket hazırlama ve gönderme ViewModel.submit()'te
                     // başarıda ekran kapanır ve HomeView'a dönülür (HomeView listeyi ekran görününce kendisi yeniler)
                     Button { // Task [SWIFT]: düğmede await kullanmamızı sağlar; ekran donmaz
-                        Task { if await viewModel.submit() { dismiss(); onSaved?() } } // ⮕ submit() → ListingService.update (düzenleme) / create (yeni)
+                        // BAŞARIDA (15 Kasım): önce koli kapanıp bantlanır (Yük Veren işareti), animasyon bitince ekran kapanır ⮕ Design/ActionFeedback.swift
+                        Task {
+                            if await viewModel.submit() { // ⮕ submit() → ListingService.update (düzenleme) / create (yeni)
+                                feedback = ActionFeedback(.seal, viewModel.isEditing ? "İlan güncellendi" : "İlan yayında") { dismiss(); onSaved?() }
+                            }
+                        }
                     } label: {
                         AccentButtonLabel(title: viewModel.submitTitle) // "İlanı Yayınla" / "İlanı Güncelle" | turuncu düğme ⮕ Design/FormStyle.swift
                     }
@@ -157,6 +163,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
         }
         .tint(palette.accent) // [SWIFT] seçiciler, tarih ve geri oku turuncu (mavi yerine)
         .navigationBarTitleDisplayMode(.inline)
+        .actionFeedback($feedback) // ⮕ Design/ActionFeedback.swift: koli bantlama animasyonu, bitince then (dismiss + onSaved)
         .task { await viewModel.loadCities() } // .task [SWIFT]: ekran açılınca bir kez çalışır | il listesini API'den çeker | ⮕ CreateListingViewModel.loadCities() → CityService.cities()
     }
 

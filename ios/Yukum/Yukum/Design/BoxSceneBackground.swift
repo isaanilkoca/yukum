@@ -11,29 +11,28 @@ import RealityKit // [SWIFT] Apple'ın 3B motoru: şekil üretir, ışıklar, fi
 // ┌─ BAĞLANTI HARİTASI: BoxSceneBackground.swift ─────────────────────────────────────────
 // │ GELEN     : Design/TapedBoxBackground.swift (koli + bant birlikte) → Views/LoginView. İleride: RegisterView, CarrierRegisterView.
 // │ GİDEN     : Design/BoxSceneRig.swift (kolileri düşürür) | Design/CardboardBoxKit.swift (koli üretimi) | Design/DesignPalette.swift (renkler)
-// │ TEKNİK    : RealityKit (RealityView). Model dosyası YOK; koliler kodla üretilir.
+// │ TEKNİK    : RealityKit (StillScene içinde ARView, fizik motoru). Model dosyası YOK; koliler kodla üretilir. Bitince resme döner.
 // │ REHBER    : Design/00_Rehber_Design.swift (hangi teknik nerede, okuma sırası)
 // └──────────────────────────────────────────────────────────────────────
 
 // ZİNCİR (ekran açılınca):
-//   RealityView.make (1 kez) → buildScene(): zemin + görünmez duvarlar + ışıklar + kamera
+//   StillScene (1 kez) → buildScene(): zemin + görünmez duvarlar + ışıklar + kamera
 //   → CardboardBoxKit.prepared() dokular (bekletmeden) → SceneRig.prepare() kalıp koliler
-//   → content.subscribe(SceneEvents.Update): HER KAREDE SceneRig.tick()
+//   → scene.subscribe(SceneEvents.Update): HER KAREDE SceneRig.tick()
 //       ilk ~3 sn : koliler tek tek yukarıdan bırakılır → FİZİK MOTORU düşürür, çarpıştırır, üst üste yığar
 //       sonra     : yığın yerleşir → onSettled() 1 kez çağrılır (ekran bantları bunu bekler)
-//       en son    : yığın tamamen durur → SceneRig fiziği kapatır, onFinished() aboneliği bırakır → sahne duran bir resimdir
+//       en son    : yığın tamamen durur → SceneRig fiziği kapatır, aboneliği bırakır → spot yanar → onStill → StillScene sahneyi RESME çevirir
 //
 // NEDEN fizik motoru: her kolinin düşüşünü elle hesaplamıyoruz. Koliye "ağırlığın var, çarpışırsın" diyoruz (iki bileşen),
-//   yerçekimi/çarpışma/yığılma RealityKit'ten bedava gelir. Her açılışta yığın biraz farklı oluşur → canlı durur.
+//   yerçekimi/çarpışma/yığılma RealityKit'ten bedava gelir. Bırakma noktaları sabit tohumlu (her açılışta aynı) ve hep yığının en alçak yerinin üstünden (15 Kasım).
 // NEDEN görünmez duvarlar: koliler ekranın dışına yuvarlanıp kaybolmasın, yığın ekran genişliğinde kalsın.
-// NEDEN yansıma kopyası: gerçek ayna yansıması telefonu yorar; kolinin ters kopyasını yarı saydam zeminin altına koymak aynı görüntüyü ucuza verir.
+// (15 Kasım) Zemindeki ayna yansıması KALDIRILDI (kullanıcı kararı, performans): her koli için ikinci bir kopya çiziliyordu.
 
 // ⮕ KULLANIM [SceneBackground]: kullanır: TapedBoxBackground › body
 struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: bu bir ekran parçası
 
     @Environment(\.colorScheme) private var colorScheme // [SWIFT] telefon açık modda mı koyu modda mı
-    @State private var updateSubscription: EventSubscription? // [SWIFT] kare aboneliği; saklanmazsa abonelik ölür, animasyon durur
-    @State private var rig = SceneRig() // [BİZİM] kolileri düşüren ve yansımaları eşitleyen nesne (aşağıda)
+    @State private var rig = SceneRig() // [BİZİM] kolileri düşüren ve yığın durunca donduran nesne (aşağıda)
     var onSettled: () -> Void = {} // [BİZİM] koliler durunca 1 kez çağrılır (ekran bandı bunu bekler)
     var onSpot: () -> Void = {}    // [BİZİM] yığın tamamen durup 3B spot yanınca 1 kez → TapedBoxBackground görünen huzmeyi ve karartmayı açar
 
@@ -45,32 +44,24 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
             LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom)
 
             // Işık haleleri: arkada bulanık renkli bulutlar (stüdyo arka ışığı). 3B değil, ucuz 2B katman.
-            Ellipse().fill(palette.glowA).frame(width: 380, height: 320).blur(radius: 95).offset(x: -120, y: -40)
-            Ellipse().fill(palette.glowB).frame(width: 360, height: 300).blur(radius: 95).offset(x: 130, y: 120)
+            SoftGlow(color: palette.glowA, width: 380, height: 320).offset(x: -120, y: -40)
+            SoftGlow(color: palette.glowB, width: 360, height: 300).offset(x: 130, y: 120)
 
-            RealityView { content in // RealityView [SWIFT]: SwiftUI içinde 3B sahne | bu blok 1 kez çalışır | blok async: içinde await kullanılabilir
-                content.camera = .virtual // [SWIFT] AR değil: telefon kamerası açılmaz, sanal kamera kullanılır
-                buildScene(in: &content, palette: palette) // zemin, duvarlar, ışıklar, kamera: hafif, hemen
-
-                // AĞIR HAZIRLIK, BEKLETMEDEN (13 Kasım performans düzeltmesi): dokular ve kalıp koliler await ile üretilir.
-                // Bu satırlarda sahne kurulumu durur ama EKRAN durmaz: giriş formu çizilmiş ve dokunulabilir kalır, koliler hazır olunca düşmeye başlar.
-                PerfLog.reset("Giriş sahnesi kuruluyor")                   // GEÇİCİ ölçüm ⮕ App/PerfLog.swift (filtre: ⏱)
-                let kit = await CardboardBoxKit.prepared(palette: palette) // ⮕ Design/CardboardBoxKit.swift (dokular)
-                PerfLog.mark("giriş sahnesi: koli dokuları hazır")
-                await rig.prepare(kit: kit)                                // ⮕ Design/BoxSceneRig.swift (kalıp koliler + ekran kartı ısınması) | 14 Kasım: yalnız koli
-                PerfLog.mark("giriş sahnesi: kalıplar hazır, düşüş başlıyor")
-                rig.palette = palette                                      // en sondaki spot ışığının rengi/gücü için
-
+            // 3B sahne | StillScene (15 Kasım performans): bir kez oynar, her şey durunca RESME döner, 3B motor kapanır ⮕ Design/StillScene.swift
+            StillScene { root, scene, finish in
+                buildScene(root: root, palette: palette) // zemin, görünmez duvarlar, ışıklar, kamera: hafif, hemen
+                rig.palette = palette
                 rig.onSettled = onSettled
-                // Yığın durunca kare aboneliğini bırak: tick artık çağrılmaz, sahne duran bir resim olarak kalır (pil ve işlemci boşa harcanmaz)
-                rig.onFinished = {
-                    updateSubscription?.cancel() // .cancel [SWIFT]: aboneliği sonlandırır
-                    updateSubscription = nil
-                    // Görünen huzme + karartma: 3B spot ışığıyla AYNI ANDA açılır | ⮕ TapedBoxBackground (SpotBeam bantların üstünde çizilir)
-                    onSpot()
-                }
-                updateSubscription = content.subscribe(to: SceneEvents.Update.self) { event in // [SWIFT] her karede haber ver
-                    rig.tick(deltaTime: Float(event.deltaTime))
+                rig.onFinished = onSpot // görünen huzme + karartma: 3B spotla AYNI ANDA | ⮕ TapedBoxBackground
+                rig.onStill = finish
+                // AĞIR HAZIRLIK, BEKLETMEDEN: dokular (önbellekli) ve kalıp koliler await ile üretilir; form bu sırada dokunulabilir
+                Task { @MainActor in
+                    let kit = await CardboardBoxKit.prepared(palette: palette) // ⮕ Design/CardboardBoxKit.swift
+                    await rig.prepare(kit: kit)                                // ⮕ Design/BoxSceneRig.swift
+                    // HER KAREDE tick: koliler bırakılır, hareket ölçülür, durunca dondurulur (abonelik orada kapanır)
+                    rig.subscription = scene.subscribe(to: SceneEvents.Update.self) { event in // [SWIFT] her karede haber ver
+                        rig.tick(deltaTime: Float(event.deltaTime))
+                    }
                 }
             }
         }
@@ -79,17 +70,14 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
         .allowsHitTesting(false) // [SWIFT] bu görünüm dokunuş almasın
     }
 
-    // ⮕ KULLANIM [buildScene]: kullanır: body › RealityView.make (1 kez)
-    private func buildScene(in content: inout RealityViewCameraContent, palette: Palette) {
-        let root = Entity() // [SWIFT] Entity: sahnedeki her şeyin ortak atası
-        content.add(root)
+    // ⮕ KULLANIM [buildScene]: kullanır: body › StillScene (1 kez)
+    private func buildScene(root: Entity, palette: Palette) {
 
-        // 1) ZEMİN (görünen): koyu, yarı saydam levha. Saydamlık sayesinde altındaki ters koli kopyaları "yansıma" gibi görünür.
+        // 1) ZEMİN (görünen): koyu, OPAK levha (15 Kasım: yansımalar kaldırıldı → saydamlığa gerek yok; opak yüzey saydamdan ucuza çizilir)
         var floorMaterial = PhysicallyBasedMaterial() // [SWIFT] fizik tabanlı malzeme: ışığa gerçek yüzey gibi tepki verir
         floorMaterial.baseColor = .init(tint: palette.floor)
         floorMaterial.roughness = 1.0
-        floorMaterial.specular = .init(floatLiteral: 0.0) // zemin kendi parlamasın; "parlaklık" hissi yansıma kopyalarından gelir
-        floorMaterial.blending = .transparent(opacity: .init(floatLiteral: palette.floorOpacity))
+        floorMaterial.specular = .init(floatLiteral: 0.0) // zemin kendi parlamasın
         let floor = ModelEntity(mesh: .generateBox(width: 60, height: 0.02, depth: 60), materials: [floorMaterial])
         floor.position.y = -0.01
         root.addChild(floor)
@@ -139,13 +127,7 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
         camera.look(at: [0, 2.9, 0], from: [0, 3.6, 10.5], relativeTo: nil)
         root.addChild(camera)
 
-        // 5) YANSIMA ATASI: y ekseninde ters çevrilmiş boş kutu. İçine konan her kopya zeminin altında baş aşağı görünür.
-        let mirrorRoot = Entity()
-        mirrorRoot.scale = [1, -1, 1]
-        root.addChild(mirrorRoot)
-
         rig.root = root
-        rig.mirrorRoot = mirrorRoot
         rig.keyLight = key // spot yanınca bu ışık kısılır (BoxSceneRig › revealSpotlight)
     }
 }

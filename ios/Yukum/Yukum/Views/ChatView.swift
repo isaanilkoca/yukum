@@ -30,118 +30,118 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 
 // ⮕ KULLANIM [ChatView]: kullanır: ListingOffersView › body, MyOffersView › body, OldOffersView › body
 struct ChatView: View {
-
-    // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
-    // ⮕ KULLANIM [viewModel]: okur: ChatView › body | bağlar(okur+yazar): ChatView › body
-    @State private var viewModel: ChatViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
-
-    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
-    @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | iş bitirilince sohbetten geri dönmek için
-
-    // Onay pencerelerinin açık/kapalı durumu: yalnız GÖRÜNÜM bilgisi (hangi pencere açık), iş mantığı değil, bu yüzden ViewModel'de değil burada
-    // showClearConfirm: "Mesajları Temizle" onay penceresi | NEDEN onay: silme geri alınamaz, yanlışlıkla basılmasın
-    // ⮕ KULLANIM [showClearConfirm]: YAZAR: ChatView › body | bağlar(okur+yazar): ChatView › body
+    @State private var viewModel: ChatViewModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showClearConfirm = false
-    // showCompleteConfirm: "İşi Bitir ve Sil" onay penceresi | bu işlem daha ağır (iki tarafta durumu değiştirir), ayrı ve daha açıklayıcı bir pencereyle sorulur
-    // ⮕ KULLANIM [showCompleteConfirm]: YAZAR: ChatView › body | bağlar(okur+yazar): ChatView › body
     @State private var showCompleteConfirm = false
-    @State private var showRating = false // işi bitirince puan sayfası açık mı (yalnız Yük Veren tarafı)
+    @State private var showRating = false
+    @State private var feedback: ActionFeedback? // işlem sonrası animasyon (rolüne göre) ⮕ Design/ActionFeedback.swift
 
-    // init: açılış bilgisi (ChatContext) dışarıdan verilir, ViewModel burada oluşturulur
     init(context: ChatContext) {
         _viewModel = State(initialValue: ChatViewModel(context: context))
     }
 
-    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
-    var body: some View {
+    // Rol işareti: sohbeti iki rol de açar. canReview yalnız Yük Veren'de true (ChatContext) → Yük Veren koli, Taşımacı lastik izi.
+    private var feedbackKind: ActionFeedback.Kind { viewModel.context.canReview ? .seal : .track }
 
-        // @Bindable [SWIFT]: @Observable bir sınıfın değişkenlerine $ ile İKİ YÖNLÜ bağ kurar (TextField doğrudan ViewModel'deki taslağa yazsın diye)
+    // GÖRÜNÜM (15 Kasım, L tasarım): benim balonum turuncu, karşı tarafınki yarı şeffaf kart; alt çubukta kapsül yazı kutusu + yuvarlak gönder.
+    //   İŞLEV DEĞİŞMEDİ: aynı yoklama (startPolling), gönderme, temizleme, işi bitirme.
+    var body: some View {
         @Bindable var viewModel = viewModel
+        let palette = Palette(isDark: colorScheme == .dark)
 
         VStack(spacing: 0) {
-            ScrollViewReader { proxy in // ScrollViewReader [SWIFT]: kaydırmayı KODLA yönetmeye yarar | proxy: kaydırma kumandası | yeni mesaj gelince en alta inmek için
-                ScrollView { // ScrollView [SWIFT]: kaydırılabilir alan | mesajlar ekrana sığmayınca yukarı-aşağı kayar
-                    LazyVStack(spacing: 8) { // LazyVStack [SWIFT]: alt alta dizer, yalnız ekrandakileri çizer (uzun sohbette hızlı)
-                        ForEach(viewModel.messages) { message in // ForEach [SWIFT]: listedeki her mesaj için bir balon çizer | message: o anki mesaj | ⮕ ChatViewModel.messages ← ChatService.messages() → [ChatMessage]
-                            HStack { // HStack [SWIFT]: yan yana dizer | Spacer ile balonu sağa ya da sola itiyoruz
-                                if message.isMine { Spacer() } // isMine true (ben yazdım): önce boşluk, balon SAĞA yaslanır
-                                Text(message.text) // mesajın yazısı
-                                    .padding(10) // .padding [SWIFT]: yazının etrafında boşluk, balon dolgusu
-                                    .background(message.isMine ? Color.blue : Color(.systemGray5)) // ?: kısa if | benim mesajım mavi, karşı tarafınki açık gri | Color [SWIFT]: renk | .background [SWIFT]: arka plan
-                                    .foregroundColor(message.isMine ? .white : .primary) // yazı rengi | benimki beyaz, karşınınki sistem rengi (koyu/açık moda uyar) | .foregroundColor [SWIFT]: yazı rengi
-                                    .clipShape(RoundedRectangle(cornerRadius: 16)) // köşeleri yuvarlar, balon şekli verir | RoundedRectangle [SWIFT]: köşeleri yuvarlak dikdörtgen | .clipShape [SWIFT]: görünümü şekle göre keser
-
-                                if !message.isMine { Spacer() } // ! = değil | karşı tarafın mesajı: balondan sonra boşluk, SOLA yaslanır
+            ScrollViewReader { proxy in // [SWIFT] koddan belirli bir mesaja kaydırmayı sağlar
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(viewModel.messages) { message in
+                            HStack {
+                                if message.isMine { Spacer(minLength: 48) }
+                                Text(message.text)
+                                    .padding(.horizontal, 12).padding(.vertical, 9)
+                                    .foregroundStyle(message.isMine ? palette.buttonText : palette.title)
+                                    .background(message.isMine ? palette.accent : palette.cardSurface.opacity(0.8), in: .rect(cornerRadius: 18))
+                                    .overlay { if !message.isMine { RoundedRectangle(cornerRadius: 18).strokeBorder(palette.cardBorder) } }
+                                if !message.isMine { Spacer(minLength: 48) }
                             }
-                            .id(message.id) // .id [SWIFT]: bu satıra "adres" verir | scrollTo ile en alttaki mesaja kaymak için gerekli
+                            .id(message.id) // scrollTo için kimlik
                         }
                     }
                     .padding()
                 }
-
-                // .onChange [SWIFT]: bir değer değişince çalışır | mesaj sayısı değişince (yeni mesaj ya da ilk yükleme) en alta kaydır
-                .onChange(of: viewModel.messages.count) { _, _ in
-                    if let last = viewModel.messages.last { // last: son mesaj, liste boşsa nil | if let: nil değilse devam
-                        proxy.scrollTo(last.id, anchor: .bottom) // son mesajın adresine kaydır | anchor: .bottom = ekranın altına hizala
-                    }
+                .scrollDismissesKeyboard(.interactively)
+                .onChange(of: viewModel.messages.count) { _, _ in // yeni mesaj gelince en alta kay
+                    if let last = viewModel.messages.last { withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
 
-            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red).font(.caption).padding(.horizontal) } // if let: doluysa kırmızı küçük yaz, nil ise çizilmez | gönderme/yükleme hatası burada çıkar | .font [SWIFT]: yazı boyutu/stili
+            if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true).padding(.horizontal) }
 
-            if viewModel.canWrite { // yazma açıksa (Pending ve Accepted teklifler) VE kilitlenmediyse alt çubuk çizilir
-                HStack { // yan yana: yazma kutusu + Gönder düğmesi
-                    TextField("Mesaj Yaz", text: $viewModel.draft) // TextField [SWIFT]: yazı kutusu | $ = iki yönlü bağ, yazılan her harf ViewModel'deki draft'a gider | ⮕ ChatViewModel.draft
-                        .textFieldStyle(.roundedBorder) // çerçeveli kutu görünümü | .textFieldStyle [SWIFT]: yazı kutusu stili
-
-                    Button("Gönder") { Task { await viewModel.send() } } // basınca ViewModel mesajı yollar | Task [SWIFT]: düğmede await kullanmamızı sağlar | ⮕ ChatViewModel.send() → ChatService.send(SendMessageRequest) | Button [SWIFT]: dokununca kod çalıştıran düğme
-                        .buttonStyle(.borderedProminent) // içi dolu düğme | .buttonStyle [SWIFT]: düğme görünüm stili
-                        .disabled(!viewModel.canSend) // .disabled: koşul doğruysa basılamaz | boş ya da yalnız boşluksa düğme kilitli | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli
+            if viewModel.canWrite {
+                HStack(spacing: 10) {
+                    TextField("Mesaj yaz", text: $viewModel.draft, axis: .vertical) // axis: .vertical → uzun mesajda kutu büyür
+                        .lineLimit(1...4)
+                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .background(palette.fieldSurface, in: .rect(cornerRadius: 20))
+                        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(palette.fieldBorder))
+                        .foregroundStyle(palette.title)
+                    Button { Task { await viewModel.send() } } label: { // ⮕ ChatViewModel.send → POST /api/v1/offers/{id}/messages
+                        Image(systemName: "arrow.up").font(.headline.bold()).foregroundStyle(palette.buttonText)
+                            .frame(width: 40, height: 40).background(palette.accent, in: .circle)
+                    }
+                    .disabled(!viewModel.canSend).opacity(viewModel.canSend ? 1 : 0.45)
                 }
-                .padding()
+                .padding(.horizontal).padding(.vertical, 10)
+                .background(palette.cardSurface.opacity(0.85))
             } else {
-                Text("Bu sohbet kapalı (teklif reddedildi ya da iş tamamlandı). Eski mesajlar okunabilir.").font(.caption).foregroundColor(.secondary).padding() // yazma kutusu yerine bilgi yazısı | iki taraf da aynı mesajı görür
+                Label("Bu sohbet kapalı (teklif reddedildi ya da iş tamamlandı). Eski mesajlar okunabilir.", systemImage: "lock.fill")
+                    .font(.caption).foregroundStyle(palette.label.opacity(0.75)).padding()
             }
         }
-        .navigationTitle(viewModel.context.title) // üst çubuk başlığı | karşı tarafın adı | .navigationTitle [SWIFT]: üst çubuk başlığı
-        .navigationBarTitleDisplayMode(.inline) // küçük, ortada başlık | .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
-
-        // ─── SAĞ ÜST MENÜ: iki ayrı işlem ───
-        // Menu [SWIFT]: basınca seçenek listesi açan düğme | label: menüyü açan görünen kısım (üç nokta ikonu)
-        .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
-            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe | ToolbarItem [SWIFT]: üst çubukta bir eleman
+        .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift
+        .navigationTitle(viewModel.context.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    // 1) MESAJLARI TEMİZLE: yalnız mesajlar silinir, teklif ve iş yerinde kalır | yalnız KENDİ ekranımdan
-                    Button("Mesajları Temizle", systemImage: "trash") { showClearConfirm = true } // systemImage: SF Symbols ikonu | basınca onay penceresi açılır
-                    // 2) İŞİ BİTİR VE SİL: yalnız kabul edilmiş işte görünür | durum iki tarafta Tamamlandı olur, sohbet iki tarafta kilitlenir, benim tarafımdan teklif ve mesajlar silinir
-                    if viewModel.canComplete { // kabul edilmiş aktif iş ve henüz kilitlenmemişse
-                        Button("İşi Bitir ve Sil", systemImage: "checkmark.seal", role: .destructive) { showCompleteConfirm = true } // role: .destructive: kırmızı
+                    Button("Mesajları Temizle", systemImage: "trash") { showClearConfirm = true }
+                    if viewModel.canComplete { // yalnız kabul edilmiş + teslim edilmiş işte
+                        Button("İşi Bitir ve Sil", systemImage: "checkmark.seal", role: .destructive) { showCompleteConfirm = true }
                     }
-                } label: { Image(systemName: "ellipsis.circle") } // üç nokta ikonu | Image [SWIFT]: görsel/ikon (systemName: SF Symbols hazır ikonları)
+                } label: { Image(systemName: "ellipsis.circle") }
             }
         }
-        // 1. onay penceresi: mesajları temizle | .confirmationDialog [SWIFT]: ekranın altından açılan seçenek menüsü | isPresented: $showClearConfirm → true olunca açılır
         .confirmationDialog("Mesajlar temizlensin mi?", isPresented: $showClearConfirm, titleVisibility: .visible) {
-            Button("Benden Sil", role: .destructive) { Task { await viewModel.clear() } } // seçilince ViewModel temizler | ⮕ ChatViewModel.clear() → ChatService.clear
-            Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
+            Button("Benden Sil", role: .destructive) {
+                Task {
+                    await viewModel.clear() // ⮕ ChatViewModel.clear
+                    if viewModel.errorMessage == nil { feedback = ActionFeedback(viewModel.context.canReview ? .unseal : .unload, "Mesajlar temizlendi") } // silme: rolün olumsuz animasyonu
+                }
+            }
+            Button("Vazgeç", role: .cancel) { }
         } message: {
             Text("Mesajlar yalnızca sizin ekranınızdan silinir. Karşı taraf görmeye devam eder, iş ve teklif yerinde kalır.")
         }
-        // 2. onay penceresi: işi bitir | .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | daha önemli işlemler için (bitirmek iki tarafı etkiler)
-        // Puan sayfası: iş tamamlanınca açılır (Yük Veren) | gönderilse de "Şimdi değil" denmiş olsa da sayfa kapanınca sohbet ekranı da kapanır (iş zaten bitti, teklif listeden silindi)
-        .sheet(isPresented: $showRating, onDismiss: { dismiss() }) {
+        .sheet(isPresented: $showRating, onDismiss: { dismiss() }) { // puan sayfası kapanınca sohbetten çık
             RatingView(offerId: viewModel.context.offerId, carrierName: viewModel.context.title)
         }
         .alert("İş bitsin mi?", isPresented: $showCompleteConfirm) {
-            Button("Bitir ve Sil", role: .destructive) { // seçilince ViewModel işi tamamlar; başarılıysa teklif listemizden silindiği için sohbetten geri dönülür
-                Task { if await viewModel.complete() { if viewModel.context.canReview { showRating = true } else { dismiss() } } } // Yük Veren: önce puan sayfası, kapanınca sohbet de kapanır | Taşımacı: doğrudan geri // önceki ekran görününce .task ile listeyi kendisi yeniler | ⮕ ChatViewModel.complete() → ChatService.complete
+            Button("Bitir ve Sil", role: .destructive) {
+                Task {
+                    if await viewModel.complete() { // ⮕ ChatViewModel.complete → işi tamamla
+                        // animasyon bitince: Yük Veren puan sayfasını görür, Taşımacı sohbetten çıkar
+                        feedback = ActionFeedback(feedbackKind, "İş tamamlandı") {
+                            if viewModel.context.canReview { showRating = true } else { dismiss() }
+                        }
+                    }
+                }
             }
             Button("Vazgeç", role: .cancel) { }
         } message: {
             Text("İş iki tarafta da Tamamlandı olur ve sohbet iki tarafta yazmaya kapanır. Teklif ve mesajlar sizin listenizden silinir; karşı taraf tamamlanmış işi kendi geçmişinde görür.")
         }
-
-        // .task [SWIFT]: ekran açılınca başlar, ekran kapanınca KENDİLİĞİNDEN iptal olur | ViewModel'in yenileme döngüsü (polling) burada çalışır
-        .task { await viewModel.startPolling() } // ⮕ ChatViewModel.startPolling() → 3 sn'de bir load() → ChatService.messages
+        .task { await viewModel.startPolling() } // ekran açıkken birkaç saniyede bir yeni mesaj sorar; ekran kapanınca .task kendiliğinden durur
+        .actionFeedback($feedback)
     }
 }

@@ -16,94 +16,78 @@ import SwiftUI
 // │ Satırı sola kaydır → "Sil"     →  viewModel.delete()      →  DELETE /api/v1/notifications/{id}
 
 struct NotificationsView: View {
-    
     @State private var viewModel = NotificationsViewModel()
-    
+    @Environment(\.colorScheme) private var colorScheme
+
+    // GÖRÜNÜM (15 Kasım, L tasarım): yarı şeffaf kartlar; okunmamış kart turuncu kenarlı + turuncu nokta. İŞLEV DEĞİŞMEDİ.
     var body: some View {
-        
-        List { // List [SWIFT]: kaydırılabilir satır listesi
+        let palette = Palette(isDark: colorScheme == .dark)
+        List {
             if let message = viewModel.errorMessage {
-                Text(message).foregroundColor(.red)
+                FormMessage(text: message, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
-            ForEach(viewModel.items) { item in // AppNotification Identifiable olduğu için id: yazılmaz
-                Button { // satırın tamamı düğme: basınca okundu olur
-                    Task { await viewModel.markRead(item) }
-                } label: {
-                    row(item)
-                }
-                .buttonStyle(.plain) // .plain [SWIFT]: düğme görünümü yok (yazılar maviye dönmesin)
-                // .swipeActions [SWIFT]: satır sola kaydırılınca çıkan düğmeler | yalnız List içindeki satırda çalışır
-                // role: .destructive [SWIFT]: "yıkıcı işlem" → düğme kırmızı olur, satır kaybolurken silme animasyonu oynar
-                // Tam kaydırma (sonuna kadar çekme) ilk düğmeyi kendiliğinden çalıştırır: Mail'deki davranış (allowsFullSwipe varsayılanı true)
-                // Onay sorulmuyor: bildirim iş kaydı değil; teklif/iş yerinde durur, yalnız haberi silinir
-                .swipeActions {
-                    Button(role: .destructive) {
-                        Task { await viewModel.delete(item) }
-                    } label: {
-                        Label("Sil", systemImage: "trash") // Label [SWIFT]: yazı + ikon birlikte
+            ForEach(viewModel.items) { item in
+                Button { Task { await viewModel.markRead(item) } } label: { row(item, palette) } // dokununca okundu
+                    .buttonStyle(.plain)
+                    .themedRow()
+                    .overlay { if !item.isRead { RoundedRectangle(cornerRadius: 16).strokeBorder(palette.accent.opacity(0.55)).padding(.horizontal, 16).padding(.vertical, 5) } }
+                    .swipeActions {
+                        Button(role: .destructive) { Task { await viewModel.delete(item) } } label: { Label("Sil", systemImage: "trash") }
                     }
-                }
-                .task { // .task [SWIFT]: bu satır ekrana gelince çalışır
-                    if item.id == viewModel.items.last?.id { await viewModel.loadMore() } // son satır göründü → sonraki sayfa | last? : liste boşsa nil
-                }
+                    .task { if item.id == viewModel.items.last?.id { await viewModel.loadMore() } } // son kart görününce sonraki sayfa
             }
             if viewModel.isLoadingMore {
-                ProgressView().frame(maxWidth: .infinity) // dönen yükleniyor göstergesi, ortada
+                ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear)
             }
         }
-        .overlay { // .overlay [SWIFT]: listenin üstüne çizer | liste boşken boş durum yazısı
+        .listStyle(.plain)
+        .themedScreen()
+        .overlay {
             if viewModel.items.isEmpty && !viewModel.isLoading && viewModel.errorMessage == nil {
-                ContentUnavailableView("Bildirim yok", systemImage: "bell.slash", description: Text("Teklif, kabul ve iş güncellemeleri burada görünür.")) // [SWIFT] hazır boş durum görünümü
+                EmptyStateCard(icon: "bell.slash", title: "Bildirim yok", detail: "Teklif, kabul ve iş güncellemeleri burada görünür.").padding()
             }
         }
         .navigationTitle("Bildirimler")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button("Tümünü oku") { Task { await viewModel.markAllRead() } }
-                    .disabled(!viewModel.hasUnread) // okunmamış yoksa basılamaz
+                Button("Tümünü oku") { Task { await viewModel.markAllRead() } }.disabled(!viewModel.hasUnread)
             }
         }
-        .task { await viewModel.load() } // ekran açılınca ilk sayfa
-        .refreshable { await viewModel.load() } // aşağı çekince yenile
+        .task { await viewModel.load() }
+        .refreshable { await viewModel.load() }
     }
 
-    // row: tek satırın görünümü | ikon + (başlık, metin, zaman) + okunmamış noktası
-    private func row(_ item: AppNotification) -> some View {
-        HStack(alignment: .top, spacing: 12) { // HStack [SWIFT]: yan yana dizer
-            Image(systemName: icon(for: item.type)) // SF Symbols ikonu
-                .foregroundColor(.accentColor)
-                .frame(width: 24) // ikonlar aynı hizada dursun
+    private func row(_ item: AppNotification, _ palette: Palette) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon(for: item.type))
+                .font(.subheadline.bold()).foregroundStyle(palette.accent)
+                .frame(width: 34, height: 34).background(palette.accent.opacity(0.15), in: .circle)
             VStack(alignment: .leading, spacing: 4) {
-                Text(item.title).font(.subheadline).fontWeight(item.isRead ? .regular : .bold) // okunmamış kalın
-                Text(item.body).font(.footnote).foregroundColor(.secondary)
+                Text(item.title).font(.subheadline).fontWeight(item.isRead ? .regular : .bold).foregroundStyle(palette.title)
+                Text(item.body).font(.footnote).foregroundStyle(palette.label.opacity(0.75))
                 if let date = item.createdDate {
-                    // .relative [SWIFT]: "2 saat önce", "dün" | telefonun diline uyar
-                    Text(date, format: .relative(presentation: .named)).font(.caption2).foregroundColor(.secondary)
+                    Text(date, format: .relative(presentation: .named)).font(.caption2).foregroundStyle(palette.label.opacity(0.6)) // "5 dk önce"
                 }
             }
-            Spacer() // Spacer [SWIFT]: aradaki boşluğu doldurur, noktayı sağa iter
-            if !item.isRead {
-                Circle().fill(Color.accentColor).frame(width: 8, height: 8) // okunmamış: mavi nokta
-            }
+            Spacer()
+            if !item.isRead { Circle().fill(palette.accent).frame(width: 9, height: 9) }
         }
-        .contentShape(Rectangle()) // satırın boş yerine basınca da tıklama algılansın
+        .contentShape(Rectangle()) // boşluklara dokununca da çalışsın
     }
 
-    // icon: bildirim türüne göre ikon adı | default: bilinmeyen (ileride eklenecek) tür için zil
     private func icon(for type: String) -> String {
-           switch type {
-           case "OfferReceived": "tray.and.arrow.down"
-           case "OfferAccepted": "checkmark.circle"
-           case "OfferRejected": "xmark.circle"
-           case "JobStageChanged": "shippingbox"
-           case "JobCompleted": "flag.checkered"
-           case "ReviewReceived": "star"
-           case "ListingCancelled": "trash"
-           default: "bell"
-           }
-       }
+        switch type {
+        case "OfferReceived": "tray.and.arrow.down.fill"
+        case "OfferAccepted": "checkmark.circle.fill"
+        case "OfferRejected": "xmark.circle.fill"
+        case "JobStageChanged": "truck.box.fill"
+        case "JobCompleted": "flag.checkered"
+        case "ReviewReceived": "star.fill"
+        case "ListingCancelled": "trash.fill"
+        default: "bell.fill"
+        }
+    }
 }
 
-
-#Preview { NavigationStack { NotificationsView() } } // önizlemede üst çubuk görünsün diye NavigationStack içinde
+#Preview { NavigationStack { NotificationsView() } }

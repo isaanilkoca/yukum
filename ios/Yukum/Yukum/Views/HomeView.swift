@@ -10,7 +10,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, arkada tam ekran Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
-// │ Taşımacı tasarımı        →  carrierHome + carrierBackground (bu dosyanın sonunda): selamlama, "Yük ara" paneli (il/ilçe, Yakınımdakiler, Filtre), tabela başlık, rota kartları | arkada Design/TruckRoadView (dorse yanaşır, yük yığından alınır, bir kez oynar ve durur)
+// │ Taşımacı tasarımı        →  carrierHome + carrierBackground (bu dosyanın sonunda): selamlama, "Yük ara" paneli (il/ilçe, Yakınımdakiler, Filtre), tabela başlık, rota kartları (Views/ListingRow › RouteCard) | arkada Design/TruckRoadView (dorse yanaşır, yük yığından alınır, bir kez oynar ve durur)
 // │ Hoş Geldin yazısı        →  viewModel.user                     →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
 // │ Taşımacı ilan listesi    →  viewModel.listings ← load()         →  ListingService.openListings()   →  GET /api/v1/listings?...         →  [Listing]
@@ -74,23 +74,24 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                 }
                 
-                // Hesabı Sil: ayrı sayfa açar (şifre onayı orada) | role: .destructive [SWIFT]: kırmızı tehlikeli işlem düğmesi
-                // .buttonStyle(.borderedProminent) [SWIFT]: içi dolu düğme (Çıkış Yap ile aynı) | .tint(.red) [SWIFT]: dolgu rengini kırmızı yapar
-                
-                
-                // Gizlilik ve KVKK: sabit metin sayfası açar | .sheet aynı düğmeye bağlı (modifier her görünüme eklenebilir)
-                                Button("Gizlilik ve KVKK") { showPrivacy = true }.font(.footnote)
-                                    .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
-                
-                Button("Hesabı Sil", role: .destructive) { showDeleteAccount = true }.buttonStyle(.borderedProminent).tint(.red) // ⮕ aşağıdaki .sheet → Views/DeleteAccountView
-
-                Button("Çıkış Yap") { // Button [SWIFT]: tıklanınca süslü parantezdeki kod çalışır
-                    // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir (jeton orada da iptal edilsin) | BAĞLANTI: Models/Networking/AuthSession.swift → signOut
-                    Task { // Task [SWIFT]: düğmede await kullanmamızı sağlar
-                        await viewModel.signOut() // ⮕ HomeViewModel.signOut() → Models/Networking/AuthSession.signOut() → Keychain silinir + POST /api/v1/auth/logout
-                        dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
-                    }
-                }.buttonStyle(.borderedProminent) // .buttonStyle [SWIFT]: düğme görünüm stili
+                // ALT SATIR (15 Kasım, L tasarım): üç hesap eylemi tek satırda, temanın kapsül düğmeleriyle (önceden mavi/kırmızı sistem düğmeleri alt alta)
+                //   Gizlilik ve KVKK → PrivacyView | Hesabı Sil → DeleteAccountView (şifre onayı orada) | Çıkış Yap → signOut + dismiss
+                HStack(spacing: 8) {
+                    Button { showPrivacy = true } label: { Label("Gizlilik", systemImage: "hand.raised.fill") }
+                        .buttonStyle(ChipButtonStyle(.outline))
+                        .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
+                    Button { showDeleteAccount = true } label: { Label("Hesabı Sil", systemImage: "person.crop.circle.badge.xmark") }
+                        .buttonStyle(ChipButtonStyle(.danger)) // ⮕ aşağıdaki .sheet → Views/DeleteAccountView
+                    Button {
+                        // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir | ⮕ Models/Networking/AuthSession.swift → signOut
+                        Task {
+                            await viewModel.signOut() // ⮕ HomeViewModel.signOut() → AuthSession.signOut() → POST /api/v1/auth/logout
+                            dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
+                        }
+                    } label: { Label("Çıkış", systemImage: "rectangle.portrait.and.arrow.right") }
+                        .buttonStyle(ChipButtonStyle(.accent))
+                }
+                .frame(maxWidth: .infinity)
 
             }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
             // Tam ekran arka plan, role göre: Yük Veren → yukarıdan dolan dorse | Taşımacı → yanaşıp yükü yerden teslim alan dorse (14 Kasım)
@@ -177,7 +178,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // Uygulama açıkken bildirim geldi → zil sayısını tazele
             .onReceive(NotificationCenter.default.publisher(for: .pushReceived)) { _ in Task { await viewModel.loadUnread() } }
             // .onAppear [SWIFT]: ekran HER göründüğünde çalışır (bildirim listesinden Geri ile dönünce de) → rozet güncel kalır
-            .onAppear { PerfLog.mark("ana ekran göründü"); Task { await viewModel.loadUnread() } } // PerfLog: GEÇİCİ ölçüm ⮕ App/PerfLog.swift
+            .onAppear { Task { await viewModel.loadUnread() } }
             .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
                 await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
             }
@@ -218,7 +219,7 @@ extension HomeView {
                         .background(palette.accent, in: .rect(cornerRadius: 14)) // LoginView'daki "Giriş yap" ile aynı düğme
                 }
 
-                if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+                if let listError = viewModel.listError { FormMessage(text: listError, isError: true) } // doluysa uyarı simgeli yazı (Design/FormStyle), nil ise çizilmez
 
                 // 3) İLANLAR: başlıkta sayı | ⮕ HomeViewModel.listings ← load() ← ListingService.myListings() → GET /api/v1/listings/mine
                 Text("İlanların (\(viewModel.listings.count))").font(.title3.bold()).foregroundStyle(palette.title)
@@ -264,8 +265,8 @@ extension HomeView {
         return ZStack {
             LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom)
             // Işık haleleri: dorsenin arkasında bulanık amber bulutlar (giriş ekranıyla aynı, ucuz 2B katman) → sahne daha aydınlık
-            Ellipse().fill(palette.glowA).frame(width: 380, height: 320).blur(radius: 95).offset(x: -120, y: -40)
-            Ellipse().fill(palette.glowB).frame(width: 360, height: 300).blur(radius: 95).offset(x: 130, y: 120)
+            SoftGlow(color: palette.glowA, width: 380, height: 320).offset(x: -120, y: -40)
+            SoftGlow(color: palette.glowB, width: 360, height: 300).offset(x: 130, y: 120)
             TruckLoadView(progress: 1) // ⮕ Design/TruckLoadView.swift (kamera dorseyi ekranın ENİNE sığdırır, dikeyde ortalar)
                 .id(colorScheme) // görünüm (açık/koyu) değişince dorse sahnesi yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
         }
@@ -280,7 +281,7 @@ extension HomeView {
 //         TÜM EKRANIN arkasında: carrierBackground → Design/TruckRoadView (yol + yükleme alanı; dorse yanaşır, yük alınır, sahne durur)
 // NE DEĞİŞMEDİ (işlev): il/ilçe Picker'ları + .onChange → cityFilterChanged | Yakınımdakiler + nearMeChanged | Filtre sayfası (showFilter) |
 //   son satır görününce loadMore | aşağı çekince load | satıra basınca ListingDetailView | HomeViewModel'e dokunulmadı.
-// NE DEĞİŞTİ (görünüm): List → yarı şeffaf kartlar (shipperHome'daki gibi) | ListingRow yerine rota kartı (carrierCard): Nereden ——🚚—— Nereye.
+// NE DEĞİŞTİ (görünüm): List → yarı şeffaf kartlar (shipperHome'daki gibi) | ListingRow yerine rota kartı (RouteCard, Views/ListingRow.swift): Nereden ——🚚—— Nereye.
 //   ListingRow değişmedi (Yük Veren ve diğer ekranlar onu kullanmaya devam ediyor).
 extension HomeView {
 
@@ -300,7 +301,7 @@ extension HomeView {
                 // 2) YÜK ARA PANELİ: eski ekrandaki tüm filtre öğeleri tek yarı şeffaf kartta
                 carrierSearchPanel(palette: palette)
 
-                if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz (Yük Veren ile aynı değişken)
+                if let listError = viewModel.listError { FormMessage(text: listError, isError: true) } // doluysa uyarı yazısı (Yük Veren ile aynı değişken)
 
                 // 3) BAŞLIK: turuncu yol tabelası (yol çalışması tabelaları turuncudur → marka rengiyle aynı) | içte ince çerçeve: gerçek tabela kenarı
                 HStack(spacing: 8) {
@@ -325,7 +326,7 @@ extension HomeView {
                     LazyVStack(spacing: 10) { // LazyVStack [SWIFT]: yalnız ekrana giren kartları kurar → sayfalı uzun listede hızlı
                         ForEach(viewModel.listings) { listing in
                             NavigationLink { ListingDetailView(listing: listing) } label: { // ⮕ Views/ListingDetailView.swift (değişmedi)
-                                carrierCard(listing, palette: palette)
+                                RouteCard(listing: listing) // ⮕ Views/ListingRow.swift › RouteCard (15 Kasım: Favoriler ve İlan Detayı da kullanıyor)
                             }
                             .buttonStyle(.plain) // [SWIFT] NavigationLink yazıyı maviye boyamasın
                             .onAppear { // son kart ekrana girince sonraki sayfa (eski List'teki ile aynı mantık)
@@ -412,85 +413,6 @@ extension HomeView {
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(palette.cardBorder))
     }
 
-    // BU GÖRÜNÜM: Taşımacı'nın ilan kartı = bir ROTA. Üstte başlık (+ bütçe, favori), ortada Nereden ——🚚—— Nereye, altta kg / tarih / mesafe çipleri,
-    //   teklif verdiyse durum rozeti. Gösterilen bilgiler ListingRow ile aynı (+ ilçe, bütçe, favori: zaten Listing'de geliyordu).
-    // ⮕ KULLANIM [carrierCard]: kullanır: carrierHome › ForEach
-    func carrierCard(_ listing: Listing, palette: Palette) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(listing.title).font(.headline).foregroundStyle(palette.title).lineLimit(1)
-                Spacer(minLength: 4)
-                if listing.isFavorite { Image(systemName: "heart.fill").font(.footnote).foregroundStyle(palette.accent) } // ⮕ Listing.isFavorite
-                if let budget = listing.budget { // bütçe girildiyse: Taşımacı için en önemli sayı → turuncu, kalın
-                    Text("\(Int(budget)) ₺").font(.subheadline.bold()).foregroundStyle(palette.accent)
-                }
-                Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(palette.accent)
-            }
-
-            // ROTA: iki uç arasında kesik çizgili yol, ortasında tır
-            HStack(spacing: 8) {
-                routeEnd(city: listing.fromCityName, district: listing.fromDistrictName, alignment: .leading, palette: palette)
-                ZStack {
-                    RouteDash().stroke(palette.label.opacity(0.45), style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [6, 5])) // dash [SWIFT]: 6 nokta çizgi, 5 boşluk
-                    Image(systemName: "truck.box.fill").font(.caption).foregroundStyle(palette.accent)
-                        .padding(5).background(palette.cardSurface, in: .circle) // çizgiyi tırın altında keser
-                }
-                .frame(maxWidth: .infinity).frame(height: 24)
-                routeEnd(city: listing.toCityName, district: listing.toDistrictName, alignment: .trailing, palette: palette)
-            }
-
-            HStack(spacing: 6) {
-                infoChip("scalemass.fill", "\(listing.weightKg) kg", palette: palette)
-                infoChip("calendar", Self.trDate(listing.pickupDate), palette: palette)
-                if let km = listing.distanceKm { infoChip("location.fill", "\(Int(km)) km", palette: palette) } // yalnız Yakınımdakiler açıkken dolu
-            }
-
-            if let amount = listing.myOfferAmount { // teklif verdiysem: durum rozeti | "Rejected" kırmızı, değilse turuncu (ListingRow ile aynı kural)
-                let rejected = listing.myOfferStatus == "Rejected"
-                Label("Teklifin \(Int(amount)) ₺ · \(rejected ? "Reddedildi" : "Beklemede")", systemImage: rejected ? "xmark.circle.fill" : "hourglass")
-                    .font(.caption.bold())
-                    .foregroundStyle(rejected ? Color.red : palette.accent)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background((rejected ? Color.red : palette.accent).opacity(0.14), in: .capsule)
-            }
-        }
-        .padding(14)
-        .padding(.leading, 4) // soldaki turuncu şeride yer
-        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 16)) // yarı şeffaf: kaydırınca arkadaki yol görünür
-        .overlay(alignment: .leading) { // sol kenarda turuncu şerit: yol kenar çizgisi gibi
-            Capsule().fill(palette.accent).frame(width: 4).padding(.vertical, 14).padding(.leading, 6)
-        }
-        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.cardBorder))
-    }
-
-    // Rota ucu: il kalın, ilçe küçük | uzun adlar biraz küçülür, sığmazsa "…" | maxWidth: ortadaki yola yer kalsın
-    // ⮕ KULLANIM [routeEnd]: kullanır: carrierCard
-    func routeEnd(city: String, district: String, alignment: HorizontalAlignment, palette: Palette) -> some View {
-        VStack(alignment: alignment, spacing: 2) {
-            Text(city).font(.subheadline.bold()).foregroundStyle(palette.title)
-            Text(district).font(.caption2).foregroundStyle(palette.label.opacity(0.7))
-        }
-        .lineLimit(1).minimumScaleFactor(0.8) // [SWIFT] sığmazsa yazıyı %80'e kadar küçült
-        .frame(maxWidth: 112, alignment: alignment == .leading ? .leading : .trailing)
-    }
-
-    // Bilgi çipi: simge + kısa yazı, kapsül zemin
-    // ⮕ KULLANIM [infoChip]: kullanır: carrierCard
-    func infoChip(_ icon: String, _ text: String, palette: Palette) -> some View {
-        Label(text, systemImage: icon)
-            .font(.caption2.weight(.semibold)).foregroundStyle(palette.label.opacity(0.85))
-            .padding(.horizontal, 8).padding(.vertical, 4)
-            .background(palette.fieldSurface, in: .capsule)
-    }
-
-    // "2026-10-31" → "31.10.2026" | beklenmeyen biçimde gelirse olduğu gibi gösterir (ListingRow'daki gibi)
-    // ⮕ KULLANIM [trDate]: kullanır: carrierCard
-    static func trDate(_ text: String) -> String {
-        let parts = text.prefix(10).split(separator: "-") // prefix(10): saat eklenmiş gelse de yalnız tarih kısmı
-        guard parts.count == 3, parts[0].count == 4 else { return text }
-        return "\(parts[2]).\(parts[1]).\(parts[0])"
-    }
-
     // BU GÖRÜNÜM: Taşımacı ekranının TAM EKRAN arka planı: yük teslim alma sahnesi, bir kez oynar (gökyüzü, dağlar, arazi de TruckRoadView'ın içinde çizilir).
     // (14 Kasım) İlk sürümde bütün tır + sürekli akan yol vardı; kullanıcı istemedi: "yalnız dorse, yükün alınması, gelsin olsun dursun".
     // BAĞLANTI: body'deki .background { ... else { carrierBackground } } | ⮕ Design/TruckRoadView.swift
@@ -500,16 +422,5 @@ extension HomeView {
             .id(colorScheme) // açık/koyu değişince sahne yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
             .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
             .allowsHitTesting(false) // [SWIFT] dokunuş almaz → kartlara ve düğmelere gider
-    }
-}
-
-// Rota kartındaki yol çizgisi: yüksekliğin ortasından soldan sağa düz çizgi (kesik görünümü stroke'un dash'i verir)
-// ⮕ KULLANIM [RouteDash]: kullanır: HomeView › carrierCard
-private struct RouteDash: Shape { // Shape [SWIFT]: kodla çizilen şekil
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.midY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
-        return path
     }
 }

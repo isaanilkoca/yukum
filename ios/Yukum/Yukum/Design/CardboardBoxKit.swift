@@ -39,7 +39,19 @@ struct CardboardBoxKit {
     // static func [SWIFT]: nesneye değil türe ait fonksiyon → CardboardBoxKit.prepared(palette:) diye çağrılır
     // NEDEN init değil: bu yapının init'i zaten var (yukarıda); "aynı şeyin async yolu" ayrı adla durunca çağıran hangisini seçtiğini görür.
     // ⮕ KULLANIM [prepared]: kullanır: SceneBackground › RealityView.make, TruckLoadRig › build
+    // ÖNBELLEK (15 Kasım performans): dokular bir kez üretilir, sonra hep aynısı verilir (açık/koyu mod ayrı).
+    //   NEDEN: giriş ekranı, Yük Veren ve Taşımacı ana ekranları aynı dokuları ayrı ayrı yeniden çiziyordu; artık yalnız ilk açılışta.
+    //   Rastgelelik sabit tohumlu olduğu için önbellekteki ile yeniden üretilen birebir aynı → önbellek görüntüyü değiştirmez.
+    private static var cache: [Bool: CardboardBoxKit] = [:]
+
     static func prepared(palette: Palette) async -> CardboardBoxKit {
+        if let cached = cache[palette.isDark] { return cached }
+        let kit = await build(palette: palette)
+        cache[palette.isDark] = kit
+        return kit
+    }
+
+    private static func build(palette: Palette) async -> CardboardBoxKit {
         var textures: [TextureResource] = []
         for print in CardboardPrint.allCases {
             if let texture = await CardboardArt.textureAsync(from: CardboardArt.faceImage(print: print)) { textures.append(texture) }
@@ -57,8 +69,6 @@ struct CardboardBoxKit {
                 material.baseColor = .init(tint: color, texture: .init(texture)) // [SWIFT] renk × doku
                 material.roughness = 0.55                               // karton: saten (ayna gibi değil)
                 material.metallic = 0.0
-                material.clearcoat = .init(floatLiteral: 0.3)           // [SWIFT] üstte ince vernik: ışıkta hafif parlar
-                material.clearcoatRoughness = .init(floatLiteral: 0.25)
                 materials.append(material)
             }
         }
@@ -70,14 +80,14 @@ struct CardboardBoxKit {
         }
         tapeMaterial.baseColor = .init(tint: palette.tape)
         tapeMaterial.roughness = 0.15
-        tapeMaterial.clearcoat = .init(floatLiteral: 1.0)
     }
 
     // BU FONKSİYON: verilen ölçüde (metre) bir koli üretir. Konum, dönüş ve fizik EKLEMEZ; onları çağıran sahne verir.
     // ⮕ KULLANIM [makeBox]: kullanır: SceneRig › spawnBox, TruckLoadRig › buildCargo
     func makeBox(size: SIMD3<Float>) -> ModelEntity {
+        var rng = SeededRandom(size) // SABİT (15 Kasım): aynı ölçüdeki koli hep aynı ton ve aynı etiketle çıkar ⮕ Design/SeededRandom.swift
         let box = ModelEntity(mesh: .generateBox(size: size, cornerRadius: 0.045), // [SWIFT] yuvarlatılmış köşeli kutu
-                              materials: [materials.randomElement() ?? PhysicallyBasedMaterial()])
+                              materials: [materials.randomElement(using: &rng) ?? PhysicallyBasedMaterial()])
 
         // Koli bandı: üst yüzün ortasından geçen ince parlak şerit (kolinin çocuğu → onunla birlikte döner).
         let tape = ModelEntity(mesh: .generateBox(size: [size.x * 0.22, 0.012, size.z * 1.002], cornerRadius: 0.004),
@@ -97,7 +107,7 @@ struct CardboardBoxKit {
         box.addChild(seam)
 
         // Kargo etiketi: kolilerin yarısında, ön yüzün köşesine yapışık beyaz barkodlu etiket.
-        if let labelMaterial, Bool.random(), size.x > 0.45, size.y > 0.3 {
+        if let labelMaterial, Bool.random(using: &rng), size.x > 0.45, size.y > 0.3 {
             let label = ModelEntity(mesh: .generateBox(size: [0.26, 0.17, 0.006], cornerRadius: 0.003), materials: [labelMaterial])
             label.position = [size.x / 2 - 0.19, -size.y / 2 + 0.15, size.z / 2]
             box.addChild(label)

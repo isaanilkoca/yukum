@@ -20,121 +20,116 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // MVVM: bu dosya yalnız GÖRÜNÜM. Liste, bölümler, silme kuralları, sohbet bilgisi ViewModels/OfferListViewModels.swift → MyOffersViewModel'de.
 // BAĞLANTI: Views/HomeView.swift → Taşımacı'nın sağ üst kutu ikonu (rozetli) bu ekranı açar | kalıp: Models/Offers/ → CarrierOffer
 // ⮕ KULLANIM [MyOffersView]: kullanır: HomeView › body
-struct MyOffersView: View { // MyOffersView [BİZİM] ad | View [SWIFT]: bu bir ekran
+struct MyOffersView: View {
+    @State private var viewModel = MyOffersViewModel()
+    @State private var feedback: ActionFeedback? // Taşımacı işlemi → lastik izi ⮕ Design/ActionFeedback.swift
+    @Environment(\.colorScheme) private var colorScheme
 
-    // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
-    // ⮕ KULLANIM [viewModel]: okur: MyOffersView › body, MyOffersView › offerRow() | bağlar(okur+yazar): MyOffersView › body
-    @State private var viewModel = MyOffersViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
-
-    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
-    var body: some View { // ekranın içeriği
-
-        // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar (.navigationDestination(item: $viewModel.chat) için)
+    // GÖRÜNÜM (15 Kasım, L tasarım): ScreenBackground + yarı şeffaf kartlar, durum rozeti, kapsül düğmeler. İŞLEV DEĞİŞMEDİ.
+    // İŞLEM SONRASI (Taşımacı işareti = lastik izi): geri çekme, tutar değiştirme, aşama ilerletme, silme. Yalnız BAŞARIDA.
+    var body: some View {
         @Bindable var viewModel = viewModel
 
-        VStack(spacing: 16) { // VStack [SWIFT]: elemanları alt alta dizer | spacing: aralarındaki boşluk
-
-            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // if let: nil değilse içine gir | doluysa kırmızı yaz, nil ise hiç çizilmez | Text [SWIFT]: yazı gösterir | .foregroundColor [SWIFT]: yazı rengi
-
-            if viewModel.offers.isEmpty { // isEmpty [SWIFT]: liste boş mu | hiç teklif verilmemişse
-                Text("Henüz teklif vermedin.").foregroundColor(.secondary) // .secondary [SWIFT]: gri, ikincil yazı rengi | boş durum mesajı
-            } else { // liste doluysa bölümleri çiz
-
-                // List [SWIFT]: kaydırılabilir satır listesi | Section [SWIFT]: listeyi başlıklı bölümlere ayırır
-                List {
-                    if !viewModel.pendingOffers.isEmpty {
-                        Section("Bekleyenler") { // karar bekleyen teklifler
-                            ForEach(viewModel.pendingOffers) { offer in offerRow(offer) } // ForEach [SWIFT]: listedeki her teklif için bir satır çizer | ⮕ MyOffersViewModel.pendingOffers ← offers ← OfferService.myOffers() → [CarrierOffer]
-                        }
-                    }
-                    if !viewModel.historyOffers.isEmpty {
-                        Section("Geçmiş") { // kabul edilen, reddedilen, tamamlanan, iptal edilen teklifler
-                            ForEach(viewModel.historyOffers) { offer in offerRow(offer) } // ⮕ MyOffersViewModel.historyOffers (kabul/red/tamamlanan/iptal)
-                        }
-                    }
-                }.listStyle(.plain) // .plain: düz beyaz zemin, ince çizgiler | varsayılan gri zemin olurdu | .listStyle [SWIFT]: liste görünüm stili
-                .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | NE İŞE YARAR: kullanıcı güncel veriyi kendisi ister | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
+        List {
+            if let errorMessage = viewModel.errorMessage {
+                FormMessage(text: errorMessage, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden)
+            }
+            if viewModel.offers.isEmpty {
+                EmptyStateCard(icon: "tray", title: "Henüz teklif vermedin.", detail: "Bir ilana teklif verince burada takip edersin.")
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            }
+            if !viewModel.pendingOffers.isEmpty {
+                Section { ForEach(viewModel.pendingOffers) { offer in offerRow(offer) } } header: { sectionTitle("Bekleyenler") }
+            }
+            if !viewModel.historyOffers.isEmpty {
+                Section { ForEach(viewModel.historyOffers) { offer in offerRow(offer) } } header: { sectionTitle("Geçmiş") }
             }
         }
-        .padding() // ekranın kenarlarından boşluk
-        .navigationTitle("Tekliflerim") // [SWIFT] üst çubuk başlığı | geri oku HomeView'daki NavigationStack'ten otomatik gelir | .navigationTitle [SWIFT]: üst çubuk başlığı
-        .navigationBarTitleDisplayMode(.inline) // [SWIFT]: başlığı küçük, ortada gösterir | .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
-        .task { await viewModel.loadAndMarkSeen() } // .task [SWIFT]: ekran HER göründüğünde çalışır | ÖNCE listeyi çek ("Yeni" rozetleri çizilsin), SONRA "görüldü" yap (anasayfadaki rozet söner) | ⮕ önce OfferService.myOffers(), sonra OfferService.markSeen()
-        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil?
-        //   NavigationLink'i List satırının İÇİNE koyarsak satırın her yeri link olur, içindeki "Sohbet" düğmesi çalışmaz.
-        //   Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat değişkenini doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat" | ChatContext Hashable olduğu için SwiftUI seçili öğeyi takip edebilir.
-        .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te
-        // .alert(isPresented:) [SWIFT]: kutu penceresi | Binding(get:set:) [SWIFT]: "editingOffer dolu mu" sorusunu true/false'a çevirir, kapanınca nil yapar
-        // alert içinde TextField kullanmak iOS 16+ | "Kaydet" tıklanma anında editingOffer hâlâ doludur, offer'ı o an alıp saveAmount'a veririz
+        .listStyle(.plain)
+        .themedScreen()
+        .refreshable { await viewModel.load() }
+        .navigationTitle("Tekliflerim")
+        .navigationBarTitleDisplayMode(.inline)
+        .task { await viewModel.loadAndMarkSeen() } // açılınca "görüldü" işaretlenir → ana ekrandaki rozet söner
+        .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }
         .alert("Tutarı değiştir", isPresented: Binding(get: { viewModel.editingOffer != nil }, set: { if !$0 { viewModel.editingOffer = nil } })) {
-            TextField("Yeni tutar (₺)", text: $viewModel.editAmountText).keyboardType(.numberPad) // ⮕ MyOffersViewModel.editAmountText
-            Button("Kaydet") { if let offer = viewModel.editingOffer { Task { await viewModel.saveAmount(offer) } } }
+            TextField("Yeni tutar (₺)", text: $viewModel.editAmountText).keyboardType(.numberPad)
+            Button("Kaydet") {
+                if let offer = viewModel.editingOffer {
+                    run(offer, "Tutar güncellendi") { await viewModel.saveAmount(offer) } // ⮕ MyOffersViewModel.saveAmount
+                }
+            }
             Button("Vazgeç", role: .cancel) {}
+        }
+        .actionFeedback($feedback)
+    }
+
+    // İşlemi çalıştırır; hata yoksa lastik izi geçer (Taşımacı işareti)
+    // kind: .track (olumlu: aşama, tutar) | .unload (olumsuz: geri çekme, silme → kamyondan koli iner)
+    private func run(_ offer: CarrierOffer, _ message: String, kind: ActionFeedback.Kind = .track, _ work: @escaping () async -> Void) {
+        Task {
+            await work()
+            if viewModel.errorMessage == nil { feedback = ActionFeedback(kind, message) }
         }
     }
 
-    // offerRow: tek bir teklifin satırı | @ViewBuilder [SWIFT]: fonksiyon birden çok görünüm döndürebilir
-    // NEDEN fonksiyon: aynı satır iki bölümde (Bekleyenler, Geçmiş) tekrar kullanılıyor
-    // ⮕ KULLANIM [offerRow]: çağırır: MyOffersView › body
+    private func sectionTitle(_ text: String) -> some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        return Text(text).font(.subheadline.weight(.bold)).foregroundStyle(palette.title).textCase(nil) // .textCase(nil) [SWIFT]: bölüm başlığı BÜYÜK HARF olmasın
+    }
+
     @ViewBuilder
     private func offerRow(_ offer: CarrierOffer) -> some View {
-        VStack(alignment: .leading, spacing: 6) { // bir teklifin satırı: alt alta | .leading: sola yasla
-
-            HStack { // HStack [SWIFT]: elemanları yan yana dizer | sol: ilan başlığı + rozet, sağ: tutar
-                Text(offer.listingTitle).font(.headline) // teklif verdiğimiz ilanın başlığı | .headline [SWIFT]: kalın başlık yazısı | .font [SWIFT]: yazı boyutu/stili
-
-                if offer.isNew { // isNew: API'den gelen true/false | true = Yük Veren karar verdi (kabul/red) AMA Taşımacı henüz bu ekranı açıp görmedi | "bildirim" yerine uygulama içi rozet
-                    Text("Yeni").font(.caption2).bold().foregroundColor(.white) // küçük kalın beyaz yazı | .caption2 [SWIFT]: en küçük yazı boyu | .bold [SWIFT]: yazıyı kalın yapar
-                        .padding(.horizontal, 6).padding(.vertical, 2) // .padding [SWIFT]: yazının etrafında boşluk | .horizontal: sağ-sol | .vertical: üst-alt
-                        .background(Color.red).clipShape(Capsule()) // .background: arka plan rengi | .clipShape(Capsule()): köşeleri tam yuvarlar, hap şekli olur | Color [SWIFT]: renk | Capsule [SWIFT]: hap şekli | .background [SWIFT]: arka plan | .clipShape [SWIFT]: görünümü şekle göre keser
+        let palette = Palette(isDark: colorScheme == .dark)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(offer.listingTitle).font(.headline).foregroundStyle(palette.title).lineLimit(1)
+                if offer.isNew { // karar yeni geldi, henüz görülmedi
+                    Text("Yeni").font(.caption2.bold()).foregroundStyle(palette.buttonText)
+                        .padding(.horizontal, 6).padding(.vertical, 2).background(palette.accent, in: .capsule)
                 }
-
-                Spacer() // Spacer [SWIFT]: kalan boşluğu doldurur, sonraki eleman (tutar) sağa yaslanır
-                Text("\(Int(offer.amount)) ₺").bold() // \( ) = yazının içine değişken koyar | Int(): 48000.0 yerine 48000 | .bold(): kalın
+                Spacer()
+                Text("\(Int(offer.amount)) ₺").font(.headline).foregroundStyle(palette.accent)
             }
+            RouteLine(from: offer.fromCityName, fromDistrict: offer.fromDistrictName, to: offer.toCityName, toDistrict: offer.toDistrictName)
+            Text("Yük Veren: \(offer.shipperName) · \(offer.weightKg) kg · \(RouteCard.trDate(offer.pickupDate))").font(.caption).foregroundStyle(palette.label.opacity(0.7))
 
-            Text("\(offer.fromCityName) / \(offer.fromDistrictName) → \(offer.toCityName) / \(offer.toDistrictName)").font(.subheadline).foregroundColor(.secondary) // rota: il / ilçe → il / ilçe
-            Text("Yük Veren: \(offer.shipperName)").font(.caption).foregroundColor(.secondary) // ilanı kimin açtığı | shipperName: backend'in Users tablosundan okuyup gönderdiği ad
-            Text("\(offer.weightKg) kg · \(offer.pickupDate)").font(.caption).foregroundColor(.secondary) // yük ağırlığı · yükleme tarihi
-
-            // durum yazısı | switch [SWIFT]: bir değere göre dallanır, çok if/else yerine okunaklı | offer.status API'den yazı gelir
-            switch offer.status {
-            case "Accepted": Text("Kabul edildi").foregroundColor(.green) // case: değer buna eşitse | Yük Veren kabul etti
-            case "Rejected": Text("Reddedildi").foregroundColor(.red) // Yük Veren reddetti
-            case "Cancelled": Text("İlan kaldırıldı").foregroundColor(.gray) // ilan sahibi ilanı yayından kaldırdı / işi iptal etti | sohbet kilitli, silinebilir
-            case "Withdrawn": Text("Geri çekildi").foregroundColor(.gray) // kendi geri çektiğimiz teklif | sohbet kapalı, silinebilir
-            case "Completed": Text("Tamamlandı").foregroundColor(.gray) // iş bitti, anlaşma tamam | silinebilir
-            default: Text("Beklemede").foregroundColor(.orange) // default: yukarıdakilerin hiçbiri değilse (Pending) | switch'te zorunlu
-            }
-
-            // İş aşaması: yalnız kabul edilmiş işte | Taşımacı düğmeyle ilerletir, Yük Veren aynı aşamayı kendi ekranında izler
-            if offer.status == "Accepted" {
-                Text("Aşama: \(viewModel.stage(offer).title)").font(.subheadline).bold() // ⮕ MyOffersViewModel.stage → JobStage.title
-                if viewModel.canAdvance(offer), let title = viewModel.stage(offer).advanceTitle { // if let [SWIFT]: nil değilse içini aç
-                    Button(title) { Task { await viewModel.advance(offer) } }.buttonStyle(.borderedProminent) // ⮕ MyOffersViewModel.advance → POST /offers/{id}/advance
+            HStack(spacing: 8) {
+                switch offer.status {
+                case "Accepted": StatusBadge(text: "Kabul edildi · \(viewModel.stage(offer).title)", icon: "checkmark.circle.fill", color: palette.success)
+                case "Rejected": StatusBadge(text: "Reddedildi", icon: "xmark.circle.fill", color: palette.danger)
+                case "Cancelled": StatusBadge(text: "İlan kaldırıldı", icon: "trash", color: palette.label.opacity(0.7))
+                case "Withdrawn": StatusBadge(text: "Geri çekildi", icon: "arrow.uturn.backward", color: palette.label.opacity(0.7))
+                case "Completed": StatusBadge(text: "Tamamlandı", icon: "flag.checkered", color: palette.label.opacity(0.75))
+                default: StatusBadge(text: "Beklemede", icon: "hourglass", color: palette.accent)
                 }
+                Spacer(minLength: 0)
             }
 
-            if viewModel.canChat(offer) { // KURAL ViewModel'de: reddedilen teklifte sohbet yok
-                Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → ChatView açılır | .bordered: List'te satırın her yeri düğme olmasın diye stil şart | ⮕ MyOffersViewModel.openChat → ChatContext.forCarrier → .navigationDestination → ChatView | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
+            HStack(spacing: 8) {
+                // Aşama ilerletme (Yüklendi → Yolda → Teslim edildi) | ⮕ MyOffersViewModel.advance → PUT /api/v1/offers/{id}/stage
+                if viewModel.canAdvance(offer), let title = viewModel.stage(offer).advanceTitle {
+                    Button { run(offer, title) { await viewModel.advance(offer) } } label: { Label(title, systemImage: "truck.box.fill") }
+                        .buttonStyle(ChipButtonStyle(.accent))
+                }
+                if viewModel.canChat(offer) {
+                    Button { viewModel.openChat(offer) } label: { Label("Sohbet", systemImage: "bubble.left.and.bubble.right.fill") }.buttonStyle(ChipButtonStyle(.outline))
+                }
             }
         }
-        .padding(.vertical, 4) // satırın üst/alt boşluğu
-        // .swipeActions [SWIFT]: satırı sola kaydırınca çıkan düğmeler
-        .swipeActions {
-            if viewModel.canWithdraw(offer) { // KURAL ViewModel'de: yalnız bekleyen teklif
-                // .tint [SWIFT]: düğme rengi | Task { await … } [SWIFT]: düğme await çağıramaz, Task içinde çağırılır
-                Button("Geri çek") { Task { await viewModel.withdraw(offer) } }.tint(.orange) // ⮕ MyOffersViewModel.withdraw
-                // Tutarı değiştir: alert'i açar (ViewModel.editingOffer dolar) | .tint [SWIFT]: düğme rengi
-                Button("Tutarı değiştir") { viewModel.startEditing(offer) }.tint(.blue) // ⮕ MyOffersViewModel.startEditing
+        .themedRow() // ⮕ Design/FormStyle.swift
+        .swipeActions { // kaydırınca: bekleyende Geri çek / Tutarı değiştir, bitmişte Sil (kurallar ViewModel'de)
+            if viewModel.canWithdraw(offer) {
+                Button("Geri çek") { run(offer, "Teklif geri çekildi", kind: .unload) { await viewModel.withdraw(offer) } }.tint(palette.danger)
+                Button("Tutarı değiştir") { viewModel.startEditing(offer) }.tint(palette.accent)
             }
-            if viewModel.canHide(offer) { // KURAL ViewModel'de: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
-                Button("Sil", role: .destructive) { Task { await viewModel.hide(offer) } } // role: .destructive [SWIFT]: kırmızı "tehlikeli işlem" düğmesi | ⮕ MyOffersViewModel.hide → OfferService.hide → DELETE /api/v1/offers/{id} | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar
+            if viewModel.canHide(offer) {
+                Button("Sil", role: .destructive) { run(offer, "Listeden silindi", kind: .unload) { await viewModel.hide(offer) } }
             }
         }
     }
 }
 
-#Preview { // Xcode önizleme | #Preview [SWIFT]: Xcode'da canlı önizleme (uygulamayı etkilemez)
-    MyOffersView()
+#Preview {
+    NavigationStack { MyOffersView() }
 }

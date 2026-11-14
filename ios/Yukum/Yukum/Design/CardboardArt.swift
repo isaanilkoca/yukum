@@ -39,6 +39,7 @@ enum CardboardArt {
     // ⮕ KULLANIM [faceImage]: kullanır: faceTexture (bekleten yol) | CardboardBoxKit.prepared (bekletmeyen yol)
     static func faceImage(print: CardboardPrint) -> UIImage {
         let side: CGFloat = 512
+        var rng = SeededRandom(seed: 0xC0FFEE) // SABİT TOHUM (15 Kasım): doku her açılışta aynı ⮕ Design/SeededRandom.swift
         return render(side: side) { context in
             let rect = CGRect(x: 0, y: 0, width: side, height: side)
             UIColor.white.setFill()
@@ -46,13 +47,13 @@ enum CardboardArt {
 
             // Karton lifleri: yüzlerce çok silik yatay çizgi → düz renk yerine "kâğıt" dokusu.
             for _ in 0..<1400 {
-                let y = CGFloat.random(in: 0...side)
-                let x = CGFloat.random(in: 0...side)
-                let dark = Bool.random()
-                context.setStrokeColor((dark ? UIColor.black : UIColor.white).withAlphaComponent(.random(in: 0.012...0.035)).cgColor)
-                context.setLineWidth(.random(in: 0.6...1.6))
+                let y = CGFloat.random(in: 0...side, using: &rng)
+                let x = CGFloat.random(in: 0...side, using: &rng)
+                let dark = Bool.random(using: &rng)
+                context.setStrokeColor((dark ? UIColor.black : UIColor.white).withAlphaComponent(.random(in: 0.012...0.035, using: &rng)).cgColor)
+                context.setLineWidth(.random(in: 0.6...1.6, using: &rng))
                 context.move(to: CGPoint(x: x, y: y))
-                context.addLine(to: CGPoint(x: x + .random(in: 30...160), y: y + .random(in: -1...1)))
+                context.addLine(to: CGPoint(x: x + .random(in: 30...160, using: &rng), y: y + .random(in: -1...1, using: &rng)))
                 context.strokePath()
             }
             // Oluklu mukavva izi: düzenli aralıklı çok silik dikey şeritler.
@@ -102,6 +103,7 @@ enum CardboardArt {
     // ⮕ KULLANIM [labelImage]: kullanır: labelTexture | CardboardBoxKit.prepared
     static func labelImage() -> UIImage {
         let width: CGFloat = 390, height: CGFloat = 256
+        var rng = SeededRandom(seed: 0xBA5C0DE) // SABİT TOHUM: barkod hep aynı
         return render(side: width, height: height) { context in
             UIColor(white: 0.97, alpha: 1).setFill()
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
@@ -109,9 +111,9 @@ enum CardboardArt {
             context.fill(CGRect(x: 0, y: 0, width: width, height: 44)) // üst siyah bant
             var x: CGFloat = 26
             while x < width - 30 { // barkod: rastgele kalınlıkta dikey çizgiler
-                let bar = CGFloat.random(in: 2...8)
+                let bar = CGFloat.random(in: 2...8, using: &rng)
                 context.fill(CGRect(x: x, y: 150, width: bar, height: 80))
-                x += bar + .random(in: 2...6)
+                x += bar + .random(in: 2...6, using: &rng)
             }
             context.setFillColor(UIColor(white: 0.35, alpha: 1).cgColor)
             for (row, lineWidth) in [CGFloat(230), 170, 200].enumerated() { // adres satırları

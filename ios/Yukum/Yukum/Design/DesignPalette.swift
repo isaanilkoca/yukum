@@ -34,6 +34,9 @@ struct Palette {
     var title: Color { isDark ? Color(red: 0.98, green: 0.94, blue: 0.86) : Color(red: 0.24, green: 0.17, blue: 0.11) } // krem / koyu kahve
     var accent: Color { Color(red: 1.0, green: 0.58, blue: 0.05) }      // koli bandı turuncusu
     var buttonText: Color { Color(red: 0.10, green: 0.06, blue: 0.02) }
+    // Durum renkleri (15 Kasım, ikincil ekranlar): sistemin parlak yeşil/kırmızısı yerine sıcak aileden
+    var success: Color { isDark ? Color(red: 0.55, green: 0.78, blue: 0.38) : Color(red: 0.30, green: 0.55, blue: 0.20) } // zeytin yeşili: kabul, tamamlandı
+    var danger: Color { isDark ? Color(red: 0.96, green: 0.42, blue: 0.32) : Color(red: 0.78, green: 0.22, blue: 0.14) }  // kiremit kırmızısı: ret, sil, hata
 
     // Form kartı (Design/FormStyle.swift): arka plandan NET ayrılsın diye opak
     var cardSurface: Color { isDark ? Color(red: 0.105, green: 0.085, blue: 0.068) : Color(red: 1.0, green: 0.985, blue: 0.960) }   // kart zemini
@@ -46,7 +49,6 @@ struct Palette {
 
     // 3B sahne: zemin ve ışıklar
     var floor: UIColor { isDark ? UIColor(red: 0.05, green: 0.038, blue: 0.028, alpha: 1) : UIColor(red: 0.90, green: 0.83, blue: 0.71, alpha: 1) }
-    var floorOpacity: Float { isDark ? 0.74 : 0.90 } // zemin ne kadar opaksa yansıma o kadar silik
     var keyLight: UIColor { UIColor(red: 1.0, green: 0.94, blue: 0.85, alpha: 1) } // ana ışık: sıcak beyaz
     var keyIntensity: Float { isDark ? 5200 : 5600 }
     var rimA: UIColor { isDark ? UIColor(red: 1.0, green: 0.62, blue: 0.25, alpha: 1) : UIColor(red: 1.0, green: 0.80, blue: 0.55, alpha: 1) }  // kenar ışığı 1: amber

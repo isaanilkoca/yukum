@@ -13,7 +13,8 @@ import SwiftUI
 
 
 struct PrivacyView: View {
-    @Environment(\.dismiss) private var dismiss // bu sayfayı kapatır swift
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme // GÖRÜNÜM (15 Kasım): bloklar yarı şeffaf kart, zemin ScreenBackground // bu sayfayı kapatır swift
     
     
     
@@ -41,6 +42,7 @@ var body: some View {
             }
             .padding()
         }
+        .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift
         .navigationTitle("Gizlilik ve KVKK")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar{
@@ -51,12 +53,14 @@ var body: some View {
         
 }
     // block: "başlık + açıklama" kalıbı | private func [SWIFT]: yalnız bu dosyada kullanılır | -> some View: bir görünüm döndürür | _ : çağırırken etiket yazılmaz
-      private func block(_ title: String, _ text: String) -> some View {
-          VStack(alignment: .leading, spacing: 6) {
-              Text(title).font(.headline) // kalın başlık
-              Text(text).font(.subheadline).foregroundColor(.secondary) // gri açıklama
-          }
-      }
+    private func block(_ title: String, _ text: String) -> some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        return VStack(alignment: .leading, spacing: 6) {
+            Text(title).font(.headline).foregroundStyle(palette.title)
+            Text(text).font(.subheadline).foregroundStyle(palette.label.opacity(0.8))
+        }
+        .themedCard() // ⮕ Design/FormStyle.swift
+    }
 }
 
 #Preview { PrivacyView() } // #Preview [SWIFT]: Xcode sağ panelinde canlı önizleme

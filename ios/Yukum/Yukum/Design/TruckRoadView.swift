@@ -13,7 +13,7 @@ import UIKit      // [SWIFT] UIColor (3B malzeme ve ışıklar bunu ister)
 
 // ┌─ BAĞLANTI HARİTASI: TruckRoadView.swift ─────────────────────────────────────────
 // │ GELEN     : Views/HomeView.swift › carrierBackground (Taşımacı ana ekranı, tam ekran arka plan)
-// │ GİDEN     : Design/TruckLoadView.swift › TruckModel (aynı Truck.usdz, giriş ekranında önceden yüklenir; ikinci kez yüklenmez)
+// │ GİDEN     : Design/StillScene.swift (bitince resme döner) | Design/TruckLoadView.swift › TruckModel (aynı Truck.usdz, giriş ekranında önceden yüklenir; ikinci kez yüklenmez)
 // │             Design/CardboardBoxKit.swift (koliler) | Design/CargoKit.swift (meyve kasası, zeytinyağı, çuval) | Design/DesignPalette.swift
 // │ TEKNİK    : 2B (SwiftUI Canvas): gökyüzü, yıldızlar, ufuk ışığı, sıradağlar, arazi (hepsi DURAĞAN)
 // │             3B (RealityKit): yol, yükleme alanı, paletler, dorse, yükler, ışıklar
@@ -74,10 +74,9 @@ struct TruckRoadView: View { // TruckRoadView [BİZİM] ad | View [SWIFT]: bu bi
                                                startPoint: CGPoint(x: 0, y: horizon), endPoint: CGPoint(x: 0, y: horizon + (size.height - horizon) * 0.45)))
             }
 
-            // 2) 3B SAHNE: zemini saydam → arkadaki Canvas görünür
-            RealityView { content in // make: 1 kez çalışır
-                content.camera = .virtual // [SWIFT] AR değil: sanal kamera
-                rig.build(in: &content, palette: palette)
+            // 2) 3B SAHNE: zemini saydam → arkadaki Canvas görünür | StillScene: bir kez oynar, bitince resme döner, 3B motor kapanır (PERFORMANS ⮕ Design/StillScene.swift)
+            StillScene { root, _, finish in
+                rig.build(root: root, palette: palette, finish: finish)
             }
         }
     }
@@ -141,10 +140,12 @@ final class TruckRoadRig {
     private var played = false              // koreografi bir kez oynar
     private var cellSize: SIMD3<Float> = [1, 0.8, 1] // kasadaki bir hücrenin ölçüsü (yerdeki yığın da bu ölçüyle dizilir)
 
-    // ⮕ KULLANIM [build]: kullanır: TruckRoadView › RealityView.make (1 kez)
-    func build(in content: inout RealityViewCameraContent, palette: Palette) {
-        let root = Entity()
-        content.add(root)
+    private var remaining = 0 // henüz yerine oturmamış yük sayısı
+    private var finish: (@MainActor () -> Void)? // yükleme bitince StillScene'e "dur" der (sahne resme döner)
+
+    // ⮕ KULLANIM [build]: kullanır: TruckRoadView › StillScene (1 kez)
+    func build(root: Entity, palette: Palette, finish: @escaping @MainActor () -> Void) {
+        self.finish = finish
 
         // 1) IŞIKLAR: Yük Veren dorse sahnesiyle aynı dil (önden güçlü sıcak beyaz + dolgu + iki renkli kenar ışığı)
         let key = Entity()
@@ -272,14 +273,12 @@ final class TruckRoadRig {
                     var glass = PhysicallyBasedMaterial()
                     glass.baseColor = .init(tint: palette.cargoGlass)
                     glass.roughness = 0.05
-                    glass.clearcoat = .init(floatLiteral: 1.0)
                     glass.blending = .transparent(opacity: .init(floatLiteral: 0.07)) // %7 opak (Yük Veren ile aynı)
                     return glass
                 case "glass", "windglass", "full_glass":
                     var glass = PhysicallyBasedMaterial()
                     glass.baseColor = .init(tint: UIColor(red: 0.02, green: 0.02, blue: 0.025, alpha: 1))
                     glass.roughness = 0.04
-                    glass.clearcoat = .init(floatLiteral: 1.0)
                     return glass
                 case "signal_light", "signal_light_001":
                     var lamp = PhysicallyBasedMaterial()
@@ -410,6 +409,7 @@ final class TruckRoadRig {
     //   → yığından kalkan yükün üstünde ya da önünde yük kalmaz; kasada da yük, henüz boş hücrelerin içinden kayar.
     // ⮕ KULLANIM [buildCargo]: kullanır: build
     private func buildCargo(trailerShell shell: BoundingBox, root: Entity, palette: Palette) async -> [Load] {
+        var rng = SeededRandom(seed: 0x7A5E1E) // SABİT TOHUM (15 Kasım, kullanıcı kararı): yükler her açılışta AYNI tür, AYNI yerde ⮕ Design/SeededRandom.swift
         let innerMin = shell.min + SIMD3<Float>(0.14, 0.10, 0.12)
         let cell = cellSize
         let fit = cell * 0.94 // aralarda ince boşluk
@@ -432,7 +432,7 @@ final class TruckRoadRig {
         let cargoKit = await CargoKit.prepared(palette: palette)      // ⮕ Design/CargoKit.swift
         var boxes: [(entity: Entity, size: SIMD3<Float>)] = []
         for _ in 0..<3 {
-            let size = cell * SIMD3<Float>(.random(in: 0.86...0.96), .random(in: 0.84...0.97), .random(in: 0.86...0.96))
+            let size = cell * SIMD3<Float>(.random(in: 0.86...0.96, using: &rng), .random(in: 0.84...0.97, using: &rng), .random(in: 0.86...0.96, using: &rng))
             boxes.append((boxKit.makeBox(size: size), size))
             await Task.yield() // [SWIFT] ekran çizimi araya girsin
         }
@@ -460,21 +460,21 @@ final class TruckRoadRig {
             for h in 0..<grid.height {
                 for w in 0..<grid.width {
                     let item: Entity, size: SIMD3<Float>
-                    switch layers[min(h, layers.count - 1)].randomElement()! {
+                    switch layers[min(h, layers.count - 1)].randomElement(using: &rng)! {
                     case .box:
-                        let template = boxes.randomElement()!
+                        let template = boxes.randomElement(using: &rng)!
                         item = template.entity.clone(recursive: true); size = template.size
                     case .kind(let kind):
                         item = kinds[kind]!.clone(recursive: true); size = fit
                     }
                     let cellMin = innerMin + cell * SIMD3<Float>(Float(l), Float(h), Float(w))
-                    let home = Transform(rotation: simd_quatf(angle: .random(in: -0.04...0.04), axis: [0, 1, 0]), // elle dizilmiş gibi hafif yamuk
+                    let home = Transform(rotation: simd_quatf(angle: .random(in: -0.04...0.04, using: &rng), axis: [0, 1, 0]), // elle dizilmiş gibi hafif yamuk
                                          translation: [cellMin.x + cell.x / 2, cellMin.y + size.y / 2, cellMin.z + cell.z / 2])
 
                     let p = picks[k]
                     var base = stackSlot(x: p.x, z: p.z, y: p.y, rearX: shell.max.x)
                     base.y += size.y / 2
-                    let ground = Transform(rotation: simd_quatf(angle: .random(in: -0.05...0.05), axis: [0, 1, 0]), translation: base)
+                    let ground = Transform(rotation: simd_quatf(angle: .random(in: -0.05...0.05, using: &rng), axis: [0, 1, 0]), translation: base)
 
                     item.transform = ground // başta yerde, yığında
                     root.addChild(item)
@@ -498,7 +498,8 @@ final class TruckRoadRig {
         // 1) YANAŞMA: geri geri, yavaşlayarak durur (easeOut) | holder yalnız konumla oynar; yön pivot'ta
         holder.move(to: Transform(translation: .zero), relativeTo: holder.parent, duration: Self.arriveSeconds, timingFunction: .easeOut)
 
-        // 2) YÜKLEME
+        // 2) YÜKLEME | remaining: biten yük sayacı → hepsi oturunca finish (sahne resme döner, 3B kapanır)
+        remaining = loads.count
         let doorX = (loads.map { $0.home.translation.x }.max() ?? 0) + 1.0 // kapının hemen dışı
         for (order, load) in loads.enumerated() {
             Task { @MainActor in
@@ -523,6 +524,9 @@ final class TruckRoadRig {
 
                 let slide = Double(0.18 + (doorX - h.x) * 0.06)
                 e.move(to: load.home, relativeTo: parent, duration: slide, timingFunction: .easeOut) // sona doğru yavaşlar: "yerine oturdu"
+                try? await Task.sleep(for: .seconds(slide))
+                self.remaining -= 1
+                if self.remaining == 0 { self.finish?(); self.finish = nil } // 3) DURDU → ⮕ StillScene: fotoğraf + 3B kapanır
             }
         }
     }

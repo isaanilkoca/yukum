@@ -88,7 +88,19 @@ struct CargoKit {
 
     // BEKLETMEYEN KURULUM: dokular tek tek, aralarında ekrana sıra vererek üretilir.
     // ⮕ KULLANIM [prepared]: kullanır: TruckLoadRig › buildCargo, SceneBackground › RealityView.make
+    // ÖNBELLEK (15 Kasım performans): dokular bir kez üretilir, sonra hep aynısı verilir (açık/koyu mod ayrı).
+    //   NEDEN: giriş ekranı, Yük Veren ve Taşımacı ana ekranları aynı dokuları ayrı ayrı yeniden çiziyordu; artık yalnız ilk açılışta.
+    //   Rastgelelik sabit tohumlu olduğu için önbellekteki ile yeniden üretilen birebir aynı → önbellek görüntüyü değiştirmez.
+    private static var cache: [Bool: CargoKit] = [:]
+
     static func prepared(palette: Palette) async -> CargoKit {
+        if let cached = cache[palette.isDark] { return cached }
+        let kit = await build(palette: palette)
+        cache[palette.isDark] = kit
+        return kit
+    }
+
+    private static func build(palette: Palette) async -> CargoKit {
         // RESİMLER ARKA PLANDA ÇİZİLİR (14 Kasım gecikme düzeltmesi): projede her şey varsayılan olarak ana iş parçacığında (DefaultActorIsolation = MainActor);
         //   ~5000 nokta/çizgi çizmek giriş ekranını donduruyordu. Task.detached [SWIFT]: işi ana iş parçacığından AYRI çalıştırır; ekran bu sırada akar.
         //   Art fonksiyonları "nonisolated" → ana iş parçacığına bağlı değil, arka planda çağrılabilir.
@@ -110,7 +122,7 @@ struct CargoKit {
             m.baseColor = texture.map { .init(tint: color, texture: .init($0)) } ?? .init(tint: color)
             m.roughness = .init(floatLiteral: rough)
             m.metallic = .init(floatLiteral: metal)
-            if coat > 0 { m.clearcoat = .init(floatLiteral: coat); m.clearcoatRoughness = .init(floatLiteral: 0.05) } // [SWIFT] ince parlak vernik
+            _ = coat // 15 Kasım (performans, kullanıcı: "ayna efektini kaldır"): parlak vernik (clearcoat) katmanı KALDIRILDI; ek yansıma hesabı yapmasın
             if opacity < 1 { m.blending = .transparent(opacity: .init(floatLiteral: opacity)) }                     // [SWIFT] yarı saydam
             return m
         }
@@ -155,7 +167,7 @@ struct CargoKit {
             kit.group([(kit.unitSphere, skins, kit.skins[kind]!), (kit.unitSphere, greens, kit.leaf), (kit.unitCylinder, stems, kit.stem)])
         }
     }
-    private func addFruit(_ kind: FruitKind, diameter d: Float, frame: simd_float4x4, into p: inout FruitParts) {
+    private func addFruit(_ kind: FruitKind, diameter d: Float, frame: simd_float4x4, into p: inout FruitParts, rng: inout SeededRandom) {
         // local: meyvenin kendi ekseninde bir parça (ölçek, dönüş, konum) → frame ile sahneye taşınır
         func local(_ scale: SIMD3<Float>, _ pos: SIMD3<Float> = .zero, _ rot: simd_quatf = simd_quatf(angle: 0, axis: [0, 1, 0])) -> simd_float4x4 {
             frame * Transform(scale: scale, rotation: rot, translation: pos).matrix
@@ -167,11 +179,11 @@ struct CargoKit {
         case .orange:
             p.skins.append(local(SIMD3(repeating: d)))
             p.stems.append(local([d * 0.09, d * 0.06, d * 0.09], [0, d * 0.5, 0]))
-            if Float.random(in: 0...1) < 0.25 { addLeaf(at: d * 0.5) }
+            if Float.random(in: 0...1, using: &rng) < 0.25 { addLeaf(at: d * 0.5) }
         case .lemon: // uzun ekseni X: gövde + iki uçta sivri meme
             p.skins.append(local([d * 1.28, d, d]))
             for side: Float in [-1, 1] { p.skins.append(local([d * 0.3, d * 0.24, d * 0.24], [side * d * 0.66, 0, 0])) }
-            if Float.random(in: 0...1) < 0.2 { addLeaf(at: d * 0.45) }
+            if Float.random(in: 0...1, using: &rng) < 0.2 { addLeaf(at: d * 0.45) }
         case .tomato: // basık gövde + 5 kollu çanak + sap
             p.skins.append(local([d, d * 0.8, d]))
             for k in 0..<5 {
@@ -191,6 +203,7 @@ struct CargoKit {
     // TEK KASA (giriş ekranı, kullanıcı isteği: "kasaların içi görünsün"): çıtalar SEYREK ve ince (tek sıra, alçakta),
     //   meyveler %25 daha büyük ve kasanın dibinden ağzına kadar dolu, üstte tepeleme → kasa düşerken içi net görünür.
     private func crates(size s: SIMD3<Float>, fruit kind: FruitKind) -> Entity {
+        var rng = SeededRandom(s, salt: UInt64(kind.size.bitPattern)) // SABİT (15 Kasım): aynı kasa hep aynı meyve dizilişiyle ⮕ Design/SeededRandom.swift
         var boards: [simd_float4x4] = []
         var fruits = FruitParts()
         let layers = s.y > 0.5 ? 2 : 1          // dorse hücresi uzun → üst üste 2 kasa | giriş ekranı → tek kasa
@@ -221,20 +234,20 @@ struct CargoKit {
             // Kat sayısı: tek kasada çıtalar seyrek → dipten ağza kadar dolu olmalı | dorsede yalnız üst kat görünür → tek kat yeter
             let fruitLayers = single ? max(1, Int((topY - (y0 + 0.025 + r)) / (r * 1.7)) + 1) : 1
             func place(_ pos: SIMD3<Float>) {
-                let yaw = simd_quatf(angle: .random(in: 0...(2 * .pi)), axis: [0, 1, 0])
-                let tilt = simd_quatf(angle: .random(in: -0.25...0.25), axis: [1, 0, 0]) // hafif yatık: hepsi aynı duruşta olmasın
-                addFruit(kind, diameter: r * 2 * .random(in: 0.88...1.0), frame: Transform(rotation: yaw * tilt, translation: pos).matrix, into: &fruits)
+                let yaw = simd_quatf(angle: .random(in: 0...(2 * .pi), using: &rng), axis: [0, 1, 0])
+                let tilt = simd_quatf(angle: .random(in: -0.25...0.25, using: &rng), axis: [1, 0, 0]) // hafif yatık: hepsi aynı duruşta olmasın
+                addFruit(kind, diameter: r * 2 * .random(in: 0.88...1.0, using: &rng), frame: Transform(rotation: yaw * tilt, translation: pos).matrix, into: &fruits, rng: &rng)
             }
             for level in 0..<fruitLayers {
                 let y = topY - Float(level) * r * 1.7
                 let shift: Float = level.isMultiple(of: 2) ? 0 : 0.25 // alt katlar kaydırılır: gerçek istif gibi aralara oturur
                 for i in 0..<nx { for j in 0..<nz {
-                    place([-s.x / 2 + 0.03 + step.x * (Float(i) + 0.5 + shift) + .random(in: -0.01...0.01), y,
-                           -s.z / 2 + 0.03 + step.y * (Float(j) + 0.5) + .random(in: -0.01...0.01)])
+                    place([-s.x / 2 + 0.03 + step.x * (Float(i) + 0.5 + shift) + .random(in: -0.01...0.01, using: &rng), y,
+                           -s.z / 2 + 0.03 + step.y * (Float(j) + 0.5) + .random(in: -0.01...0.01, using: &rng)])
                 } }
             }
             if isTop { // en üst kasada ikinci kat: ortası tepe yapar (tek kasada tam, dorsede seyrek)
-                for i in 1..<nx { for j in 1..<nz where single || Bool.random() {
+                for i in 1..<nx { for j in 1..<nz where single || Bool.random(using: &rng) {
                     place([-s.x / 2 + 0.03 + step.x * Float(i), topY + r * 1.1, -s.z / 2 + 0.03 + step.y * Float(j)])
                 } }
             }
@@ -332,11 +345,12 @@ struct CargoKit {
 
     // ─── ÇUVALLAR: üst üste 3 yatık çuval (örgü dokulu), biri hafif yamuk; üstlerinde kırmızı-kahve baskı bandı ───
     private func sacks(size s: SIMD3<Float>) -> Entity {
+        var rng = SeededRandom(s, salt: 0x5AC) // SABİT: çuvalların yamukluğu hep aynı
         var bags: [simd_float4x4] = [], prints: [simd_float4x4] = []
         let bagH = s.y / 3
         for layer in 0..<3 {
-            let yaw = Float.random(in: -0.06...0.06)
-            let c = SIMD3<Float>(.random(in: -0.02...0.02), -s.y / 2 + bagH * (Float(layer) + 0.5), .random(in: -0.02...0.02))
+            let yaw = Float.random(in: -0.06...0.06, using: &rng)
+            let c = SIMD3<Float>(.random(in: -0.02...0.02, using: &rng), -s.y / 2 + bagH * (Float(layer) + 0.5), .random(in: -0.02...0.02, using: &rng))
             bags.append(box([s.x * 0.94, bagH * 0.98, s.z * 0.9], at: c, yaw: yaw))
             prints.append(box([s.x * 0.4, 0.012, s.z * 0.34], at: c + [0, bagH * 0.47, 0], yaw: yaw)) // üst yüzdeki baskı
         }
@@ -414,32 +428,35 @@ struct CargoKit {
     enum Art {
         // Portakal/limon kabuğu: binlerce minik gözenek (koyu nokta) + aralarda parlak benekler
         nonisolated static func peel() -> UIImage {
-            draw { ctx, size in
-                for _ in 0..<2200 { dot(ctx, size, radius: .random(in: 0.7...1.8), gray: .random(in: 0.72...0.88), alpha: 0.55) }
-                for _ in 0..<500 { dot(ctx, size, radius: .random(in: 0.6...1.2), gray: 1, alpha: 0.7) }
+            var rng = SeededRandom(seed: 0x9EE1)
+            return draw { ctx, size in
+                for _ in 0..<2200 { dot(ctx, size, radius: .random(in: 0.7...1.8, using: &rng), gray: .random(in: 0.72...0.88, using: &rng), alpha: 0.55, rng: &rng) }
+                for _ in 0..<500 { dot(ctx, size, radius: .random(in: 0.6...1.2, using: &rng), gray: 1, alpha: 0.7, rng: &rng) }
             }
         }
         // Avokado kabuğu: iri pütürler (açık tepe + koyu çukur) → mat, engebeli görünüm
         nonisolated static func avocadoSkin() -> UIImage {
-            draw(base: 0.82) { ctx, size in
-                for _ in 0..<900 { dot(ctx, size, radius: .random(in: 1.5...3.5), gray: .random(in: 0.45...0.62), alpha: 0.6) }
-                for _ in 0..<700 { dot(ctx, size, radius: .random(in: 1...2.5), gray: 1, alpha: 0.5) }
+            var rng = SeededRandom(seed: 0xA70C)
+            return draw(base: 0.82) { ctx, size in
+                for _ in 0..<900 { dot(ctx, size, radius: .random(in: 1.5...3.5, using: &rng), gray: .random(in: 0.45...0.62, using: &rng), alpha: 0.6, rng: &rng) }
+                for _ in 0..<700 { dot(ctx, size, radius: .random(in: 1...2.5, using: &rng), gray: 1, alpha: 0.5, rng: &rng) }
             }
         }
         // Ahşap damarı: dalgalı yatay çizgiler + birkaç budak
         nonisolated static func woodGrain() -> UIImage {
-            draw(base: 0.92) { ctx, size in
-                for line in stride(from: CGFloat(0), to: size, by: .random(in: 4...9)) {
+            var rng = SeededRandom(seed: 0x700D)
+            return draw(base: 0.92) { ctx, size in
+                for line in stride(from: CGFloat(0), to: size, by: .random(in: 4...9, using: &rng)) {
                     let path = UIBezierPath()
-                    let amp = CGFloat.random(in: 1...4), phase = CGFloat.random(in: 0...6)
+                    let amp = CGFloat.random(in: 1...4, using: &rng), phase = CGFloat.random(in: 0...6, using: &rng)
                     path.move(to: CGPoint(x: 0, y: line))
                     for x in stride(from: CGFloat(0), through: size, by: 8) { path.addLine(to: CGPoint(x: x, y: line + sin(x / 30 + phase) * amp)) }
-                    ctx.setStrokeColor(UIColor(white: .random(in: 0.6...0.8), alpha: 0.6).cgColor)
-                    ctx.setLineWidth(.random(in: 0.8...2.2))
+                    ctx.setStrokeColor(UIColor(white: .random(in: 0.6...0.8, using: &rng), alpha: 0.6).cgColor)
+                    ctx.setLineWidth(.random(in: 0.8...2.2, using: &rng))
                     ctx.addPath(path.cgPath); ctx.strokePath()
                 }
                 for _ in 0..<3 { // budak
-                    let c = CGPoint(x: .random(in: 0...size), y: .random(in: 0...size))
+                    let c = CGPoint(x: .random(in: 0...size, using: &rng), y: .random(in: 0...size, using: &rng))
                     ctx.setFillColor(UIColor(white: 0.55, alpha: 0.7).cgColor)
                     ctx.fillEllipse(in: CGRect(x: c.x - 6, y: c.y - 3, width: 12, height: 6))
                 }
@@ -447,11 +464,12 @@ struct CargoKit {
         }
         // Çuval bezi: kare örgü (yatay + dikey kalın lifler)
         nonisolated static func burlap() -> UIImage {
-            draw(base: 0.85) { ctx, size in
+            var rng = SeededRandom(seed: 0xB0A9)
+            return draw(base: 0.85) { ctx, size in
                 for i in stride(from: CGFloat(0), to: size, by: 4) {
-                    ctx.setFillColor(UIColor(white: .random(in: 0.65...0.8), alpha: 0.5).cgColor)
+                    ctx.setFillColor(UIColor(white: .random(in: 0.65...0.8, using: &rng), alpha: 0.5).cgColor)
                     ctx.fill(CGRect(x: 0, y: i, width: size, height: 1.6))
-                    ctx.setFillColor(UIColor(white: .random(in: 0.95...1.0), alpha: 0.5).cgColor)
+                    ctx.setFillColor(UIColor(white: .random(in: 0.95...1.0, using: &rng), alpha: 0.5).cgColor)
                     ctx.fill(CGRect(x: i, y: 0, width: 1.6, height: size))
                 }
             }
@@ -469,8 +487,8 @@ struct CargoKit {
                 pattern(ctx, size)
             }
         }
-        nonisolated private static func dot(_ ctx: CGContext, _ size: CGFloat, radius: CGFloat, gray: CGFloat, alpha: CGFloat) {
-            let c = CGPoint(x: .random(in: 0...size), y: .random(in: 0...size))
+        nonisolated private static func dot(_ ctx: CGContext, _ size: CGFloat, radius: CGFloat, gray: CGFloat, alpha: CGFloat, rng: inout SeededRandom) {
+            let c = CGPoint(x: .random(in: 0...size, using: &rng), y: .random(in: 0...size, using: &rng))
             ctx.setFillColor(UIColor(white: gray, alpha: alpha).cgColor)
             ctx.fillEllipse(in: CGRect(x: c.x - radius, y: c.y - radius, width: radius * 2, height: radius * 2))
         }

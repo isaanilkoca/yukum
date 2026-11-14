@@ -29,17 +29,23 @@
 //  TapedBoxBackground      koli sahnesi + bantlar birlikte: ekranlar bunu arka plan olarak kullanır (Views/LoginView).
 //  TruckLoadView           Yük Veren ana ekranı: hazır modelin yalnız dorsesi, şeffaf kasaya yükler dizilir (+ TruckModel: modeli bir kez yükler).
 //  TruckRoadView           Taşımacı ana ekranı: dorse yoldan yükleme alanına geri geri yanaşır, yerdeki yığın arka kapıdan içeri alınır; bir kez oynar, durur. Ufuk 2B Canvas, sahne 3B.
+//  ActionFeedback          işlem sonrası tek seferlik animasyon: Yük Veren → koli kapanır + bantlanır | Taşımacı → lastik izi. + ScreenBackground (ikincil ekran zemini).
+//  StillScene              PERFORMANS: 3B sahne bir kez oynar, bitince RESME döner ve 3B motor kapanır (ARView + snapshot). Üç sahne de bunu kullanır.
+//  SeededRandom            sabit tohumlu "rastgele": yığın, yükler ve dokular her açılışta birebir aynı (kullanıcı kararı 15 Kasım).
+//  FormStyle (alt kısım)   ikincil ekran parçaları: themedCard / themedRow / themedScreen, ChipButtonStyle, StatusBadge, EmptyStateCard, RouteLine.
 //
 // ── KOLİ NASIL YAPILDI (RealityKit) ─────────────────────────────────────────────
 //   1. ŞEKİL    : MeshResource.generateBox(size:cornerRadius:) → köşesi yuvarlatılmış kutu. Hazır fonksiyon; ölçüyü biz veririz.
 //   2. MALZEME  : PhysicallyBasedMaterial → renk (tint) × doku (CardboardArt'ın çizdiği resim), pürüz (roughness), vernik (clearcoat).
+//                 (15 Kasım: parlak vernik/clearcoat katmanı performans için kaldırıldı.)
 //                 "Kaliteli" görüntü buradan gelir: yüzey ışığa gerçek karton gibi tepki verir.
 //   3. AYRINTI  : bant, bandın sarkan uçları, kapak yarığı, kargo etiketi = koliye ÇOCUK olarak eklenmiş ince kutular.
 //                 Çocuk oldukları için koliyle birlikte döner/düşer.
-//   4. FİZİK    : CollisionComponent ("şeklim bu, çarpışırım") + PhysicsBodyComponent(mode: .dynamic) ("ağırlığım var, düşerim").
-//                 Düşme, çarpma, yığılma, durma: hepsini motor hesaplar. Biz yalnız koliyi yukarıda bir noktaya bırakırız.
-//   5. YANSIMA  : her kolinin fiziksiz bir kopyası, y ekseni ters çevrilmiş bir atanın içinde → zeminin altında baş aşağı durur.
-//                 Zemin yarı saydam olduğu için "parlak zemindeki yansıma" gibi görünür. Her karede kopya = asıl.
+//   4. FİZİK    : CollisionComponent + PhysicsBodyComponent(mode: .dynamic): düşme, çarpma, yığılma motor tarafından (dağınık görünüm).
+//                 15 Kasım: bırakma noktaları sabit tohumlu ve hep yığının EN ALÇAK yerinin üstünden (BoxSceneRig.lowestSpot) → kule olmaz.
+//                 KAYIT: fizik bir kez çalıştırılıp kaydedildi (Design/BoxFall.json, 30 kare/sn). Uygulama her açılışta bu kaydı OYNATIR,
+//                 fizik çalışmaz → düşüş her seferinde birebir aynı. Yeniden kayıt: simülatörde "-recordFall" argümanı (BoxSceneRig başındaki not).
+//   5. YANSIMA  : (15 Kasım'da kaldırıldı, performans) zemin artık opak, ters kopya yok.
 //   6. IŞIK     : önden sıcak beyaz ana ışık (gölge de bundan), arkadan/yandan renkli spotlar (kenarlarda parlak çizgi).
 //
 // ── BANT NASIL YAPILDI (yalnız SwiftUI) ─────────────────────────────────────────

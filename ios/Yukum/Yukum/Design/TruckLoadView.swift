@@ -13,8 +13,7 @@ import UIKit      // [SWIFT] UIColor buradan gelir
 // ┌─ BAĞLANTI HARİTASI: TruckLoadView.swift ─────────────────────────────────────────
 // │ GELEN     : Views/HomeView.swift › shipperBackground (Yük Veren ana ekranı, tam ekran arka plan)
 // │             Views/LoginView.swift › TruckModel.preload() (modeli giriş ekranındayken önceden yükler)
-// │             TruckLoadPreview → App/ContentView.swift "-truckPreview" (yalnız DEBUG)
-// │ GİDEN     : Design/Truck.usdz (hazır 3B model: "Truck" by ROY, Sketchfab, CC-BY 4.0 → uygulamada atıf GEREKİR: Views/PrivacyView › Atıflar)
+// │ GİDEN     : Design/StillScene.swift (bitince resme döner) | Design/Truck.usdz (hazır 3B model: "Truck" by ROY, Sketchfab, CC-BY 4.0 → uygulamada atıf GEREKİR: Views/PrivacyView › Atıflar)
 // │             Design/CardboardBoxKit.swift (karton koli: yüklerin çoğu) | Design/CargoKit.swift (meyve/sebze kasaları, zeytinyağı tenekesi ve şişesi, çuval) | Design/DesignPalette.swift
 // │ TEKNİK    : RealityKit. Model HAZIR (kodla çizilmedi); kod yalnız kabini çıkarır, boyar, kasayı şeffaflaştırır, yükleri dizer.
 // │ REHBER    : Design/00_Rehber_Design.swift
@@ -50,7 +49,7 @@ enum TruckModel {
     }
 }
 
-// ⮕ KULLANIM [TruckLoadView]: kullanır: HomeView › shipperBackground, TruckLoadPreview › body
+// ⮕ KULLANIM [TruckLoadView]: kullanır: HomeView › shipperBackground
 struct TruckLoadView: View { // TruckLoadView [BİZİM] ad | View [SWIFT]: bu bir ekran parçası
     var progress: Double // kasanın doluluk oranı: 0 = boş, 1 = tam dolu
 
@@ -59,11 +58,10 @@ struct TruckLoadView: View { // TruckLoadView [BİZİM] ad | View [SWIFT]: bu bi
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
-        RealityView { content in // make: 1 kez çalışır
-            content.camera = .virtual // [SWIFT] AR değil: sanal kamera
-            rig.build(in: &content, palette: Palette(isDark: colorScheme == .dark))
-            rig.setProgress(progress)
-        } update: { _ in // update [SWIFT]: bu görünümün okuduğu bir değer (progress) değişince çalışır
+        // StillScene: bir kez oynar (yükler iner), bitince resme döner, 3B motor kapanır (PERFORMANS 15 Kasım ⮕ Design/StillScene.swift)
+        //   Önceden RealityView'dı: yükler indikten sonra da saniyede 60 kez yeniden çiziyordu.
+        StillScene { root, _, finish in
+            rig.build(root: root, palette: Palette(isDark: colorScheme == .dark), finish: finish)
             rig.setProgress(progress)
         }
     }
@@ -81,10 +79,12 @@ final class TruckLoadRig {
     private var shownCount = 0       // şu an görünen yük sayısı
     private var pendingProgress = 0.0 // model gelmeden istenen progress burada bekler
 
-    // ⮕ KULLANIM [build]: kullanır: TruckLoadView › RealityView.make (1 kez)
-    func build(in content: inout RealityViewCameraContent, palette: Palette) {
-        let root = Entity()
-        content.add(root)
+    private var finish: (@MainActor () -> Void)? // son yük oturunca StillScene'e "dur" der
+    private var landing = 0                       // havada (inmekte) olan yük sayısı
+
+    // ⮕ KULLANIM [build]: kullanır: TruckLoadView › StillScene (1 kez)
+    func build(root: Entity, palette: Palette, finish: @escaping @MainActor () -> Void) {
+        self.finish = finish
 
         // 1) SAHNE ZEMİNİ YOK (14 Kasım, kullanıcı isteği): önceden dorse yuvarlak bir podyumun üstündeydi → "ayrı bir sahne" gibi duruyordu.
         //    Şimdi dorse doğrudan ekranın arka planında (HomeView'ın renk geçişi üstünde) durur.
@@ -118,9 +118,7 @@ final class TruckLoadRig {
 
         // 4) MODEL + YÜKLER: model önceden yüklendiyse hemen gelir; yükler bekletmeden hazırlanır.
         Task { @MainActor in
-            PerfLog.mark("dorse: sahne kuruldu (make)") // GEÇİCİ ölçüm ⮕ App/PerfLog.swift
             guard let truck = await TruckModel.instance() else { return }
-            PerfLog.mark("dorse: model hazır (önceden yüklendiyse ~0)")
             let holder = Entity() // modeli saran boş kutu: konum/ölçek buna verilir
             holder.addChild(truck)
             self.trailerOnly(truck)
@@ -136,12 +134,10 @@ final class TruckLoadRig {
 
             let cargoShell = self.repaint(truck, palette: palette) // boyar; kasa parçasını (bodycolour) geri verir
             root.addChild(holder)
-            PerfLog.mark("dorse: kabin çıkarıldı, boyandı")
 
             if let cargoShell {
                 await self.buildCargo(inside: cargoShell.visualBounds(relativeTo: holder), parent: holder, palette: palette)
             }
-            PerfLog.mark("dorse: 42 yük kuruldu")
             self.setProgress(self.pendingProgress) // model gelmeden istenen doluluk şimdi uygulanır
         }
     }
@@ -186,14 +182,12 @@ final class TruckLoadRig {
                     var glass = PhysicallyBasedMaterial()
                     glass.baseColor = .init(tint: palette.cargoGlass)
                     glass.roughness = 0.05
-                    glass.clearcoat = .init(floatLiteral: 1.0)
                     glass.blending = .transparent(opacity: .init(floatLiteral: 0.07)) // [SWIFT] %7 opak | %14-16'da yükler soluk (sütlü) görünüyordu
                     return glass
                 case "glass", "windglass", "full_glass": // camlar: koyu füme
                     var glass = PhysicallyBasedMaterial()
                     glass.baseColor = .init(tint: UIColor(red: 0.02, green: 0.02, blue: 0.025, alpha: 1))
                     glass.roughness = 0.04
-                    glass.clearcoat = .init(floatLiteral: 1.0)
                     return glass
                 case "signal_light", "signal_light_001": // lambalar: kendi ışığını yayar
                     var lamp = PhysicallyBasedMaterial()
@@ -219,6 +213,7 @@ final class TruckLoadRig {
     //   clone(recursive:) [SWIFT]: şekil ve malzeme PAYLAŞILIR, yeniden üretilmez → çok ucuz. Kalıplar arasında Task.yield() → ekran nefes alır.
     // ⮕ KULLANIM [buildCargo]: kullanır: build
     private func buildCargo(inside shell: BoundingBox, parent: Entity, palette: Palette) async {
+        var rng = SeededRandom(seed: 0xD0125E) // SABİT TOHUM (15 Kasım, kullanıcı kararı): yükler her açılışta AYNI tür, AYNI yerde ⮕ Design/SeededRandom.swift
         // Kasa çerçevesi: sınır kutusunun 12 kenarına ince ışıklı çubuklar → şeffaf kasanın hatları belli olur.
         let edgeMaterial = UnlitMaterial(color: palette.cargoEdge) // [SWIFT] ışıktan etkilenmez → hep parlak
         let t: Float = 0.04 // çubuk kalınlığı
@@ -248,10 +243,9 @@ final class TruckLoadRig {
         enum Slot { case box, kind(CargoKind) } // [SWIFT] iç içe tür: bu fonksiyona özel | box = karton koli
         let boxKit = await CardboardBoxKit.prepared(palette: palette) // ⮕ Design/CardboardBoxKit.swift (koli dokuları, bekletmeden)
         let cargoKit = await CargoKit.prepared(palette: palette)      // ⮕ Design/CargoKit.swift (ürün dokuları arka planda çizilir)
-        PerfLog.mark("dorse: dokular hazır")
         var boxes: [(entity: Entity, size: SIMD3<Float>)] = []
         for _ in 0..<3 {
-            let size = cell * SIMD3<Float>(.random(in: 0.86...0.96), .random(in: 0.84...0.97), .random(in: 0.86...0.96))
+            let size = cell * SIMD3<Float>(.random(in: 0.86...0.96, using: &rng), .random(in: 0.84...0.97, using: &rng), .random(in: 0.86...0.96, using: &rng))
             boxes.append((boxKit.makeBox(size: size), size))
             await Task.yield() // [SWIFT] "sıranı ver": bekleyen ekran çizimi araya girer
         }
@@ -260,7 +254,6 @@ final class TruckLoadRig {
             kinds[kind] = cargoKit.make(kind, size: fit)
             await Task.yield()
         }
-        PerfLog.mark("dorse: yük kalıpları hazır")
 
         // Katlara göre olası yükler | her katta koli ağırlıkta (~%60) | altta ağır ürünler, üstte meyve kasaları
         let layers: [[Slot]] = [
@@ -274,16 +267,16 @@ final class TruckLoadRig {
             for h in 0..<grid.height {
                 for w in 0..<grid.width {
                     let item: Entity, size: SIMD3<Float>
-                    switch layers[min(h, layers.count - 1)].randomElement()! {
+                    switch layers[min(h, layers.count - 1)].randomElement(using: &rng)! {
                     case .box:
-                        let template = boxes.randomElement()!
+                        let template = boxes.randomElement(using: &rng)!
                         item = template.entity.clone(recursive: true); size = template.size // kalıptan kopya (bant, etiket dahil)
                     case .kind(let kind):
                         item = kinds[kind]!.clone(recursive: true); size = fit             // kalıptan kopya: şekil ve malzeme paylaşılır
                     }
                     let cellMin = innerMin + cell * SIMD3<Float>(Float(l), Float(h), Float(w))
                     item.position = [cellMin.x + cell.x / 2, cellMin.y + size.y / 2, cellMin.z + cell.z / 2] // hücrenin TABANINA oturur
-                    item.orientation = simd_quatf(angle: .random(in: -0.04...0.04), axis: [0, 1, 0]) // çok hafif yamuk: elle dizilmiş gibi
+                    item.orientation = simd_quatf(angle: .random(in: -0.04...0.04, using: &rng), axis: [0, 1, 0]) // çok hafif yamuk: elle dizilmiş gibi
                     item.isEnabled = false // [SWIFT] gizli (çizilmez); setProgress sırası gelince açar
                     parent.addChild(item)
                     cargo.append((item, item.transform))
@@ -300,6 +293,7 @@ final class TruckLoadRig {
         let target = Int((min(max(progress, 0), 1) * Double(cargo.count)).rounded())
 
         if target > shownCount {
+            landing += target - shownCount
             for (order, index) in (shownCount..<target).enumerated() {
                 let item = cargo[index]
                 var start = item.home
@@ -309,8 +303,10 @@ final class TruckLoadRig {
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(Double(order) * 0.05)) // art arda gelenler sırayla insin (42 × 0,05 ≈ 2 sn)
                     item.box.isEnabled = true
-                    if order == 0 { PerfLog.mark("dorse: ilk yük göründü") } // GEÇİCİ ölçüm
                     item.box.move(to: item.home, relativeTo: item.box.parent, duration: 0.38, timingFunction: .easeOut) // [SWIFT] hedef konuma animasyonla git
+                    try? await Task.sleep(for: .seconds(0.4))
+                    self.landing -= 1
+                    if self.landing == 0 { self.finish?(); self.finish = nil } // hepsi oturdu → ⮕ StillScene: fotoğraf + 3B kapanır
                 }
             }
         } else if target < shownCount {
@@ -319,34 +315,3 @@ final class TruckLoadRig {
         shownCount = target
     }
 }
-
-#if DEBUG
-// PROTOTİP: dorseyi tek başına görmek için. Doluluk kendiliğinden artar; alttaki sürgüyle elle de oynanır.
-// Çalıştırma: Xcode → Edit Scheme → Run → Arguments → "-truckPreview".
-// ⮕ KULLANIM [TruckLoadPreview]: kullanır: ContentView › body (yalnız DEBUG + "-truckPreview")
-struct TruckLoadPreview: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @State private var progress = 0.0
-
-    var body: some View {
-        let palette = Palette(isDark: colorScheme == .dark)
-        ZStack { // ana ekrandaki gibi: dorse TÜM EKRANIN arkasında, yazı ve sürgü üstünde
-            LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-            TruckLoadView(progress: progress).ignoresSafeArea()
-            VStack(spacing: 18) {
-                Text("Yük dolumu: %\(Int(progress * 100))").font(.title2.bold()).foregroundStyle(palette.title)
-                Spacer()
-                Slider(value: $progress).tint(palette.accent).padding(.horizontal, 30)
-            }
-            .padding(.vertical, 30)
-        }
-        .task { // açılınca kendiliğinden doldur
-            try? await Task.sleep(for: .seconds(1.5))
-            for step in 1...10 {
-                progress = Double(step) / 10
-                try? await Task.sleep(for: .seconds(0.55))
-            }
-        }
-    }
-}
-#endif

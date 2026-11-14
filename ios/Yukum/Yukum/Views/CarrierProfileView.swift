@@ -12,49 +12,60 @@ import SwiftUI
 // └──────────────────────────────────────────────────────────────────────
 
 struct CarrierProfileView: View {
-    @State private var viewModel: CarrierProfileViewModel // @State [SWIFT]: ekranın hafızası
+    @State private var viewModel: CarrierProfileViewModel
+    @Environment(\.colorScheme) private var colorScheme
 
     init(carrierId: String) {
         _viewModel = State(initialValue: CarrierProfileViewModel(carrierId: carrierId))
     }
 
+    // GÖRÜNÜM (15 Kasım, L tasarım): üstte profil kartı (baş harf rozeti, puan, tamamlanan iş), altında yorum kartları. İŞLEV DEĞİŞMEDİ.
     var body: some View {
-        List { // List [SWIFT]: kaydırılabilir satır listesi
-            if let message = viewModel.errorMessage { Text(message).foregroundColor(.red) } // hata varsa kırmızı yaz
-
-            if let profile = viewModel.profile { // if let [SWIFT]: nil değilse içini aç | dolana kadar çizilmez
-                Section { // Section [SWIFT]: listede gruplu bölüm
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(profile.fullName).font(.title2).bold()
-                        Text(RatingText.summary(rating: profile.averageRating, count: profile.ratingCount)).font(.headline).foregroundColor(.orange) // "★ 4.5 (8)" / "Yeni"
-                        Text("\(profile.completedJobCount) tamamlanan iş").font(.subheadline).foregroundColor(.secondary)
+        let palette = Palette(isDark: colorScheme == .dark)
+        List {
+            if let message = viewModel.errorMessage { FormMessage(text: message, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden) }
+            if let profile = viewModel.profile {
+                HStack(spacing: 14) {
+                    Text(String(profile.fullName.prefix(1))).font(.title.bold()).foregroundStyle(palette.buttonText) // baş harf
+                        .frame(width: 58, height: 58).background(palette.accent, in: .circle)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(profile.fullName).font(.title3.bold()).foregroundStyle(palette.title)
+                        Text(RatingText.summary(rating: profile.averageRating, count: profile.ratingCount)).font(.subheadline.bold()).foregroundStyle(palette.accent)
+                        Label("\(profile.completedJobCount) tamamlanan iş", systemImage: "flag.checkered").font(.caption).foregroundStyle(palette.label.opacity(0.75))
                     }
                 }
-                Section("Yorumlar") {
-                    if profile.reviews.isEmpty {
-                        Text("Henüz yorum yok.").foregroundColor(.secondary)
-                    } else {
-                        ForEach(profile.reviews, id: \.self) { review in // id: \.self [SWIFT]: öğenin kendisi kimlik (CarrierReview Hashable)
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(String(repeating: "★", count: review.rating) + String(repeating: "☆", count: 5 - review.rating)).foregroundColor(.orange) // String(repeating:count:) [SWIFT]: yazıyı tekrarlar
-                                    Spacer()
-                                    Text(String(review.createdAt.prefix(10))).font(.caption).foregroundColor(.secondary) // "2026-11-07T..." → ilk 10 karakter
+                .themedRow()
+
+                Text("Yorumlar").font(.subheadline.weight(.bold)).foregroundStyle(palette.title)
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                if profile.reviews.isEmpty {
+                    EmptyStateCard(icon: "star", title: "Henüz yorum yok.").listRowBackground(Color.clear).listRowSeparator(.hidden)
+                } else {
+                    ForEach(profile.reviews, id: \.self) { review in
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                HStack(spacing: 2) {
+                                    ForEach(1...5, id: \.self) { i in Image(systemName: i <= review.rating ? "star.fill" : "star").font(.caption) }
                                 }
-                                if let comment = review.comment { Text(comment) } // yorum yoksa satır çizilmez
-                                Text("\(review.shipperName) · \(review.listingTitle) · \(review.fromCityName) → \(review.toCityName)").font(.caption).foregroundColor(.secondary)
+                                .foregroundStyle(palette.accent)
+                                Spacer()
+                                Text(RouteCard.trDate(review.createdAt)).font(.caption).foregroundStyle(palette.label.opacity(0.65))
                             }
-                            .padding(.vertical, 2)
+                            if let comment = review.comment { Text(comment).foregroundStyle(palette.title) }
+                            Text("\(review.shipperName) · \(review.listingTitle) · \(review.fromCityName) → \(review.toCityName)").font(.caption).foregroundStyle(palette.label.opacity(0.65))
                         }
+                        .themedRow()
                     }
                 }
             } else if viewModel.isLoading {
-                ProgressView().frame(maxWidth: .infinity) // ProgressView [SWIFT]: dönen çark
+                ProgressView().frame(maxWidth: .infinity).listRowBackground(Color.clear)
             }
         }
+        .listStyle(.plain)
+        .themedScreen()
         .navigationTitle("Taşımacı Profili")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.load() } // ekran açılınca yükle
-        .refreshable { await viewModel.load() } // aşağı çekince yenile
+        .task { await viewModel.load() }
+        .refreshable { await viewModel.load() }
     }
 }

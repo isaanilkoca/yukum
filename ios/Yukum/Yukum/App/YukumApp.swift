@@ -65,6 +65,9 @@ struct YukumApp: App { // YukumApp [BİZİM] ad | App [SWIFT]: "bu struct bir uy
             ContentView() // pencerede ilk açılacak ekran | () = ContentView'dan bir örnek üret
                 // .preferredColorScheme [SWIFT]: tüm pencereyi (üstte açılan sayfalar dahil) bu modda çizer | nil = telefonun ayarı
                 .preferredColorScheme(theme.colorScheme)
+                // .tint [SWIFT]: tüm uygulamada sistem öğelerinin vurgu rengi (geri oku, anahtar, seçici, bağlantı) → koli bandı turuncusu (15 Kasım)
+                //   Assets › AccentColor da aynı turuncu: .tint'in ulaşmadığı yerler (uyarı pencereleri, kaydırma düğmeleri) için
+                .tint(Palette(isDark: false).accent)
         }
     }
 }

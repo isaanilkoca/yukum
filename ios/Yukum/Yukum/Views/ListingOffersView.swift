@@ -22,111 +22,120 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BAĞLANTI: Views/HomeView.swift → Yük Veren listesindeki NavigationLink bu ekranı açar ve ilanı verir | kalıp: Models/Offers/ → ListingOffer
 // ⮕ KULLANIM [ListingOffersView]: kullanır: HomeView › body
 struct ListingOffersView: View {
-
-    // viewModel: ekranın durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar
-    // ⮕ KULLANIM [viewModel]: okur: ListingOffersView › body | bağlar(okur+yazar): ListingOffersView › body
-    @State private var viewModel: ListingOffersViewModel // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
-
-    // ⮕ KULLANIM [dismiss]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
-    @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer | dismiss: "bu ekranı kapat" komutu | ilan kaldırılınca bu ekrandan geri dönmek için
-    // showCancelConfirm: "İlanı yayından kaldır" onay penceresi açık mı | yalnız GÖRÜNÜM bilgisi
-    // NEDEN onay penceresi: işlem geri alınamaz ve bekleyen tekliflerin hepsini iptal eder, yanlışlıkla basılmasın
-    // ⮕ KULLANIM [showCancelConfirm]: YAZAR: ListingOffersView › body | bağlar(okur+yazar): ListingOffersView › body
+    @State private var viewModel: ListingOffersViewModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showCancelConfirm = false
+    @State private var feedback: ActionFeedback? // Yük Veren işlemi → koli bantlanır ⮕ Design/ActionFeedback.swift
 
-    // init: ilan dışarıdan verilir (HomeView'daki satır), ViewModel burada oluşturulur
     init(listing: Listing) {
         _viewModel = State(initialValue: ListingOffersViewModel(listing: listing))
     }
 
-    // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
+    // GÖRÜNÜM (15 Kasım, L tasarım): ScreenBackground + yarı şeffaf kartlar (Design/FormStyle › themedRow, ChipButtonStyle). İŞLEV DEĞİŞMEDİ.
+    // İŞLEM SONRASI (Yük Veren işareti = koli bantlanır): kabul, ret, ilanı kaldırma. Yalnız BAŞARIDA (errorMessage boş kaldıysa).
     var body: some View {
+        @Bindable var viewModel = viewModel
+        let palette = Palette(isDark: colorScheme == .dark)
 
-        @Bindable var viewModel = viewModel // @Bindable [SWIFT]: @Observable sınıfın değişkenlerine $ ile bağ kurar
-
-        VStack(spacing: 16) { // VStack [SWIFT]: elemanları alt alta dizer
-            if let stats = viewModel.stats { // ilgi göstergesi: görüntülenme · favori · teklif
-                HStack {
-                    statCard("eye", stats.viewCount, "Görüntülenme")
-                    statCard("heart", stats.favoriteCount, "Favori")
-                    statCard("tray.full", stats.offerCount, "Teklif")
+        List {
+            // ÜST BİLGİ: başlık + istatistik kartları (görüntülenme, favori, teklif) | ⮕ ListingOffersViewModel.stats ← loadStats()
+            VStack(alignment: .leading, spacing: 12) {
+                Text(viewModel.listing.title).font(.title3.bold()).foregroundStyle(palette.title)
+                RouteLine(from: viewModel.listing.fromCityName, fromDistrict: viewModel.listing.fromDistrictName,
+                          to: viewModel.listing.toCityName, toDistrict: viewModel.listing.toDistrictName) // ⮕ Design/FormStyle.swift
+                if let stats = viewModel.stats {
+                    HStack(spacing: 8) {
+                        statCard("eye.fill", stats.viewCount, "Görüntülenme", palette)
+                        statCard("heart.fill", stats.favoriteCount, "Favori", palette)
+                        statCard("tray.full.fill", stats.offerCount, "Teklif", palette)
+                    }
                 }
             }
+            .listRowBackground(Color.clear).listRowSeparator(.hidden)
 
-            Text(viewModel.listing.title).font(.title3).bold() // hangi ilan olduğu | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
+            if let errorMessage = viewModel.errorMessage {
+                FormMessage(text: errorMessage, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden)
+            }
 
-            if let errorMessage = viewModel.errorMessage { Text(errorMessage).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez | .foregroundColor [SWIFT]: yazı rengi
-            if viewModel.offers.isEmpty { // liste boş mu
-                Text("Henüz teklif gelmedi.").foregroundColor(.secondary) // .secondary [SWIFT]: gri yazı
+            if viewModel.offers.isEmpty {
+                EmptyStateCard(icon: "tray", title: "Henüz teklif gelmedi.", detail: "Taşımacılar teklif verince burada görünür.")
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
             } else {
-                List(viewModel.offers) { offer in // List [SWIFT]: kaydırılabilir satır listesi | offer: o anki teklif | ⮕ ListingOffersViewModel.offers ← OfferService.listingOffers() → [ListingOffer]
-                    VStack(alignment: .leading, spacing: 8) { // bir teklifin satırı: alt alta, sola yaslı
-                        HStack { // HStack [SWIFT]: elemanları yan yana dizer
-                            Text(offer.carrierName).font(.headline) // teklifi veren taşımacı
-                            Text(RatingText.summary(rating: offer.carrierRating, count: offer.carrierRatingCount)).font(.caption).foregroundColor(.orange) // "★ 4.5 (8)" / "Yeni"
-                            Spacer() // Spacer [SWIFT]: kalan boşluğu doldurur
-                            Text("\(Int(offer.amount))₺").bold() // Int(): 48000.0 yerine 48000
+                ForEach(viewModel.offers) { offer in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(alignment: .firstTextBaseline) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(offer.carrierName).font(.headline).foregroundStyle(palette.title)
+                                Text(RatingText.summary(rating: offer.carrierRating, count: offer.carrierRatingCount)).font(.caption).foregroundStyle(palette.accent) // ⮕ Models › RatingText
+                            }
+                            Spacer()
+                            Text("\(Int(offer.amount)) ₺").font(.title3.bold()).foregroundStyle(palette.accent)
                         }
-
                         if let note = offer.note {
-                            Text(note).font(.caption).foregroundColor(.secondary) // küçük gri not
+                            Text(note).font(.caption).foregroundStyle(palette.label.opacity(0.75))
                         }
-
-                        // Bu ekranda yalnız BEKLEYEN teklifler var (sunucu yalnız onları gönderir); kabul/red verilenler "Eski Teklifler"e gider
-                        HStack {
-                            // .borderedProminent / .bordered: ZORUNLU, yoksa List'te satırın her yeri düğme olur | .tint [SWIFT]: dolgu rengi
-                            Button("Reddet") { Task { await viewModel.decide(offer, accept: false) } }.buttonStyle(.borderedProminent).tint(.red) // kırmızı dolu | ⮕ ListingOffersViewModel.decide(accept: false) → OfferService.decide → POST .../reject | await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder) | Task [SWIFT]: arka planda çalışan iş: normal koddan await kullanabilmeyi sağlar | Button [SWIFT]: dokununca kod çalıştıran düğme | .buttonStyle [SWIFT]: düğme görünüm stili
-                            Button("Kabul et") { Task { await viewModel.decide(offer, accept: true) } }.buttonStyle(.borderedProminent).tint(.green) // yeşil dolu | ⮕ ListingOffersViewModel.decide(accept: true) → OfferService.decide → POST .../accept
-                            Button("Profil") { viewModel.profileCarrierId = offer.carrierId }.buttonStyle(.bordered) // ViewModel'deki profileCarrierId'yi doldurur → CarrierProfileView açılır
-                            Button("Sohbet") { viewModel.openChat(offer) }.buttonStyle(.bordered) // ViewModel'deki chat'i doldurur → aşağıdaki .navigationDestination ChatView'ı açar | çerçeveli düğme
+                        // Düğmeler: ChipButtonStyle ZORUNLU (stilsiz düğmede List satırının her yeri düğme olur)
+                        HStack(spacing: 8) {
+                            Button("Kabul et") { decide(offer, accept: true) }.buttonStyle(ChipButtonStyle(.success))
+                            Button("Reddet") { decide(offer, accept: false) }.buttonStyle(ChipButtonStyle(.danger))
+                            Spacer(minLength: 0)
+                            Button { viewModel.profileCarrierId = offer.carrierId } label: { Image(systemName: "person.fill") }.buttonStyle(ChipButtonStyle(.outline)) // ⮕ CarrierProfileView
+                            Button { viewModel.openChat(offer) } label: { Image(systemName: "bubble.left.and.bubble.right.fill") }.buttonStyle(ChipButtonStyle(.outline)) // ⮕ ChatView
                         }
                     }
-                    .padding(.vertical, 4) // .padding [SWIFT]: etrafında boşluk bırakır
-                }.listStyle(.plain) // .listStyle [SWIFT]: liste görünüm stili
-                .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır | NE İŞE YARAR: kullanıcı güncel veriyi kendisi ister
+                    .themedRow() // ⮕ Design/FormStyle.swift
+                }
             }
         }
-        .padding()
-        .navigationTitle("Gelen Teklifler") // üst çubuk başlığı | .navigationTitle [SWIFT]: üst çubuk başlığı
-        .navigationBarTitleDisplayMode(.inline) // .navigationBarTitleDisplayMode [SWIFT]: üst başlığın boyut biçimi
-        // .toolbar [SWIFT]: üst çubuğa eleman koyar | sağ üstte "Kaldır": iptal olan, vazgeçilen, yanlış açılan ilanlar için
+        .listStyle(.plain)
+        .themedScreen() // ⮕ Design/FormStyle.swift: ScreenBackground + List zemini gizli
+        .refreshable { await viewModel.load() }
+        .navigationTitle("Gelen Teklifler")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            
             ToolbarItem(placement: .topBarTrailing) {
-                           // NavigationLink [SWIFT]: basınca süslü parantezdeki ekrana geçer | CreateListingView: Views/CreateListingView.swift (düzenleme modu)
-                           // viewModel.listing: bu ekrana verilen ilan (Listing, Models/Listings) → form onunla dolar
-                           // onSaved: { dismiss() }: kayıt sonrası bu ekran da kapanır, HomeView görününce .task listeyi yeniler (yeni başlık orada görünür)
-                           NavigationLink("Düzenle") { CreateListingView(listing: viewModel.listing, onSaved: { dismiss() }) }
-                       }
-            ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe | ToolbarItem [SWIFT]: üst çubukta bir eleman
-                Button("Kaldır", role: .destructive) { showCancelConfirm = true } // role: .destructive: kırmızı | basınca onay penceresi açılır
+                Menu { // iki eylem tek menüde: üst çubuk sıkışmasın
+                    NavigationLink { CreateListingView(listing: viewModel.listing, onSaved: { dismiss() }) } label: { Label("Düzenle", systemImage: "pencil") } // ⮕ CreateListingView (düzenleme kipi)
+                    Button(role: .destructive) { showCancelConfirm = true } label: { Label("Yayından kaldır", systemImage: "trash") }
+                } label: { Image(systemName: "ellipsis.circle") }
             }
         }
-        // .alert [SWIFT]: ekranın ortasında çıkan uyarı penceresi | isPresented: $showCancelConfirm → true olunca açılır
         .alert("İlan yayından kaldırılsın mı?", isPresented: $showCancelConfirm) {
-            Button("Yayından Kaldır", role: .destructive) { // seçilince ViewModel ilanı kaldırır; başarılıysa ilan listemizde olmadığı için geri dönülür
-                Task { if await viewModel.cancelListing() { dismiss() } } // önceki ekran (HomeView) görününce .task ile listeyi kendisi yeniler | ⮕ ListingOffersViewModel.cancelListing() → ListingService.cancel → POST /api/v1/listings/{id}/cancel
+            Button("Yayından Kaldır", role: .destructive) {
+                Task {
+                    if await viewModel.cancelListing() { // ⮕ ListingOffersViewModel.cancelListing → DELETE /api/v1/listings/{id}
+                        feedback = ActionFeedback(.unseal, "İlan kaldırıldı") { dismiss() } // iptal: koli açılır + İPTAL damgası
+                    }
+                }
             }
-            Button("Vazgeç", role: .cancel) { } // pencereyi kapatır, hiçbir şey yapmaz
+            Button("Vazgeç", role: .cancel) { }
         } message: {
             Text("İlan herkesin listesinden kalkar. Gelen teklifler iptal edilir, Taşımacılar bilgilendirilir ve sohbetler kapanır.")
         }
-        .task { await viewModel.load(); await viewModel.loadStats() } // .task [SWIFT]: ekran HER göründüğünde çalışır | teklifleri yükler
-        // NEDEN .navigationDestination(item:) KULLANDIK, NavigationLink değil? List satırının içindeki NavigationLink, satırdaki Reddet/Kabul/Sohbet düğmelerini bozar (hepsi sayfaya götürür).
-        // Çözüm: düğme sayfa AÇMAZ, ViewModel'deki chat'i doldurur. Kural: "chat dolunca ChatView'a geç, nil olunca kapat"
-        .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) } // BAĞLANTI: Views/ChatView.swift | kim yazabilir/bitirebilir kuralı ChatContext'te | .navigationDestination [SWIFT]: bir değer dolunca ekrana geçer
-        .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) } // item: Hashable olmalı (String) | BAĞLANTI: Views/CarrierProfileView.swift
+        .task { await viewModel.load(); await viewModel.loadStats() }
+        .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }
+        .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) }
+        .actionFeedback($feedback)
     }
 
-    // statCard: tek sayaç kartı (ikon, sayı, etiket) | @ViewBuilder gerekmez, tek görünüm döner
-    private func statCard(_ icon: String, _ value: Int, _ title: String) -> some View {
-        VStack(spacing: 2) {
-            Image(systemName: icon).foregroundColor(.secondary)
-            Text("\(value)").font(.title3).bold()
-            Text(title).font(.caption).foregroundColor(.secondary)
+    // Kabul/ret: ViewModel karar verir; başarıdaysa koli bantlanır | ⮕ ListingOffersViewModel.decide → PUT /api/v1/offers/{id}/accept|reject
+    private func decide(_ offer: ListingOffer, accept: Bool) {
+        Task {
+            await viewModel.decide(offer, accept: accept)
+            if viewModel.errorMessage == nil { feedback = ActionFeedback(accept ? .seal : .unseal, accept ? "Teklif kabul edildi" : "Teklif reddedildi") } // kabul: bantlanır | ret: bant kesilir
         }
-        .frame(maxWidth: .infinity) // üç kart eşit genişlik
-        .padding(.vertical, 6)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10)) // Color(.secondarySystemBackground) [SWIFT]: sistemin hafif gri zemini
+    }
+
+    // İstatistik kartı: simge + sayı + başlık
+    private func statCard(_ icon: String, _ value: Int, _ title: String, _ palette: Palette) -> some View {
+        VStack(spacing: 2) {
+            Image(systemName: icon).font(.caption).foregroundStyle(palette.accent)
+            Text("\(value)").font(.title3.bold()).foregroundStyle(palette.title)
+            Text(title).font(.caption2).foregroundStyle(palette.label.opacity(0.7))
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 8)
+        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(palette.cardBorder))
     }
 }

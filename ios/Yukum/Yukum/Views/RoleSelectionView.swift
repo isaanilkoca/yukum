@@ -39,8 +39,8 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad (dosya adı k
         ZStack {
             // SAKİN ARKA PLAN: giriş ekranının renk geçişi + iki bulanık ışık halesi (3B sahne yok)
             LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom).ignoresSafeArea()
-            Ellipse().fill(palette.glowA).frame(width: 380, height: 320).blur(radius: 95).offset(x: -120, y: -220)
-            Ellipse().fill(palette.glowB).frame(width: 360, height: 300).blur(radius: 95).offset(x: 130, y: 200)
+            SoftGlow(color: palette.glowA, width: 380, height: 320).offset(x: -120, y: -220)
+            SoftGlow(color: palette.glowB, width: 360, height: 300).offset(x: 130, y: 200)
 
             ScrollView { // ScrollView [SWIFT]: uzun formda kaydırma (Taşımacı formu ekrandan uzun)
                 VStack(spacing: 18) {

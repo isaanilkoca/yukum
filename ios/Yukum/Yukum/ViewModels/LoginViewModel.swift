@@ -73,8 +73,7 @@ final class LoginViewModel {
         //   try?               → [Swift] restore() hata fırlatırsa çökme, sonucu nil say (şifre formu görünür)
         //   if let user = ...  → [Swift] sonuç nil DEĞİLSE içindekini `user` adıyla al (user: yalnız bu süslü parantez içinde yaşar)
         //   loggedInUser = user → BİZİM değişken: dolunca LoginView'daki .fullScreenCover HomeView(user:) açar
-        PerfLog.reset("Otomatik giriş başladı") // GEÇİCİ ölçüm ⮕ App/PerfLog.swift
-        if let user = try? await session.restore() { PerfLog.mark("API oturum yenileme cevabı geldi"); loggedInUser = user }
+        if let user = try? await session.restore() { loggedInUser = user }
         // isRestoring → BİZİM değişken: false olunca LoginView "Oturum açılıyor" çarkını kaldırır, form görünür
         isRestoring = false
     }
@@ -96,7 +95,6 @@ final class LoginViewModel {
         // isLoading → BİZİM: true iken LoginView düğmeyi kilitler | errorMessage = nil: eski hata silinir
         isLoading = true
         errorMessage = nil
-        PerfLog.reset("Giriş yap'a basıldı") // GEÇİCİ ölçüm ⮕ App/PerfLog.swift
         // defer { ... } → [Swift] fonksiyondan HER çıkışta (başarı/hata/return) çalışır: düğme tekrar açılır
         defer { isLoading = false }
 
@@ -107,7 +105,6 @@ final class LoginViewModel {
             // auth.login(body) → auth: BİZİM, tipi AuthServicing → gerçekte Models/Services/AuthService.login: isteği atar, jetonları AuthSession'a verir
             //   try await → [Swift] hata fırlatabilir + cevap gelene kadar bekle | response: LoginResponse (Models/Auth/LoginResponse.swift)
             let response = try await auth.login(body)
-            PerfLog.mark("API giriş cevabı geldi") // GEÇİCİ: ağ süresi (telefon → Mac → telefon)
             password = "" // şifre bellekte/ekranda kalmasın
             defaults.set(role.rawValue, forKey: Self.lastRoleKey) // bir dahaki sefer aynı tür seçili gelsin
             // response.user → LoginResponse içindeki LoginUser (ad, rol) → loggedInUser'a yazılır → LoginView HomeView'ı açar
