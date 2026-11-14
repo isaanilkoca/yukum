@@ -34,6 +34,10 @@ var body: some View {
                                           "Ad, e-posta, telefon, şifre, firma ve plaka bilgilerin geri döndürülemez biçimde silinir; hesap \"Silinmiş Kullanıcı\" olarak kalır. Açık ilanların kaldırılır, bekleyen tekliflerin iptal olur, favorilerin silinir. Tamamlanmış işler ve puanlar karşı tarafın geçmişi olduğu için adın gizlenerek durur. Devam eden bir işin varken hesap silinemez.")
                                     block("Haklarının kullanımı",
                                           "KVKK kapsamında bilgilerine erişme, düzeltme ve silme hakkın vardır. Silme işlemini uygulamada Ana sayfa › Hesabı Sil ile kendin yapabilirsin.")
+                                    // ATIF (14 Kasım): Yük Veren ana ekranındaki dorse hazır bir 3B modelden (Design/Truck.usdz, CC-BY 4.0).
+                                    //   Lisans, kaynağın adının uygulamada geçmesini şart koşar → ana ekrandan buraya taşındı (kullanıcı ana ekranda istemedi).
+                                    block("Atıflar",
+                                          "Ana ekrandaki 3B dorse modeli: \"Truck\" by ROY (Sketchfab), CC-BY 4.0 lisansıyla kullanılmıştır.")
             }
             .padding()
         }

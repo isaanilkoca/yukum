@@ -56,10 +56,15 @@ struct YukumApp: App { // YukumApp [BİZİM] ad | App [SWIFT]: "bu struct bir uy
     // @UIApplicationDelegateAdaptor [SWIFT]: SwiftUI uygulamasına eski tip uygulama temsilcisi bağlar | push adresi ve bildirim olayları oraya gelir ⮕ App/AppDelegate.swift
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    // GÖRÜNÜM SEÇİMİ (Sistem / Açık / Koyu): giriş ve ana ekrandaki düğmeyle değişir, telefonda saklanır ⮕ Design/ThemeToggle.swift
+    @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system // [SWIFT] UserDefaults'a bağlı değişken
+
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some Scene { // body [SWIFT] zorunlu özellik | Scene: uygulamanın pencere kısmı | some: tür Swift'e bırakıldı
         WindowGroup { // [SWIFT] ana pencere kutusu | iPhone'da tek pencere gösterir | WindowGroup [SWIFT]: ana pencereyi tanımlar
             ContentView() // pencerede ilk açılacak ekran | () = ContentView'dan bir örnek üret
+                // .preferredColorScheme [SWIFT]: tüm pencereyi (üstte açılan sayfalar dahil) bu modda çizer | nil = telefonun ayarı
+                .preferredColorScheme(theme.colorScheme)
         }
     }
 }

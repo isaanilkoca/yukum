@@ -9,7 +9,8 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
-// │ Hoş Geldin yazısı        →  viewModel.user                      →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
+// │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, arkada tam ekran Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
+// │ Hoş Geldin yazısı        →  viewModel.user                     →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
 // │ Taşımacı ilan listesi    →  viewModel.listings ← load()         →  ListingService.openListings()   →  GET /api/v1/listings?...         →  [Listing]
 // │ İl / İlçe Picker'ları    →  cities, filterDistricts, filterCityId, filterDistrictId  →  CityService.cities() / districts()  →  GET /cities, /cities/{id}/districts  →  [City] / [District]
@@ -17,7 +18,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Kutu ikonundaki rozet    →  viewModel.unseenCount ← load()     →  OfferService.unseenCount()      →  GET /api/v1/offers/mine/unseen-count  →  UnseenCount
 // │ Çıkış Yap                →  viewModel.signOut()                 →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
 // │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
-// │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | CreateListingView, OldOffersView, MyOffersView
+// │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | "Yeni ilan ver" → CreateListingView (tek yol, + kaldırıldı), OldOffersView, MyOffersView
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
@@ -42,6 +43,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     
     @State private var showNotifications = false // true → bildirim listesi açılır (telefondaki bildirime dokununca)
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
+    @Environment(\.colorScheme) private var colorScheme // [SWIFT] açık/koyu mod → Palette seçimi (Yük Veren tasarımı)
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
     // init: dışarıdan "user" verilir (LoginView: HomeView(user: user)), ViewModel burada oluşturulur
@@ -60,35 +62,13 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
             VStack(spacing: 24) { // elemanları alt alta dizer | VStack [SWIFT]: elemanları alt alta dizer
 
-                Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser) | Text [SWIFT]: yazı gösterir | .font [SWIFT]: yazı boyutu/stili | .bold [SWIFT]: yazıyı kalın yapar
-
                 // user.role API'den "Shipper" ya da "Carrier" gelir | yazımı API ile birebir aynı olmalı
-                if viewModel.isShipper { // GÖRÜNÜM kararı: ekranda ne ÇİZİLECEK | Yük Veren ilan listesini görür, Taşımacı aşağıdaki else'teki yazıyı
+                if viewModel.isShipper { // GÖRÜNÜM kararı: ekranda ne ÇİZİLECEK | Yük Veren tasarımlı ana ekranı görür (selamlama dahil, aşağıda shipperHome), Taşımacı else'teki ekranı
 
-                    if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez | .foregroundColor [SWIFT]: yazı rengi
-
-                    if viewModel.listings.isEmpty { // liste boş mu
-                        Text("Henüz ilanın yok, ilk ilanını ver.").foregroundColor(.secondary) // boşsa bu yazı görünür | .secondary [SWIFT]: gri, ikincil yazı rengi
-
-                    } else {
-                        HStack {
-                            Text("Eski İlanların ").font(.title3).bold()
-                            Image(systemName: "shippingbox.fill")
-                            Text("->")
-                            Image(systemName: "truck.box.fill")
-                        }
-
-                        List(viewModel.listings) { listing in // List [SWIFT]: kaydırılabilir satır listesi | listing: o anki ilan | ⮕ HomeViewModel.listings ← load() ← ListingService.myListings() (Yük Veren) → [Listing]
-                            NavigationLink { // satıra basınca süslü parantezdeki ekrana geçer
-                                ListingOffersView(listing: listing) // Views/ListingOffersView.swift → bu ilanın gelen teklifleri | basılan ilanı VERİYORUZ
-                            } label: { // label: satırın görünen kısmı
-                                ListingRow(listing: listing) // BAĞLANTI: Views/ListingRow.swift → tek satırı o çizer, ilanı ona VERİYORUZ (listing: parametre adı)
-                            }
-                        }.listStyle(.plain) // .plain: düz beyaz arka plan, satırlar arası ince çizgi | varsayılan (.insetGrouped) gri zemin çizerdi | .listStyle [SWIFT]: liste görünüm stili
-                        .refreshable { await viewModel.load() } // .refreshable [SWIFT]: List'i parmakla AŞAĞI çekince iş çalışır, yenileme çarkı iş bitince kendiliğinden kapanır | NE İŞE YARAR: kullanıcı, otomatik yenilemeyi beklemeden güncel veriyi kendisi ister
-                    }
+                    shipperHome // ⮕ aşağıdaki extension HomeView › shipperHome (L tasarım, 13 Kasım)
 
                 } else { // Shipper değilse (Carrier)
+                    Text("Hoş Geldin \(viewModel.user.displayName)").font(.title2).bold() // \( ) = yazının içine değişken koyar | LoginUser'daki ad alanı | ⮕ viewModel.user ← LoginViewModel.loggedInUser (LoginUser) | NEDEN else içinde: Yük Veren'in selamlaması artık shipperHome'da
                     if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // hata varsa kırmızı yaz (Yük Veren ile aynı değişken)
 
                     HStack { // başlık solda, Filtre düğmesi sağda
@@ -189,6 +169,8 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 }.buttonStyle(.borderedProminent) // .buttonStyle [SWIFT]: düğme görünüm stili
 
             }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
+            // Yük Veren'de arka plan giriş ekranının renk geçişi (aynı palet) | Taşımacı ekranı henüz tasarlanmadı → sistem zemini kalır
+            .background { if viewModel.isShipper { shipperBackground } } // ⮕ aşağıdaki extension HomeView › shipperBackground (renk geçişi + 3B dorse)
             // .onReceive [SWIFT]: bir "yayını" dinler | oturum yenilenemezse (süre doldu, jeton iptal edildi/çalıntı sanıldı) AuthSession "sessionExpired" yayınlar
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
             .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Models/Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
@@ -220,16 +202,12 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             }
                     }
                 }
+                // GÖRÜNÜM DÜĞMESİ (Sistem / Açık / Koyu): iki rolde de sol üstte | ⮕ Design/ThemeToggle.swift (giriş ekranındakiyle aynı ayar)
+                ToolbarItem(placement: .topBarLeading) { ThemeToggle() }
                 if viewModel.isShipper { // yalnız Yük Veren ilan açabilir
-                    ToolbarItem(placement: .topBarTrailing) { // ToolbarItem [SWIFT]: çubuktaki bir eleman | placement: nerede durur | .topBarTrailing: sağ üst köşe
-                        NavigationLink { // basınca süslü parantezdeki ekrana geçer
-                            CreateListingView() // Views/CreateListingView.swift → yeni ilan formu | () = ekrandan bir örnek üret
-                        } label: { // label: düğmenin görünen kısmı (yazı yerine ikon koyacağımız için ayrı yazılır)
-                            Image(systemName: "plus") // Image(systemName:) [SWIFT]: Apple'ın hazır ikon kütüphanesi (SF Symbols) | "plus": + işareti
-                        }
-                    }
-
-                    ToolbarItem(placement: .topBarLeading) { // GÖRÜNÜM kararı: "Eski teklifler" yalnız Yük Veren'de çıkar | .topBarLeading: sol üst köşe (sağ üstte + var)
+                    // (14 Kasım) Sağ üstteki + düğmesi KALDIRILDI: ilan vermenin iki yolu vardı (+ ve "Yeni ilan ver"); kullanıcı tek yol istedi.
+                    //   İlan artık yalnız ana ekrandaki turuncu "Yeni ilan ver" düğmesinden verilir (shipperHome).
+                    ToolbarItem(placement: .topBarLeading) { // GÖRÜNÜM kararı: "Eski teklifler" yalnız Yük Veren'de çıkar | .topBarLeading: sol üst köşe
                         NavigationLink {
                             OldOffersView() // Views/OldOffersView.swift → karara bağlanmış teklifler + silme
                         } label: {
@@ -275,10 +253,99 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // Uygulama açıkken bildirim geldi → zil sayısını tazele
             .onReceive(NotificationCenter.default.publisher(for: .pushReceived)) { _ in Task { await viewModel.loadUnread() } }
             // .onAppear [SWIFT]: ekran HER göründüğünde çalışır (bildirim listesinden Geri ile dönünce de) → rozet güncel kalır
-            .onAppear { Task { await viewModel.loadUnread() } }
+            .onAppear { PerfLog.mark("ana ekran göründü"); Task { await viewModel.loadUnread() } } // PerfLog: GEÇİCİ ölçüm ⮕ App/PerfLog.swift
             .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
                 await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
             }
         }
+    }
+}
+
+// ─── YÜK VEREN ANA EKRANI (L tasarım, 13 Kasım) ───────────────────────────────
+// NEDEN extension + ayrı özellik: body zaten uzun; Yük Veren tasarımı tek yerde okunsun. Yeni dosya açılmadı (klasör yapısı sabit).
+// ZİNCİR: body → if isShipper → shipperHome → ScrollView: selamlama → "Yeni ilan ver" → yarı şeffaf ilan kartları | TÜM EKRANIN arkasında: shipperBackground → TruckLoadView(progress: 1)
+// NE DEĞİŞMEDİ: liste verisi (viewModel.listings), ListingRow, satıra basınca ListingOffersView, üst çubuk (+, geçmiş, zil), Taşımacı dalı.
+// NEDEN List yerine ScrollView + LazyVStack: List kendi beyaz zeminini ve ayırıcı çizgilerini çizer, kart görünümü vermez.
+//   LazyVStack [SWIFT]: yalnız ekrana giren satırları kurar → çok ilan olsa da hızlı | .refreshable ScrollView'da da çalışır.
+extension HomeView {
+
+    // ⮕ KULLANIM [shipperHome]: kullanır: HomeView › body (isShipper dalı)
+    var shipperHome: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+
+        return ScrollView { // ScrollView [SWIFT]: içeriği kaydırılabilir yapar
+            VStack(alignment: .leading, spacing: 18) {
+
+                // 1) SELAMLAMA: giriş ekranıyla aynı renkler (palette.title / label)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Merhaba, \(viewModel.user.displayName)").font(.title.bold()).foregroundStyle(palette.title) // ⮕ LoginUser.displayName
+                    Text("Yükün yolda, aklın rahat.").font(.subheadline).foregroundStyle(palette.label.opacity(0.75))
+                }
+
+                // (14 Kasım) Dorse için ayrılmış boşluk KALDIRILDI (kullanıcı: "ayrı bir alanda değil"): dorse tüm ekranın arkasında (shipperBackground),
+                //   içerik doğrudan onun üstünde akar; kartlar yarı şeffaf olduğu için dorse ve dolumu arkadan görünür.
+
+                // 2) ANA EYLEM: üst çubuktaki + ile aynı yere gider; büyük düğme ilk ilanı verecek kişiye yolu gösterir
+                NavigationLink { CreateListingView() } label: { // ⮕ Views/CreateListingView.swift
+                    Label("Yeni ilan ver", systemImage: "plus.circle.fill") // Label [SWIFT]: simge + yazı
+                        .font(.headline)
+                        .foregroundStyle(palette.buttonText)
+                        .frame(maxWidth: .infinity).frame(height: 54)
+                        .background(palette.accent, in: .rect(cornerRadius: 14)) // LoginView'daki "Giriş yap" ile aynı düğme
+                }
+
+                if let listError = viewModel.listError { Text(listError).foregroundColor(.red) } // doluysa kırmızı yaz, nil ise çizilmez
+
+                // 3) İLANLAR: başlıkta sayı | ⮕ HomeViewModel.listings ← load() ← ListingService.myListings() → GET /api/v1/listings/mine
+                Text("İlanların (\(viewModel.listings.count))").font(.title3.bold()).foregroundStyle(palette.title)
+
+                if viewModel.listings.isEmpty {
+                    Text("Henüz ilanın yok, ilk ilanını ver.").foregroundStyle(palette.label.opacity(0.7))
+                } else {
+                    LazyVStack(spacing: 10) {
+                        ForEach(viewModel.listings) { listing in
+                            NavigationLink { ListingOffersView(listing: listing) } label: { // ⮕ Views/ListingOffersView.swift (değişmedi)
+                                HStack {
+                                    ListingRow(listing: listing) // ⮕ Views/ListingRow.swift (değişmedi)
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(palette.accent) // List'teki ok burada kendiliğinden gelmez
+                                }
+                                .foregroundStyle(palette.title) // ListingRow'un ana yazıları palete uysun (.secondary gri yazılar kendi rengini korur)
+                                .padding(14)
+                                .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16)) // YARI ŞEFFAF (14 Kasım): kaydırınca arkadaki dorse kartların içinden görünür | koyu modda koyu, açıkta krem
+                                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.cardBorder))
+                            }
+                            .buttonStyle(.plain) // [SWIFT] NavigationLink yazıyı maviye boyamasın
+                        }
+                    }
+                }
+                // (14 Kasım) Model atıf yazısı ana ekrandan KALDIRILDI (kullanıcı istemedi) → Views/PrivacyView "Atıflar" bölümüne taşındı.
+                //   CC-BY 4.0 lisansı uygulamada kaynağın adının geçmesini şart koşar; yeri serbest, silinemez.
+            }
+        }
+        .scrollIndicators(.hidden)
+        .refreshable { await viewModel.load() } // aşağı çekince yenile (eski List'teki ile aynı iş)
+    }
+
+    // BU GÖRÜNÜM: Yük Veren ekranının TAM EKRAN arka planı (giriş ekranındaki SceneBackground gibi): renk geçişi + ışık haleleri + 3B dorse.
+    // BAĞLANTI: body'deki .background { if isShipper { shipperBackground } } çağırır | renkler Design/DesignPalette.swift
+    // DORSE: progress 1 sabit → koliler hazır olunca sırayla kasaya iner (TruckLoadRig.setProgress), sonra öyle kalır.
+    //   Bir kez oynar: TruckLoadView'ın rig'i @State → ekran yenilense de (liste değişse de) yeniden oynamaz. Dokunuşa tepki yok (karar 13 Kasım).
+    //   NEDEN veriye bağlı değil: iOS Listing modelinde ilan durumu yok; doluluk şimdilik süs.
+    // YERLEŞİM (14 Kasım, kullanıcı: "ayrı bir alanda değil, arka planda dolacak"): 3B görünüm TÜM EKRANI kaplar (giriş ekranındaki koli sahnesi gibi);
+    //   dorse ekranın ortasında durur, içerik (düğme, yarı şeffaf kartlar) onun üstünden akar. Önceden üstte 300 noktalık ayrı bir bölmedeydi.
+    // ⮕ KULLANIM [shipperBackground]: kullanır: HomeView › body (.background)
+    var shipperBackground: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        return ZStack {
+            LinearGradient(colors: [palette.skyTop, palette.skyBottom], startPoint: .top, endPoint: .bottom)
+            // Işık haleleri: dorsenin arkasında bulanık amber bulutlar (giriş ekranıyla aynı, ucuz 2B katman) → sahne daha aydınlık
+            Ellipse().fill(palette.glowA).frame(width: 380, height: 320).blur(radius: 95).offset(x: -120, y: -40)
+            Ellipse().fill(palette.glowB).frame(width: 360, height: 300).blur(radius: 95).offset(x: 130, y: 120)
+            TruckLoadView(progress: 1) // ⮕ Design/TruckLoadView.swift (kamera dorseyi ekranın ENİNE sığdırır, dikeyde ortalar)
+                .id(colorScheme) // görünüm (açık/koyu) değişince dorse sahnesi yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
+        }
+        .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
+        .allowsHitTesting(false) // [SWIFT] arka plan dokunuş almaz → dokunuşlar üstteki düğme ve kartlara gider
     }
 }

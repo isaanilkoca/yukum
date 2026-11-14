@@ -35,6 +35,7 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
     @State private var updateSubscription: EventSubscription? // [SWIFT] kare aboneliği; saklanmazsa abonelik ölür, animasyon durur
     @State private var rig = SceneRig() // [BİZİM] kolileri düşüren ve yansımaları eşitleyen nesne (aşağıda)
     var onSettled: () -> Void = {} // [BİZİM] koliler durunca 1 kez çağrılır (ekran bandı bunu bekler)
+    var onSpot: () -> Void = {}    // [BİZİM] yığın tamamen durup 3B spot yanınca 1 kez → TapedBoxBackground görünen huzmeyi ve karartmayı açar
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
@@ -53,14 +54,20 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
 
                 // AĞIR HAZIRLIK, BEKLETMEDEN (13 Kasım performans düzeltmesi): dokular ve kalıp koliler await ile üretilir.
                 // Bu satırlarda sahne kurulumu durur ama EKRAN durmaz: giriş formu çizilmiş ve dokunulabilir kalır, koliler hazır olunca düşmeye başlar.
+                PerfLog.reset("Giriş sahnesi kuruluyor")                   // GEÇİCİ ölçüm ⮕ App/PerfLog.swift (filtre: ⏱)
                 let kit = await CardboardBoxKit.prepared(palette: palette) // ⮕ Design/CardboardBoxKit.swift (dokular)
-                await rig.prepare(kit: kit)                                // ⮕ Design/BoxSceneRig.swift (kalıp koliler)
+                PerfLog.mark("giriş sahnesi: koli dokuları hazır")
+                await rig.prepare(kit: kit)                                // ⮕ Design/BoxSceneRig.swift (kalıp koliler + ekran kartı ısınması) | 14 Kasım: yalnız koli
+                PerfLog.mark("giriş sahnesi: kalıplar hazır, düşüş başlıyor")
+                rig.palette = palette                                      // en sondaki spot ışığının rengi/gücü için
 
                 rig.onSettled = onSettled
                 // Yığın durunca kare aboneliğini bırak: tick artık çağrılmaz, sahne duran bir resim olarak kalır (pil ve işlemci boşa harcanmaz)
                 rig.onFinished = {
                     updateSubscription?.cancel() // .cancel [SWIFT]: aboneliği sonlandırır
                     updateSubscription = nil
+                    // Görünen huzme + karartma: 3B spot ışığıyla AYNI ANDA açılır | ⮕ TapedBoxBackground (SpotBeam bantların üstünde çizilir)
+                    onSpot()
                 }
                 updateSubscription = content.subscribe(to: SceneEvents.Update.self) { event in // [SWIFT] her karede haber ver
                     rig.tick(deltaTime: Float(event.deltaTime))
@@ -139,5 +146,6 @@ struct SceneBackground: View { // SceneBackground [BİZİM] ad | View [SWIFT]: b
 
         rig.root = root
         rig.mirrorRoot = mirrorRoot
+        rig.keyLight = key // spot yanınca bu ışık kısılır (BoxSceneRig › revealSpotlight)
     }
 }

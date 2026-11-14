@@ -25,7 +25,7 @@ struct CardboardBoxKit {
     private var labelMaterial: PhysicallyBasedMaterial?     // kargo etiketi (doku üretilemezse etiket konmaz)
     private let seamMaterial = UnlitMaterial(color: UIColor(red: 0.30, green: 0.20, blue: 0.11, alpha: 1)) // kapak yarığı: koyu kahve
 
-    // BEKLETEN KURULUM: dokular hemen, ekranı kilitleyerek üretilir. Kullanan: Design/TruckLoadView (prototip).
+    // BEKLETEN KURULUM: dokular hemen, ekranı kilitleyerek üretilir. Şu an kullanan YOK (TruckLoadView 13 Kasım'da prepared'a geçti); ekranda kullanma, takılma yapar.
     init(palette: Palette) {
         self.init(palette: palette,
                   textures: CardboardPrint.allCases.compactMap { CardboardArt.faceTexture(print: $0) },
@@ -38,7 +38,7 @@ struct CardboardBoxKit {
     // ÇÖZÜM: her doku ayrı ayrı ve bekletmeden üretilir (CardboardArt.textureAsync). Aradaki her await'te ekran nefes alır.
     // static func [SWIFT]: nesneye değil türe ait fonksiyon → CardboardBoxKit.prepared(palette:) diye çağrılır
     // NEDEN init değil: bu yapının init'i zaten var (yukarıda); "aynı şeyin async yolu" ayrı adla durunca çağıran hangisini seçtiğini görür.
-    // ⮕ KULLANIM [prepared]: kullanır: SceneBackground › RealityView.make
+    // ⮕ KULLANIM [prepared]: kullanır: SceneBackground › RealityView.make, TruckLoadRig › build
     static func prepared(palette: Palette) async -> CardboardBoxKit {
         var textures: [TextureResource] = []
         for print in CardboardPrint.allCases {

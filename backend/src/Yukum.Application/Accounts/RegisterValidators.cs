@@ -29,6 +29,10 @@ internal static partial class AccountRules
         rule.Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("E-posta boş olamaz.")
             .Must(v => v!.Trim().Length <= 254).WithMessage("E-posta en fazla 254 karakter olabilir.")
+            // Yalnız İngilizce harf/rakam/simge (ASCII). NEDEN (14 Kasım hatası): "işık@..." gibi adresler biçim denetimini geçiyor ama
+            // Identity'nin kullanıcı adı kuralı (e-posta_Rol, AccountService) Türkçe harfi reddediyor → kayıt 500 ile çöküyordu, kullanıcı
+            // yalnız "Bir hata oluştu." görüyordu. Şimdi kayıt başlamadan net Türkçe mesajla reddedilir. (Türkçe harfli e-posta pratikte kullanılmaz.)
+            .Must(v => v!.Trim().All(char.IsAscii)).WithMessage("E-posta adresinde Türkçe karakter (ç, ğ, ı, ö, ş, ü) kullanılamaz.")
             // Biçim denetimi: düzenli ifade + .NET MailAddress. Identity'nin kendi denetimiyle ayrışmasın diye ikisi birden.
             .Must(v => IsValidEmail(v!.Trim())).WithMessage("Geçerli bir e-posta adresi girin.");
 

@@ -31,6 +31,8 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // colorScheme: telefon açık modda mı koyu modda mı | @Environment [SWIFT]: sistemin verdiği ortam bilgisini okur
     // ⮕ KULLANIM [colorScheme]: okur: LoginView › body (palette seçimi)
     @Environment(\.colorScheme) private var colorScheme
+    @State private var homeShown = false // ana ekran üstte açık mı | true → arkadaki 3B giriş sahnesi kaldırılır (aşağıda ZStack)
+    @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system // görünüm seçimi (⮕ Design/ThemeToggle.swift) | ana ekrana da uygulanır (aşağıda)
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View { // ekranın içeriği
@@ -47,7 +49,17 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // Animasyonun tüm kodu Design/ klasöründe (rehber: Design/00_Rehber_Design.swift); bu ekran yalnız TapedBoxBackground()'u çağırır.
             // Alanların/düğmelerin bağlandığı yerler (viewModel.x, login()) DEĞİŞMEDİ; yalnız görünümleri değişti.
             ZStack {
-            TapedBoxBackground() // Design/TapedBoxBackground.swift → koliler düşer, durunca ekran bantlanır
+            // NE ZAMAN ÇİZİLMEZ (13 Kasım gecikme düzeltmesi):
+            //   1) isRestoring: otomatik giriş aranırken form zaten örtülü; oturum bulunursa bu sahne hiç görünmeden ana ekran açılır.
+            //      Önceden yine de kuruluyordu → açılışta telefon iki 3B sahneyi (koliler + kamyon) AYNI ANDA hazırlıyordu.
+            //   2) homeShown: ana ekran üstte açıkken giriş ekranı arkada canlı kalır (fullScreenCover onu kapatmaz) → sahne boşuna çizilir.
+            // Çıkış yapınca homeShown false olur → sahne yeniden kurulur, koliler yeniden düşer (yeni giriş ekranı gibi).
+            if !viewModel.isRestoring && !homeShown {
+                TapedBoxBackground() // Design/TapedBoxBackground.swift → koliler düşer, durunca ekran bantlanır
+                    // .id(colorScheme) [SWIFT]: değer değişince görünüm SIFIRDAN kurulur → görünüm (açık/koyu) değiştirilince 3B sahne
+                    //   yeni renklerle yeniden kurulur, koliler yeniden düşer (3B malzemeler kurulurken bir kez seçilir, sonradan kendiliğinden değişmez)
+                    .id(colorScheme)
+            }
 
             VStack(spacing: 14) { // elemanları alt alta dizer | VStack [SWIFT]: elemanları alt alta dizer
 
@@ -107,7 +119,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     .padding(.top, 4)
 
                     NavigationLink { // NavigationLink [SWIFT]: kendisi düğme, basınca ilk süslü parantezdeki ekrana geçer (Button içine konmaz) | label: görünümü
-                        RoleSelectionView() // Views/RoleSelectionView.swift → Yük Veren / Taşımacı seçimi
+                        RoleSelectionView(initialRole: viewModel.role) // Views/RoleSelectionView.swift → TEK kayıt ekranı | girişte seçili hesap türüyle açılır (14 Kasım)
                     } label: {
                         Text("Hesabın yok mu? **Kayıt ol**") // ** ** [SWIFT]: Markdown kalın yazı
                             .font(.subheadline)
@@ -123,12 +135,26 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
             .padding(.horizontal, 20) // .padding [SWIFT]: etrafında boşluk bırakır
             .padding(.bottom, 12)
             } // ZStack sonu
+            // GÖRÜNÜM DÜĞMESİ (Sistem / Açık / Koyu): sağ üst köşe | .overlay [SWIFT]: ekranın üstüne katman | ⮕ Design/ThemeToggle.swift
+            .overlay(alignment: .topTrailing) {
+                ThemeToggle()
+                    .font(.title3)
+                    .foregroundStyle(palette.title)
+                    .frame(width: 40, height: 40)
+                    .background(palette.cardSurface.opacity(0.55), in: Circle()) // bantların üstünde de seçilsin diye yarı saydam zemin
+                    .padding(.trailing, 16)
+                    .padding(.top, 4)
+            }
         }
 
         // OTOMATİK GİRİŞ | .task [SWIFT]: ekran açılınca bir kez çalışır
         // Keychain'de yenileme jetonu varsa sunucudan yeni jeton alınır; başarılıysa kullanıcı şifre yazmadan doğrudan ana sayfaya girer (loggedInUser dolunca fullScreenCover açılır)
         // Sunucu "oturum geçersiz" derse jeton silinir ve giriş formu görünür | internet yoksa jeton SİLİNMEZ, form görünür, kullanıcı sonra tekrar dener | BAĞLANTI: ViewModel.restoreSession → Models/Networking/AuthSession.swift → restore
         .task { await viewModel.restoreSession() } // ⮕ LoginViewModel.restoreSession() → AuthSession.restore() (Keychain'deki yenileme jetonuyla)
+        // DORSE MODELİNİ ÖNCEDEN YÜKLE (13 Kasım gecikme düzeltmesi): model iPhone 11'de ~4 sn'de yükleniyor; kullanıcı şifre yazarken arka planda biter
+        //   → Yük Veren ana ekranında dorse hemen gelir. Yalnız son seçilen tür Yük Veren ise (Taşımacı ekranında dorse yok, boşuna yüklenmesin).
+        // ⮕ Design/TruckLoadView.swift › TruckModel.preload
+        .task { if viewModel.role == .shipper { TruckModel.preload() } }
         // overlay [SWIFT]: ekranın ÜSTÜNE katman koyar | oturum aranırken giriş formunun üstünü örter ve dönen çark gösterir (form bir anlığına yanıp sönmesin)
         .overlay { // .overlay [SWIFT]: görünümün üstüne katman koyar
             if viewModel.isRestoring {
@@ -138,8 +164,15 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
         // BAĞLANTI: loggedInUser giriş başarılı olunca dolar → dolunca HomeView tam ekran açılır.
         // HomeView'daki "Çıkış Yap" dismiss() ile bu ekranı kapatır → loggedInUser tekrar nil olur → giriş ekranına dönülür.
         // item: Identifiable ister, LoginUser'a bu yüzden Identifiable eklendi (Models/Auth/).
-        .fullScreenCover(item: $viewModel.loggedInUser) { user in // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ | user: dolan kullanıcı (adı bizim) | ⮕ LoginViewModel.loggedInUser (LoginUser) dolunca HomeView açılır | .fullScreenCover [SWIFT]: tam ekran açılan ekran
+        // onDismiss [SWIFT]: tam ekran kapanınca (çıkış) çalışır → giriş sahnesi geri gelir
+        .fullScreenCover(item: $viewModel.loggedInUser, onDismiss: { homeShown = false }) { user in // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ | user: dolan kullanıcı (adı bizim) | ⮕ LoginViewModel.loggedInUser (LoginUser) dolunca HomeView açılır | .fullScreenCover [SWIFT]: tam ekran açılan ekran
             HomeView(user: user) // Views/HomeView.swift'e kullanıcıyı veriyoruz
+                // GÖRÜNÜM AYARI ana ekrana da (14 Kasım hatası: ana ekranda düğme çalışmıyordu).
+                // NEDEN: tam ekran açılan sayfa (fullScreenCover) ayrı bir sunum katmanıdır; YukumApp'teki .preferredColorScheme ona geçmiyor.
+                //   Aynı ayarı burada da veriyoruz → ana ekrandaki ve girişteki düğme aynı anda, her yerde çalışır.
+                .preferredColorScheme(theme.colorScheme)
+                // .onAppear: ana ekran TAMAMEN açılınca → arkadaki giriş sahnesi kaldırılır (açılış kayması sırasında kaldırılsa arka plan bir an boş görünürdü)
+                .onAppear { homeShown = true; PerfLog.mark("giriş sahnesi kaldırıldı") }
         }
     }
 }

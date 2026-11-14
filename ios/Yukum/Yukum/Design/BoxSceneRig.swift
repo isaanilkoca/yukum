@@ -2,7 +2,7 @@
 //  BoxSceneRig.swift
 //  Yukum
 //
-//  Kolileri sırayla düşüren, yansımalarını eşitleyen, yığın durunca sahneyi donduran nesne.
+//  Kolileri sırayla düşüren, yansımalarını eşitleyen, yığın durunca sahneyi donduran ve en sonda spot ışığını açan nesne.
 //
 
 import RealityKit // [SWIFT] Apple'ın 3B motoru: şekil üretir, ışıklar, fizik hesaplar, kamerayla çizer (iOS'un içinde, ek kütüphane yok)
@@ -10,9 +10,10 @@ import UIKit      // [SWIFT] UIColor, UIImage ve resim çizici (UIGraphicsImageR
 
 // ┌─ BAĞLANTI HARİTASI: BoxSceneRig.swift ─────────────────────────────────────────
 // │ GELEN     : Design/BoxSceneBackground.swift → sahne kurulurken prepare(kit:), sonra her karede tick()
-// │ GİDEN     : onSettled kapanışı → Design/TapedBoxBackground.wrapScreen (bantlamayı başlatır)
+// │ GİDEN     : Design/CardboardBoxKit.swift (koli) | Design/DesignPalette.swift (spot ışığı rengi/gücü)
+// │             onSettled kapanışı → Design/TapedBoxBackground.wrapScreen (bantlamayı başlatır)
 // │             onFinished kapanışı → Design/BoxSceneBackground (kare aboneliğini kapatır)
-// │ TEKNİK    : RealityKit fizik (PhysicsBodyComponent + CollisionComponent).
+// │ TEKNİK    : RealityKit fizik (PhysicsBodyComponent + CollisionComponent) + SpotLightComponent.
 // │ REHBER    : Design/00_Rehber_Design.swift (hangi teknik nerede, okuma sırası)
 // └──────────────────────────────────────────────────────────────────────
 
@@ -20,18 +21,22 @@ import UIKit      // [SWIFT] UIColor, UIImage ve resim çizici (UIGraphicsImageR
 // NEDEN class: kare aboneliği bir closure; struct kopyalanırdı, class aynı nesneyi paylaşır.
 //
 // ÖMÜR (koliler YALNIZ BİR KEZ düşer; bu bir oyun değil, arka plan):
-//   1. prepare(kit:)  sahne kurulurken: birkaç KALIP koli üretilir (pahalı iş burada, bir kez)
-//   2. tick()         her karede: zamanı gelen koli kalıptan KOPYALANIP bırakılır (ucuz) → fizik motoru düşürür
-//   3. onSettled      son koliden 1,7 sn sonra: bantlar başlar
-//   4. freeze()       yığın gerçekten durunca: fizik kapatılır, kare aboneliği bırakılır → sahne artık yalnız duran bir resimdir
+//   1. prepare(kit:)      sahne kurulurken: birkaç KALIP koli üretilir (pahalı iş burada, bir kez) + ekran kartı ısıtılır
+//   2. tick()             her karede: zamanı gelen koli kalıptan KOPYALANIP bırakılır (ucuz) → fizik motoru düşürür
+//   3. onSettled          son koliden 1,7 sn sonra: bantlar başlar
+//   4. freeze()           yığın gerçekten durunca: fizik kapatılır, kare aboneliği bırakılır
+//   5. revealSpotlight()  en son: tepeden spot ışığı ORTADA küçük bir daire olarak yanar, dairesi giderek BÜYÜYÜP tüm kolileri kaplar
 //
-// PERFORMANS NOTLARI (13 Kasım, gerçek cihazda takılma görülünce):
+// 14 Kasım KARARI (kullanıcı): giriş ekranında YALNIZ karton koli düşer (meyve/teneke/şişe denendi, geri alındı; onlar dorsede: Design/CargoKit.swift).
+//   Tek yenilik spot ışığı.
+//
+// PERFORMANS NOTLARI (13-14 Kasım, gerçek cihazda takılma görülünce):
 //   KALIP + KOPYA : eskiden her koli bırakılırken şekli (köşesi yuvarlak kutu + bant + kapak + etiket) sıfırdan üretiliyordu.
-//                   Ölçüm: 24 koliyi üretmek ≈ 190 ms, 24 koliyi KOPYALAMAK ≈ 2 ms (simülatörde). Şekil üretimi koli düşerken
-//                   kare aralarına sığmıyor, düşüş takılıyordu. Şimdi 8 kalıp önceden üretilir; düşen her koli bir kalıbın kopyasıdır.
+//                   Ölçüm: 24 koliyi üretmek ≈ 190 ms, 24 koliyi KOPYALAMAK ≈ 2 ms (simülatörde). Şimdi kalıplar önceden üretilir.
 //                   Kopya, şekil ve malzemeyi PAYLAŞIR (yeniden üretmez) → hem hızlı hem bellekte az yer.
-//   DONDURMA      : eskiden yığın durduktan sonra da fizik motoru her karede 24 koliyi hesaplıyor, biz de 24 yansımayı eşitliyorduk
-//                   (kullanıcı giriş ekranında kaldığı sürece, boşuna). Şimdi yığın durunca ikisi de biter.
+//   ISINMA        : ekran kartı bir malzemeyi İLK KEZ çizerken onun programını derler (o kare uzar). Kalıplar düşüş başlamadan
+//                   görünmeyecek kadar küçük bir kez çizdirilir → derleme ekran sakinken yapılır (ölçüm: ilk düşüş takılması kalktı).
+//   DONDURMA      : yığın durunca fizik ve yansıma eşitleme biter → sahne duran bir resimdir (pil/işlemci boşa harcanmaz).
 // ⮕ KULLANIM [SceneRig]: kullanır: SceneBackground › rig
 @MainActor
 final class SceneRig {
@@ -43,6 +48,8 @@ final class SceneRig {
 
     var root: Entity?
     var mirrorRoot: Entity?
+    var keyLight: Entity?         // sahnenin ana ışığı: spot yanınca kısılır (BoxSceneBackground verir)
+    var palette: Palette?         // spot ışığının rengi ve gücü
     var onSettled: (() -> Void)?  // son koliden 1,7 sn sonra, 1 kez → bantlar
     var onFinished: (() -> Void)? // yığın tamamen durunca, 1 kez → kare aboneliği kapanır
     private var settledFired = false
@@ -54,10 +61,10 @@ final class SceneRig {
     private var time: Float = 0
     private var nextSpawn: Float = 0.5 // ilk koli ekran açıldıktan yarım saniye sonra
     private var stillFrames = 0        // art arda kaç karedir hiçbir koli kıpırdamadı
+    private var maxFrame: Float = 0    // GEÇİCİ ölçüm: düşüş boyunca en uzun kare (sn) → donunca App/PerfLog'a yazılır
 
     // BU FONKSİYON: kalıp kolileri üretir. Pahalı iş (şekil üretimi) burada, koliler düşmeye başlamadan ÖNCE yapılır.
     // await Task.yield() [SWIFT]: "sıramı bir anlığına bırakıyorum" → her kalıptan sonra ekran bir kare çizebilir, dokunuş işlenebilir.
-    //   Yield olmasa 8 kalıp tek parça hâlinde üretilir, o süre boyunca ekran donardı.
     // ⮕ KULLANIM [prepare]: kullanır: SceneBackground › RealityView.make (1 kez)
     func prepare(kit: CardboardBoxKit) async {
         for _ in 0..<Self.templateCount {
@@ -66,12 +73,27 @@ final class SceneRig {
             templates.append((kit.makeBox(size: size), .generateBox(size: size))) // bantlı, etiketli hazır koli: Design/CardboardBoxKit.swift
             await Task.yield()
         }
+
+        // ISINMA: her kalıbın bir kopyası kameranın önünde, 1/1000 boyunda birkaç kare çizilir, sonra silinir (yukarıdaki not).
+        //   NEDEN gizli (isEnabled = false) değil: gizli parça hiç çizilmez → derleme de yapılmaz.
+        guard let root else { return }
+        let warmRoot = Entity()
+        warmRoot.position = [0, 3, 2] // kameranın görüş alanının ortası
+        for template in templates {
+            let copy = template.box.clone(recursive: true)
+            copy.scale = SIMD3(repeating: 0.001)
+            warmRoot.addChild(copy)
+        }
+        root.addChild(warmRoot)
+        try? await Task.sleep(for: .milliseconds(150)) // birkaç kare çizilsin
+        warmRoot.removeFromParent()
     }
 
     // ⮕ KULLANIM [tick]: kullanır: SceneBackground › SceneEvents.Update aboneliği (her kare)
     func tick(deltaTime: Float) {
         guard !finished else { return } // donduktan sonra yapılacak iş yok
         time += deltaTime
+        if !pairs.isEmpty { maxFrame = max(maxFrame, deltaTime) } // GEÇİCİ ölçüm: düşüş başladıktan sonraki en uzun kare
 
         // SIRAYLA BIRAK: zamanı gelince bir koli daha ekle (toplam boxCount olana kadar).
         while pairs.count < Self.boxCount, time >= nextSpawn {
@@ -103,7 +125,7 @@ final class SceneRig {
     }
 
     // BU FONKSİYON: yığını olduğu yerde sabitler. Koliler bir daha hareket etmez; dokunuşla da zıplamaz (bilerek: giriş ekranı oyun değil).
-    // Fizik bileşenleri SİLİNİR: motor artık bu kolileri hiç hesaplamaz. Koliler son konumlarında görüntü olarak kalır.
+    // Fizik bileşenleri SİLİNİR: motor artık bu kolileri hiç hesaplamaz. Koliler son konumlarında görüntü olarak kalır. Sonra spot yanar.
     // ⮕ KULLANIM [freeze]: kullanır: tick
     private func freeze() {
         finished = true
@@ -112,7 +134,46 @@ final class SceneRig {
             pair.box.components.remove(CollisionComponent.self)
         }
         templates.removeAll() // kalıplara artık gerek yok
+        PerfLog.mark("giriş sahnesi: yığın durdu | en uzun kare \(Int(maxFrame * 1000)) ms (60 fps = 16 ms)") // GEÇİCİ ölçüm ⮕ App/PerfLog.swift
         onFinished?()
+        revealSpotlight()
+    }
+
+    // BU FONKSİYON: her şey düştükten sonra tepeden spot ışığını açar. ORTADAN YAYILARAK (14 Kasım, kullanıcı isteği):
+    //   ışık önce yığının ortasında küçük bir daire olarak yanar, dairesi 2 sn içinde giderek büyür ve tüm kolileri kaplar.
+    //   NASIL: SpotLightComponent'in koni açısı (outerAngle) her adımda büyütülür: 3° → 30°.
+    //   KESKİN KENAR: iç açı dış açıdan yalnız 3° küçük → dairenin kenarı bulanık değil, net çizgi (sahne ışığı gibi).
+    //   YAVAŞLAYARAK: büyüme "ease-out" (1 - (1-k)³) → başta hızlı açılır, kenara yaklaşınca yavaşlar.
+    //   Aynı anda ana ışık %40a kısılır → ışık dairesinin dışı loş kalır, dairenin içindeki koliler parlak ve canlı öne çıkar.
+    //   NEDEN Task + bekleme (kare aboneliği değil): abonelik dondurmada kapandı; kısa bir geçiş için yeniden açmaya değmez.
+    // ⮕ KULLANIM [revealSpotlight]: kullanır: freeze
+    private func revealSpotlight() {
+        guard let root, let palette, palette.isDark else { return } // YALNIZ KOYU MOD (14 Kasım, kullanıcı kararı): gündüzde spot ve kısma yok
+        let spot = Entity()
+        var light = SpotLightComponent(color: palette.spotColor, intensity: 0,
+                                       innerAngleInDegrees: 1, outerAngleInDegrees: 3, attenuationRadius: 30)
+        spot.components.set(light)
+        spot.look(at: [0, 1.2, 0], from: [0, 11, 3], relativeTo: nil) // tam tepeden, hafif önden, yığının ortasına
+        root.addChild(spot)
+
+        let keyStart = keyLight?.components[DirectionalLightComponent.self]
+        Task { @MainActor in
+            let steps = 60 // 60 adım × 33 ms ≈ 2 sn
+            for step in 1...steps {
+                let k = Float(step) / Float(steps)
+                let eased = 1 - pow(1 - k, 3)                              // ease-out: hızlı başla, yavaş bitir
+                light.outerAngleInDegrees = 3 + 27 * eased                  // 3° → 30°: daire büyür
+                light.innerAngleInDegrees = light.outerAngleInDegrees - 3   // keskin kenar
+                light.intensity = palette.spotIntensity * min(1, k * 4)     // ilk 0,5 sn'de tam güce çıkar
+                spot.components.set(light)
+                if let start = keyStart {
+                    var key = start
+                    key.intensity = start.intensity * (1 - 0.6 * eased)     // ana ışık %100 → %40 (koni dışı karanlık; karartma perdesiyle birlikte: Design/SpotBeam)
+                    keyLight?.components.set(key)
+                }
+                try? await Task.sleep(for: .milliseconds(33))
+            }
+        }
     }
 
     // ⮕ KULLANIM [spawnBox]: kullanır: tick

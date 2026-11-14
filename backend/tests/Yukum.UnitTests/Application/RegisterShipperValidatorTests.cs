@@ -57,6 +57,9 @@ public class RegisterShipperValidatorTests
     [InlineData(null, "E-posta boş olamaz.")]
     [InlineData("", "E-posta boş olamaz.")]
     [InlineData("yok", "Geçerli bir e-posta adresi girin.")]
+    // 14 Kasım hatası: Türkçe harfli e-posta Identity kullanıcı adında reddedilip 500 veriyordu → artık doğrulamada net mesajla durur
+    [InlineData("işık@x.com", "E-posta adresinde Türkçe karakter (ç, ğ, ı, ö, ş, ü) kullanılamaz.")]
+    [InlineData("ali@görsel.com", "E-posta adresinde Türkçe karakter (ç, ğ, ı, ö, ş, ü) kullanılamaz.")]
     [InlineData("ali@", "Geçerli bir e-posta adresi girin.")]
     [InlineData("ali veli@x.com", "Geçerli bir e-posta adresi girin.")]
     public async Task Email_rules(string? value, string message)

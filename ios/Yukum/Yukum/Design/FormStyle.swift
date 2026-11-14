@@ -8,7 +8,7 @@
 import SwiftUI    // [SWIFT] ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: FormStyle.swift ─────────────────────────────────────────
-// │ GELEN     : Views/LoginView.swift → FormCard { LabeledInput(...) { TextField(...) } ... }. İleride: kayıt ekranları.
+// │ GELEN     : Views/LoginView.swift → FormCard { LabeledInput(...) { TextField(...) } ... } | Views/RoleSelectionView (tek kayıt ekranı), RegisterView, CarrierRegisterView
 // │ GİDEN     : Design/DesignPalette.swift (kart ve kutu renkleri)
 // │ TEKNİK    : yalnız SwiftUI. İçerik dışarıdan verilir (@ViewBuilder) → alanın NE olduğu (TextField, Picker) ekranda kalır, NASIL göründüğü burada.
 // │ REHBER    : Design/00_Rehber_Design.swift
@@ -67,5 +67,71 @@ struct LabeledInput<Content: View>: View {
             .background(palette.fieldSurface, in: .rect(cornerRadius: 14))
             .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(palette.fieldBorder))
         }
+    }
+}
+
+// ─── KAYIT FORMU PARÇALARI (14 Kasım: tek kayıt ekranı) ─────────────────────────
+// NEDEN burada: Yük Veren ve Taşımacı formları aynı düğmeyi, aynı KVKK satırını, aynı mesaj kutusunu kullanır → kod tekrarı olmasın, görünüm tek yerden değişsin.
+
+// BU GÖRÜNÜM: turuncu, tam genişlik ana düğmenin GÖRÜNÜMÜ (giriş ekranındaki "Giriş yap" ile aynı). Davranışı çağıran Button verir.
+// ⮕ KULLANIM [AccentButtonLabel]: kullanır: RegisterView, CarrierRegisterView (Button label'ı)
+struct AccentButtonLabel: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let title: String
+
+    var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(palette.buttonText)
+            .frame(maxWidth: .infinity).frame(height: 54) // parmakla rahat basılır
+            .background(palette.accent, in: .rect(cornerRadius: 14)) // koli bandı turuncusu
+    }
+}
+
+// BU GÖRÜNÜM: KVKK onayı. Solda onay kutusu (basınca işaretlenir), yanında metin; altında "KVKK metnini oku" bağlantısı (alttan sayfa açar).
+// NEDEN Toggle değil kutu: anahtar (Toggle) bir ayar gibi duruyor; sözleşme onayı için alışılmış görünüm işaret kutusudur.
+// ⮕ KULLANIM [FormConsent]: kullanır: RegisterView, CarrierRegisterView
+struct FormConsent: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @Binding var isOn: Bool // @Binding [SWIFT]: değer çağıranın (ViewModel.kvkkAccepted); burada değişince orada da değişir
+    @State private var showPrivacy = false
+
+    var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        VStack(alignment: .leading, spacing: 6) {
+            Button { isOn.toggle() } label: { // .toggle() [SWIFT]: true ↔ false
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: isOn ? "checkmark.square.fill" : "square")
+                        .font(.title3)
+                        .foregroundStyle(isOn ? palette.accent : palette.label.opacity(0.6))
+                    Text("KVKK aydınlatma metnini okudum, onaylıyorum.")
+                        .font(.footnote)
+                        .foregroundStyle(palette.label)
+                        .multilineTextAlignment(.leading)
+                }
+            }
+            .buttonStyle(.plain) // [SWIFT] düğme yazıyı maviye boyamasın
+            Button("KVKK metnini oku") { showPrivacy = true }
+                .font(.footnote.weight(.semibold))
+                .tint(palette.accent)
+                .padding(.leading, 32) // kutunun hizasından değil, yazının hizasından başlasın
+                .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
+        }
+        .padding(.top, 2)
+    }
+}
+
+// BU GÖRÜNÜM: formun altındaki hata (kırmızı, uyarı simgesi) ya da başarı (yeşil, tik simgesi) yazısı.
+// Simge + renk: durum yalnız renge bağlı kalmasın (renk ayırt edemeyen kullanıcı da anlasın).
+// ⮕ KULLANIM [FormMessage]: kullanır: RegisterView, CarrierRegisterView
+struct FormMessage: View {
+    let text: String
+    let isError: Bool
+
+    var body: some View {
+        Label(text, systemImage: isError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill") // Label [SWIFT]: simge + yazı
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(isError ? Color.red : Color.green)
     }
 }

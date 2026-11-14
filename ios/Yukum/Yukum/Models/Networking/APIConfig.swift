@@ -27,5 +27,7 @@ nonisolated enum APIConfig { // enum [SWIFT]: sabit seçenek listesi
     #endif
 
     // devMachineHost: Mac'in yerel ağ IP'si | Wi-Fi değişince değişir → Terminal: ipconfig getifaddr en0 | canlıda burası https alan adı olacak
-    static let devMachineHost = "192.168.1.18"
+    // DİKKAT: Mac telefonun hotspot'una bağlıyken en0 BOŞ döner (bağlantı başka arayüzde, örn. en6) → `ifconfig | grep "inet "` ile bak; hotspot adresi 172.20.10.x olur
+    // Wi-Fi'ye dönünce eski adres: 192.168.1.18
+    static let devMachineHost = "192.168.1.18" // ev Wi-Fi'si | telefon hotspot'unda: 172.20.10.11 (ifconfig ile bak)
 }

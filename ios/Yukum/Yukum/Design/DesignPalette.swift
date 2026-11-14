@@ -52,12 +52,40 @@ struct Palette {
     var rimA: UIColor { isDark ? UIColor(red: 1.0, green: 0.62, blue: 0.25, alpha: 1) : UIColor(red: 1.0, green: 0.80, blue: 0.55, alpha: 1) }  // kenar ışığı 1: amber
     var rimB: UIColor { isDark ? UIColor(red: 0.62, green: 0.70, blue: 0.82, alpha: 1) : UIColor(red: 1.0, green: 0.95, blue: 0.85, alpha: 1) } // kenar ışığı 2: gecede soğuk gri (koliyi zeminden ayırır)
     var rimIntensity: Float { isDark ? 110000 : 14000 }
+    // Giriş ekranı: her şey düştükten sonra yanan tepe spotu (Design/BoxSceneRig › revealSpotlight) | dorse tavan lambası gibi soğuğa yakın beyaz
+    var spotColor: UIColor { UIColor(red: 1.0, green: 0.99, blue: 0.96, alpha: 1) }   // beyaz (çok hafif sıcak)
+    var spotIntensity: Float { isDark ? 900_000 : 0 } // 14 Kasım: 900 bin → 2,4 milyon (kullanıcı: "spot düşmüyor") | 4 milyonda koliler beyaza çekiyordu | sonra 1,3 milyon → 900 bin: kullanıcı "daha loş, sahne efekti" | gündüz 0: spot yalnız koyu modda
+    var beam: Color { Color(red: 1.0, green: 0.99, blue: 0.96) } // görünen huzme ve yer havuzu (BoxSceneBackground › SpotBeam): beyaz, parlak
 
-    // Kamyon sahnesi (Design/TruckLoadView.swift)
-    var cabPaint: UIColor { UIColor(red: 1.0, green: 0.55, blue: 0.02, alpha: 1) }  // kabin: koli bandı turuncusu (düğmeyle aynı aile)
+    // Dorse sahnesi (Design/TruckLoadView.swift) | hazır modelin YALNIZ dorsesi (kabin gizli) | kullanıcı isteğiyle sahne daha PARLAK
+    var trailerKeyIntensity: Float { isDark ? 8200 : 8600 }   // ana ışık: giriş sahnesinden (keyIntensity) ~%55 güçlü
+    var trailerFillIntensity: Float { isDark ? 3000 : 3400 }  // sağ-önden dolgu ışığı: gölgeli yüzler kararmasın
     var cargoGlass: UIColor { isDark ? UIColor(red: 1.0, green: 0.93, blue: 0.82, alpha: 1) : UIColor(red: 0.55, green: 0.45, blue: 0.35, alpha: 1) } // şeffaf kasa camının rengi
-    var cargoEdge: UIColor { isDark ? UIColor(red: 1.0, green: 0.86, blue: 0.62, alpha: 1) : UIColor(red: 0.45, green: 0.33, blue: 0.22, alpha: 1) }  // kasa kenar çizgileri
-    var podium: UIColor { isDark ? UIColor(red: 0.10, green: 0.078, blue: 0.058, alpha: 1) : UIColor(red: 0.86, green: 0.78, blue: 0.66, alpha: 1) }  // aracın durduğu disk
+    var cargoEdge: UIColor { isDark ? UIColor(red: 1.0, green: 0.88, blue: 0.66, alpha: 1) : UIColor(red: 0.45, green: 0.33, blue: 0.22, alpha: 1) }  // kasa kenar çizgileri
+
+    // Yük çeşitleri (Design/CargoKit.swift): tarım ürünleri ve gıda | gerçek ürün renkleri, kartonla aynı sıcak aile
+    var crateWood: UIColor { UIColor(red: 0.66, green: 0.47, blue: 0.27, alpha: 1) }   // meyve kasası tahtası
+    var palletWood: UIColor { UIColor(red: 0.78, green: 0.62, blue: 0.40, alpha: 1) }  // palet tahtası (açık çam)
+    var orange: UIColor { UIColor(red: 1.0, green: 0.50, blue: 0.04, alpha: 1) }       // portakal
+    var lemon: UIColor { UIColor(red: 1.0, green: 0.88, blue: 0.08, alpha: 1) }        // limon: canlı sarı (14 Kasım: daha doygun)
+    var tomato: UIColor { UIColor(red: 0.86, green: 0.12, blue: 0.06, alpha: 1) }      // domates
+    var avocado: UIColor { UIColor(red: 0.22, green: 0.34, blue: 0.08, alpha: 1) }     // avokado: gerçek yeşil, mat kabuk (14 Kasım: koyu-siyahımsı tondan açıldı)
+    // Zeytinyağı tenekesi (kullanıcının gösterdiği 10 L teneke görseli, 14 Kasım): sıcak parlak altın gövde, açık altın kenar, koyu yeşil yassı kapak + açık halka
+    // NOT: metal yüzey rengini çevresinden yansıtır; sahnemiz koyu olduğu için tam metal (metallic 1) teneke KARA görünüyordu
+    //   → renk açık tutuldu ve CargoKit'te metallic 0,55'e indirildi: görseldeki gibi altın okunur.
+    var tinGold: UIColor { UIColor(red: 0.92, green: 0.75, blue: 0.30, alpha: 1) }
+    var tinRim: UIColor { UIColor(red: 0.98, green: 0.88, blue: 0.56, alpha: 1) }
+    var capGreen: UIColor { UIColor(red: 0.05, green: 0.33, blue: 0.17, alpha: 1) }
+    var spoutWhite: UIColor { UIColor(red: 0.95, green: 0.95, blue: 0.92, alpha: 1) }
+    var sack: UIColor { UIColor(red: 0.80, green: 0.70, blue: 0.50, alpha: 1) }        // çuval (çuval bezi)
+    var sackPrint: UIColor { UIColor(red: 0.62, green: 0.22, blue: 0.12, alpha: 1) }   // çuvalın üstündeki baskı bandı
+    // Zeytinyağı şişesi (kullanıcının görselindeki cam şişe): şeffaf cam + içinde altın sarısı yağ + mantar tıpa
+    var glassTint: UIColor { UIColor(red: 0.90, green: 0.96, blue: 0.88, alpha: 1) }   // camın çok hafif yeşilimsi rengi
+    var oil: UIColor { UIColor(red: 0.88, green: 0.70, blue: 0.10, alpha: 1) }         // zeytinyağı: altın sarısı
+    var cork: UIColor { UIColor(red: 0.74, green: 0.56, blue: 0.36, alpha: 1) }        // şişe mantarı
+    // Meyve ayrıntıları: yaprak, çanak (domates), sap
+    var leaf: UIColor { UIColor(red: 0.16, green: 0.44, blue: 0.12, alpha: 1) }
+    var stem: UIColor { UIColor(red: 0.36, green: 0.26, blue: 0.12, alpha: 1) }
 
     // Bantlar
     var tape: UIColor { UIColor(red: 0.90, green: 0.78, blue: 0.56, alpha: 1) } // kolinin üstündeki bant: açık bej, parlak
