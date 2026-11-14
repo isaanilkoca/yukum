@@ -103,7 +103,7 @@ struct RouteCard: View {
         }
         .padding(14)
         .padding(.leading, 4) // soldaki turuncu şeride yer
-        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 16)) // yarı şeffaf
+        .background(palette.cardSurface.opacity(0.88), in: .rect(cornerRadius: 16)) // 15 Kasım: 0,62 → 0,88 (okunurluk)
         .overlay(alignment: .leading) { // sol kenarda turuncu şerit: yol kenar çizgisi gibi
             Capsule().fill(palette.accent).frame(width: 4).padding(.vertical, 14).padding(.leading, 6)
         }

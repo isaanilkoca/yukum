@@ -40,6 +40,7 @@ public sealed class CompleteOfferHandler(
 
         // Durum iki taraf için de değişir: sohbet iki tarafta kilitlenir.
         offer.Status = OfferStatus.Completed;
+        CancelRequestHandlers.Clear(offer); // (15 Kasım) açık bir iptal talebi varsa iş bittiği için kapanır
         listing.Status = ListingStatus.Completed;
 
         // Taşımacı bitirmediyse ona "Yeni" bildirimi (rozet) gider.

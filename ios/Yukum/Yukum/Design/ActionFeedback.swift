@@ -142,7 +142,8 @@ private struct BoxSealAnimation: View {
                 }
                 .frame(width: w, height: h)
                 .padding(.top, h * 0.42)
-                .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
+                // GÖLGE (15 Kasım performans): .shadow kapaklar dönerken her karede yeniden bulanıklaştırılıyordu → sabit, yumuşak bir zemin elipsi
+                .background(alignment: .bottom) { Ellipse().fill(RadialGradient(colors: [.black.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 130)).frame(width: 260, height: 40).offset(y: 18) }
                 .overlay(alignment: .topTrailing) { // 4) ONAY ROZETİ: koli üstüne basılan damga gibi
                     Image(systemName: "checkmark.seal.fill").font(.system(size: 44)).foregroundStyle(palette.accent)
                         .background(Circle().fill(palette.buttonText).padding(6))
@@ -262,7 +263,8 @@ private struct BoxUnsealAnimation: View {
                 }
                 .frame(width: w, height: h)
                 .padding(.top, h * 0.42)
-                .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
+                // GÖLGE (15 Kasım performans): .shadow kapaklar dönerken her karede yeniden bulanıklaştırılıyordu → sabit, yumuşak bir zemin elipsi
+                .background(alignment: .bottom) { Ellipse().fill(RadialGradient(colors: [.black.opacity(0.35), .clear], center: .center, startRadius: 0, endRadius: 130)).frame(width: 260, height: 40).offset(y: 18) }
                 .overlay { // 3) İPTAL DAMGASI: kolinin önüne eğik basılır (büyükten küçüğe "pat")
                     Text("İPTAL")
                         .font(.system(size: 34, weight: .black, design: .rounded)).tracking(3)
@@ -421,7 +423,7 @@ private struct TireTrackAnimation: View {
                 .font(.headline).foregroundStyle(palette.buttonText)
                 .padding(.horizontal, 18).padding(.vertical, 10)
                 .background(palette.accent, in: .capsule)
-                .shadow(color: .black.opacity(0.25), radius: 10, y: 5)
+                .shadow(color: .black.opacity(0.2), radius: 4, y: 2) // küçük yarıçap: ucuz
                 .scaleEffect(done ? 1 : 0.85).opacity(done ? 1 : 0)
         }
         .opacity(visible ? 1 : 0)

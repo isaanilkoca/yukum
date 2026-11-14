@@ -37,6 +37,7 @@ struct ChatView: View {
     @State private var showCompleteConfirm = false
     @State private var showRating = false
     @State private var feedback: ActionFeedback? // işlem sonrası animasyon (rolüne göre) ⮕ Design/ActionFeedback.swift
+    @State private var busy = false // temizle / işi bitir sürüyor → "İşleniyor…"
 
     init(context: ChatContext) {
         _viewModel = State(initialValue: ChatViewModel(context: context))
@@ -100,6 +101,7 @@ struct ChatView: View {
             }
         }
         .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift
+        .busyIndicator(busy)
         .navigationTitle(viewModel.context.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -115,6 +117,7 @@ struct ChatView: View {
         .confirmationDialog("Mesajlar temizlensin mi?", isPresented: $showClearConfirm, titleVisibility: .visible) {
             Button("Benden Sil", role: .destructive) {
                 Task {
+                    busy = true; defer { busy = false }
                     await viewModel.clear() // ⮕ ChatViewModel.clear
                     if viewModel.errorMessage == nil { feedback = ActionFeedback(viewModel.context.canReview ? .unseal : .unload, "Mesajlar temizlendi") } // silme: rolün olumsuz animasyonu
                 }
@@ -129,6 +132,7 @@ struct ChatView: View {
         .alert("İş bitsin mi?", isPresented: $showCompleteConfirm) {
             Button("Bitir ve Sil", role: .destructive) {
                 Task {
+                    busy = true; defer { busy = false }
                     if await viewModel.complete() { // ⮕ ChatViewModel.complete → işi tamamla
                         // animasyon bitince: Yük Veren puan sayfasını görür, Taşımacı sohbetten çıkar
                         feedback = ActionFeedback(feedbackKind, "İş tamamlandı") {

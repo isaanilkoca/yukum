@@ -152,7 +152,7 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
                             }
                         }
                     } label: {
-                        AccentButtonLabel(title: viewModel.submitTitle) // "İlanı Yayınla" / "İlanı Güncelle" | turuncu düğme ⮕ Design/FormStyle.swift
+                        AccentButtonLabel(title: viewModel.submitTitle, isLoading: viewModel.isLoading, loadingTitle: viewModel.isEditing ? "Güncelleniyor…" : "Yayınlanıyor…") // "İlanı Yayınla" / "İlanı Güncelle" | turuncu düğme ⮕ Design/FormStyle.swift
                     }
                     .disabled(viewModel.isLoading) // isLoading iken kilitli (çift tıklama olmasın)
                 }

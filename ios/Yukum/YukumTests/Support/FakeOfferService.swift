@@ -34,4 +34,11 @@ final class FakeOfferService: OfferServicing {
     private(set) var advancedIds: [String] = []
     func advance(offerId: String) async throws { advancedIds.append(offerId); try advanceResult.get() }
     func shipperHistory() async throws -> [ShipperHistoryOffer] { try historyResult.get() }
+    // karşılıklı iptal: çağrıları kaydeder | cancelResult ile hata denenebilir
+    var cancelCalls: [String] = []
+    var cancelResult: Result<Void, Error> = .success(())
+    func requestCancel(offerId: String, reason: String, note: String?, reopenListing: Bool?) async throws { cancelCalls.append("request:\(offerId):\(reason):\(reopenListing.map(String.init) ?? "nil")"); try cancelResult.get() }
+    func approveCancel(offerId: String, reopenListing: Bool?) async throws { cancelCalls.append("approve:\(offerId):\(reopenListing.map(String.init) ?? "nil")"); try cancelResult.get() }
+    func rejectCancel(offerId: String) async throws { cancelCalls.append("reject:\(offerId)"); try cancelResult.get() }
+    func withdrawCancel(offerId: String) async throws { cancelCalls.append("withdraw:\(offerId)"); try cancelResult.get() }
 }

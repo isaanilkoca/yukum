@@ -107,6 +107,26 @@ struct OfferService { // OfferService [BİZİM] ad
     func shipperHistory() async throws -> [ShipperHistoryOffer] {
         try await api.send(.get, "/api/v1/offers/history", fallback: "Eski teklifler alınamadı.")
     }
+
+    // ─── KARŞILIKLI İPTAL (15 Kasım) ─── sunucu kuralları: backend CancelRequestHandlers (yalnız kabul edilmiş + teslim edilmemiş iş)
+    // requestCancel: POST /api/v1/offers/{id}/cancel-request {reason, note, reopenListing} | 409: zaten talep var / iş uygun değil
+    func requestCancel(offerId: String, reason: String, note: String?, reopenListing: Bool?) async throws {
+        try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/cancel-request",
+                                    body: CancelRequestBody(reason: reason, note: note, reopenListing: reopenListing), fallback: "İptal talebi gönderilemedi.")
+    }
+    // approveCancel: POST .../cancel-request/approve {reopenListing} | iş karşılıklı iptal olur
+    func approveCancel(offerId: String, reopenListing: Bool?) async throws {
+        try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/cancel-request/approve",
+                                    body: CancelApproveBody(reopenListing: reopenListing), fallback: "İptal onaylanamadı.")
+    }
+    // rejectCancel: POST .../cancel-request/reject | iş devam eder
+    func rejectCancel(offerId: String) async throws {
+        try await api.sendNoContent(.post, "/api/v1/offers/\(offerId)/cancel-request/reject", fallback: "İptal talebi reddedilemedi.")
+    }
+    // withdrawCancel: DELETE .../cancel-request | yalnız talep eden
+    func withdrawCancel(offerId: String) async throws {
+        try await api.sendNoContent(.delete, "/api/v1/offers/\(offerId)/cancel-request", fallback: "Talep geri çekilemedi.")
+    }
 }
 
 // OfferService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir

@@ -43,7 +43,9 @@ struct NotificationsView: View {
         .listStyle(.plain)
         .themedScreen()
         .overlay {
-            if viewModel.items.isEmpty && !viewModel.isLoading && viewModel.errorMessage == nil {
+            if viewModel.items.isEmpty && viewModel.isLoading {
+                LoadingCard().padding() // ilk yükleme: "Bildirim yok" veri gelmeden çıkmasın
+            } else if viewModel.items.isEmpty && !viewModel.isLoading && viewModel.errorMessage == nil {
                 EmptyStateCard(icon: "bell.slash", title: "Bildirim yok", detail: "Teklif, kabul ve iş güncellemeleri burada görünür.").padding()
             }
         }
@@ -85,6 +87,9 @@ struct NotificationsView: View {
         case "JobCompleted": "flag.checkered"
         case "ReviewReceived": "star.fill"
         case "ListingCancelled": "trash.fill"
+        case "CancelRequested": "exclamationmark.bubble.fill" // karşılıklı iptal talebi (15 Kasım)
+        case "CancelApproved": "hand.raised.fill"
+        case "CancelRejected": "arrow.uturn.backward.circle.fill"
         default: "bell.fill"
         }
     }

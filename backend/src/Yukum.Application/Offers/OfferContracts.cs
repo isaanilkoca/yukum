@@ -37,7 +37,8 @@ public sealed record GetMyOffersQuery(Guid CarrierId);
 public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName,
     string ShipperName, int WeightKg, DateOnly PickupDate,
-    decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt, JobStage Stage);
+    decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt, JobStage Stage,
+    CancelRequestDto? CancelRequest = null, bool MutuallyCancelled = false);
 
 /// <summary>Sorgu: Yük Veren'in karar verdiği (kabul/red) tekliflerin geçmişi (silinenler hariç).</summary>
 public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
@@ -45,7 +46,8 @@ public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);
 /// <summary>Yük Veren geçmişindeki satır: teklif + hangi ilan + hangi taşımacı.</summary>
 public sealed record ShipperOfferHistoryDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName, int WeightKg, DateOnly PickupDate,
-    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt, JobStage Stage, Guid CarrierId, bool Reviewed);
+    string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime? DecidedAt, JobStage Stage, Guid CarrierId, bool Reviewed,
+    CancelRequestDto? CancelRequest = null, bool MutuallyCancelled = false);
 
 /// <summary>Komut: kullanıcı karara bağlanmış bir teklifi kendi geçmişinden siler (karşı tarafta durur).</summary>
 public sealed record HideOfferCommand(Guid OfferId, Guid UserId, bool IsCarrier);
@@ -61,3 +63,19 @@ public sealed record MarkSeenCommand(Guid CarrierId);
 
 /// <summary>Komut: kabul edilmiş işi bitir ("İşi bitir ve sil"). İki taraftan biri yapabilir; teklif ve ilan Tamamlandı olur, bitirenin geçmişinden ve mesajlarından silinir.</summary>
 public sealed record CompleteOfferCommand(Guid OfferId, Guid UserId);
+
+// ─── Karşılıklı iptal (15 Kasım) ───
+/// <summary>İptal talebi gövdesi. ReopenListing yalnız Yük Veren için anlamlı (talebi o açıyorsa: onaylanınca ilan yeniden yayınlansın mı).</summary>
+public sealed record CancelRequestBody(string? Reason, string? Note, bool? ReopenListing);
+
+/// <summary>Onay gövdesi. ReopenListing: onaylayan Yük Veren ise ilanın ne olacağı (true: yeniden yayınla, false: kaldır).</summary>
+public sealed record CancelApproveBody(bool? ReopenListing);
+
+public sealed record RequestCancelCommand(Guid OfferId, Guid UserId, string? Reason, string? Note, bool? ReopenListing);
+
+public sealed record RespondCancelCommand(Guid OfferId, Guid UserId, bool Approve, bool? ReopenListing);
+
+public sealed record WithdrawCancelCommand(Guid OfferId, Guid UserId);
+
+/// <summary>Listelerde iptal talebinin durumu (iki taraf için aynı biçim).</summary>
+public sealed record CancelRequestDto(bool ByMe, string Reason, string? Note, DateTime RequestedAt);

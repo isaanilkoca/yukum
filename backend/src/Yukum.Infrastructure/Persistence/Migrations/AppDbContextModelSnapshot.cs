@@ -8969,6 +8969,23 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         .HasPrecision(12, 2)
                         .HasColumnType("decimal(12,2)");
 
+                    b.Property<string>("CancelNote")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<bool?>("CancelReopenListing")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("CancelRequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("CancelRequestedBy")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("CarrierId")
                         .HasColumnType("uniqueidentifier");
 
@@ -8992,6 +9009,9 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("ListingId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("MutuallyCancelled")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Note")
                         .HasMaxLength(500)

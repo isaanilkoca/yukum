@@ -27,6 +27,9 @@ struct ListingOffersView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var showCancelConfirm = false
     @State private var feedback: ActionFeedback? // Yük Veren işlemi → koli bantlanır ⮕ Design/ActionFeedback.swift
+    @State private var busy = false   // liste içi işlem sürüyor → üstte "İşleniyor…" (Design/FormStyle › busyIndicator)
+    @State private var acceptedHere = false // bu ekranda bir teklif kabul edildi → ilan artık atanmış: düzenleme/kaldırma kapanır (15 Kasım kuralı)
+    @State private var loaded = false // ilk yükleme bitti mi → bitmeden "Henüz yok" yerine "Yükleniyor…" (LoadingCard)
 
     init(listing: Listing) {
         _viewModel = State(initialValue: ListingOffersViewModel(listing: listing))
@@ -58,7 +61,17 @@ struct ListingOffersView: View {
                 FormMessage(text: errorMessage, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
 
-            if viewModel.offers.isEmpty {
+            // KABULDEN SONRA (15 Kasım, yönetici kuralı: "teklif kabul edilince ilan silinmemeli, teslim olmadan silinmemeli"):
+            //   sunucu da reddeder (409); burada menü gizlenir ve nedeni yazılır → kullanıcı denemeden bilir.
+            if acceptedHere {
+                Label("Teklifi kabul ettin. Yük teslim edilene kadar bu ilan düzenlenemez ve kaldırılamaz. İşi Eski Teklifler'den takip edebilirsin.", systemImage: "lock.fill")
+                    .font(.footnote).foregroundStyle(palette.title)
+                    .themedRow()
+            }
+
+            if viewModel.offers.isEmpty && !loaded {
+                LoadingCard().listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if viewModel.offers.isEmpty {
                 EmptyStateCard(icon: "tray", title: "Henüz teklif gelmedi.", detail: "Taşımacılar teklif verince burada görünür.")
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
             } else {
@@ -90,20 +103,24 @@ struct ListingOffersView: View {
         }
         .listStyle(.plain)
         .themedScreen() // ⮕ Design/FormStyle.swift: ScreenBackground + List zemini gizli
+        .busyIndicator(busy)
         .refreshable { await viewModel.load() }
         .navigationTitle("Gelen Teklifler")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
+                if !acceptedHere { // kabul edilmiş ilanda düzenle/kaldır yok (yukarıdaki not)
                 Menu { // iki eylem tek menüde: üst çubuk sıkışmasın
                     NavigationLink { CreateListingView(listing: viewModel.listing, onSaved: { dismiss() }) } label: { Label("Düzenle", systemImage: "pencil") } // ⮕ CreateListingView (düzenleme kipi)
                     Button(role: .destructive) { showCancelConfirm = true } label: { Label("Yayından kaldır", systemImage: "trash") }
                 } label: { Image(systemName: "ellipsis.circle") }
+                }
             }
         }
         .alert("İlan yayından kaldırılsın mı?", isPresented: $showCancelConfirm) {
             Button("Yayından Kaldır", role: .destructive) {
                 Task {
+                    busy = true; defer { busy = false } // defer [SWIFT]: Task'tan her çıkışta busy kapanır
                     if await viewModel.cancelListing() { // ⮕ ListingOffersViewModel.cancelListing → DELETE /api/v1/listings/{id}
                         feedback = ActionFeedback(.unseal, "İlan kaldırıldı") { dismiss() } // iptal: koli açılır + İPTAL damgası
                     }
@@ -113,7 +130,7 @@ struct ListingOffersView: View {
         } message: {
             Text("İlan herkesin listesinden kalkar. Gelen teklifler iptal edilir, Taşımacılar bilgilendirilir ve sohbetler kapanır.")
         }
-        .task { await viewModel.load(); await viewModel.loadStats() }
+        .task { await viewModel.load(); loaded = true; await viewModel.loadStats() }
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }
         .navigationDestination(item: $viewModel.profileCarrierId) { id in CarrierProfileView(carrierId: id) }
         .actionFeedback($feedback)
@@ -122,7 +139,10 @@ struct ListingOffersView: View {
     // Kabul/ret: ViewModel karar verir; başarıdaysa koli bantlanır | ⮕ ListingOffersViewModel.decide → PUT /api/v1/offers/{id}/accept|reject
     private func decide(_ offer: ListingOffer, accept: Bool) {
         Task {
+            busy = true
             await viewModel.decide(offer, accept: accept)
+            busy = false
+            if accept && viewModel.errorMessage == nil { acceptedHere = true }
             if viewModel.errorMessage == nil { feedback = ActionFeedback(accept ? .seal : .unseal, accept ? "Teklif kabul edildi" : "Teklif reddedildi") } // kabul: bantlanır | ret: bant kesilir
         }
     }

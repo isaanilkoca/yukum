@@ -19,6 +19,8 @@ import SwiftUI
 struct FavoritesView: View {
     @State private var viewModel = FavoritesViewModel() // @State [SWIFT]: ekranın hafızası
     @State private var feedback: ActionFeedback? // ⮕ Design/ActionFeedback.swift
+    @State private var busy = false   // liste içi işlem sürüyor → üstte "İşleniyor…" (Design/FormStyle › busyIndicator)
+    @State private var loaded = false // ilk yükleme bitti mi → bitmeden "Henüz yok" yerine "Yükleniyor…" (LoadingCard)
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -26,7 +28,10 @@ struct FavoritesView: View {
         VStack {
             if let message = viewModel.errorMessage { FormMessage(text: message, isError: true).padding(.horizontal) } // ⮕ Design/FormStyle.swift
 
-            if viewModel.listings.isEmpty {
+            if viewModel.listings.isEmpty && !loaded {
+                LoadingCard().padding()
+                Spacer()
+            } else if viewModel.listings.isEmpty {
                 VStack(spacing: 8) { // boş durum: yönlendirici
                     Image(systemName: "heart").font(.largeTitle).foregroundStyle(palette.accent.opacity(0.85))
                     Text("Henüz favori ilanın yok.").font(.headline).foregroundStyle(palette.title)
@@ -47,7 +52,9 @@ struct FavoritesView: View {
                         .swipeActions { // sola kaydırınca "Çıkar"
                             Button("Çıkar", role: .destructive) {
                                 Task {
+                                    busy = true
                                     await viewModel.remove(listing) // ⮕ FavoritesViewModel.remove → ListingService.setFavorite(false) → load()
+                                    busy = false
                                     if viewModel.errorMessage == nil { feedback = ActionFeedback(.unload, "Favorilerden çıkarıldı") } // olumsuz: kamyondan koli iner
                                 }
                             }
@@ -59,10 +66,11 @@ struct FavoritesView: View {
             }
         }
         .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift
+        .busyIndicator(busy)
         .tint(palette.accent)
         .navigationTitle("Favorilerim")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.load() } // ekran her göründüğünde yenilenir (detaydan kalbi kapatıp dönünce güncel kalır)
+        .task { await viewModel.load(); loaded = true } // ekran her göründüğünde yenilenir (detaydan kalbi kapatıp dönünce güncel kalır)
         .actionFeedback($feedback)
     }
 }

@@ -6,9 +6,10 @@
 //
 
 import Foundation // [SWIFT] temel türler
+import RealityKit // [SWIFT] Entity (TemplateCache)
 
 // ┌─ BAĞLANTI HARİTASI: SeededRandom.swift ─────────────────────────────────────────
-// │ GELEN     : BoxSceneRig (giriş yığını), TruckLoadView, TruckRoadView (dorse yükleri), CardboardBoxKit, CardboardArt, CargoKit (doku ve ayrıntılar)
+// │ GELEN     : CardboardBoxKit, CardboardArt (koli dokusu ve ayrıntıları; giriş ekranındaki koli)
 // │ GİDEN     : yok
 // │ REHBER    : Design/00_Rehber_Design.swift
 // └──────────────────────────────────────────────────────────────────────
@@ -40,3 +41,10 @@ struct SeededRandom: RandomNumberGenerator { // RandomNumberGenerator [SWIFT]: .
         return z ^ (z >> 31)
     }
 }
+
+// BU SINIF: kit'lerin kalıp önbelleği | NEDEN class: kit'ler struct; struct içindeki sözlük kopyalanırdı, class tek kutuyu paylaştırır
+// ⮕ KULLANIM [TemplateCache]: CardboardBoxKit › makeBox
+// NEDEN genel (generic) DEĞİL: TemplateCache<Item> biçimi Swift 6.3 derleyicisini Release (en iyileştirmeli) derlemede ÇÖKERTİYORDU
+//   (EarlyPerfInliner, deinit). Tek tür (Entity) yeterli; ModelEntity de bir Entity'dir, kullanan yer geri çevirir.
+@MainActor
+final class TemplateCache { var items: [String: Entity] = [:] }

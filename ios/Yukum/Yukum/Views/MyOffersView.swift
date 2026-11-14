@@ -23,6 +23,9 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 struct MyOffersView: View {
     @State private var viewModel = MyOffersViewModel()
     @State private var feedback: ActionFeedback? // Taşımacı işlemi → lastik izi ⮕ Design/ActionFeedback.swift
+    @State private var cancelOffer: CarrierOffer? // dolunca iptal talebi sayfası açılır (karşılıklı iptal, 15 Kasım)
+    @State private var busy = false   // liste içi işlem sürüyor → üstte "İşleniyor…" (Design/FormStyle › busyIndicator)
+    @State private var loaded = false // ilk yükleme bitti mi → bitmeden "Henüz yok" yerine "Yükleniyor…" (LoadingCard)
     @Environment(\.colorScheme) private var colorScheme
 
     // GÖRÜNÜM (15 Kasım, L tasarım): ScreenBackground + yarı şeffaf kartlar, durum rozeti, kapsül düğmeler. İŞLEV DEĞİŞMEDİ.
@@ -34,7 +37,9 @@ struct MyOffersView: View {
             if let errorMessage = viewModel.errorMessage {
                 FormMessage(text: errorMessage, isError: true).listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
-            if viewModel.offers.isEmpty {
+            if viewModel.offers.isEmpty && !loaded {
+                LoadingCard().listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if viewModel.offers.isEmpty {
                 EmptyStateCard(icon: "tray", title: "Henüz teklif vermedin.", detail: "Bir ilana teklif verince burada takip edersin.")
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
@@ -47,10 +52,11 @@ struct MyOffersView: View {
         }
         .listStyle(.plain)
         .themedScreen()
+        .busyIndicator(busy)
         .refreshable { await viewModel.load() }
         .navigationTitle("Tekliflerim")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.loadAndMarkSeen() } // açılınca "görüldü" işaretlenir → ana ekrandaki rozet söner
+        .task { await viewModel.loadAndMarkSeen(); loaded = true } // açılınca "görüldü" işaretlenir → ana ekrandaki rozet söner
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }
         .alert("Tutarı değiştir", isPresented: Binding(get: { viewModel.editingOffer != nil }, set: { if !$0 { viewModel.editingOffer = nil } })) {
             TextField("Yeni tutar (₺)", text: $viewModel.editAmountText).keyboardType(.numberPad)
@@ -61,6 +67,13 @@ struct MyOffersView: View {
             }
             Button("Vazgeç", role: .cancel) {}
         }
+        .sheet(item: $cancelOffer) { offer in // ⮕ Views/CancelRequestSheet.swift
+            CancelRequestSheet(title: offer.listingTitle, isShipper: false) { reason, note, _ in
+                let ok = await viewModel.requestCancel(offer, reason: reason, note: note) // ⮕ MyOffersViewModel.requestCancel
+                if ok { feedback = ActionFeedback(.unload, "İptal talebi gönderildi") }
+                return ok
+            }
+        }
         .actionFeedback($feedback)
     }
 
@@ -68,7 +81,9 @@ struct MyOffersView: View {
     // kind: .track (olumlu: aşama, tutar) | .unload (olumsuz: geri çekme, silme → kamyondan koli iner)
     private func run(_ offer: CarrierOffer, _ message: String, kind: ActionFeedback.Kind = .track, _ work: @escaping () async -> Void) {
         Task {
+            busy = true
             await work()
+            busy = false
             if viewModel.errorMessage == nil { feedback = ActionFeedback(kind, message) }
         }
     }
@@ -98,7 +113,7 @@ struct MyOffersView: View {
                 switch offer.status {
                 case "Accepted": StatusBadge(text: "Kabul edildi · \(viewModel.stage(offer).title)", icon: "checkmark.circle.fill", color: palette.success)
                 case "Rejected": StatusBadge(text: "Reddedildi", icon: "xmark.circle.fill", color: palette.danger)
-                case "Cancelled": StatusBadge(text: "İlan kaldırıldı", icon: "trash", color: palette.label.opacity(0.7))
+                case "Cancelled": StatusBadge(text: offer.mutuallyCancelled == true ? "Karşılıklı iptal" : "İlan kaldırıldı", icon: offer.mutuallyCancelled == true ? "hand.raised.fill" : "trash", color: palette.label.opacity(0.7))
                 case "Withdrawn": StatusBadge(text: "Geri çekildi", icon: "arrow.uturn.backward", color: palette.label.opacity(0.7))
                 case "Completed": StatusBadge(text: "Tamamlandı", icon: "flag.checkered", color: palette.label.opacity(0.75))
                 default: StatusBadge(text: "Beklemede", icon: "hourglass", color: palette.accent)
@@ -115,6 +130,16 @@ struct MyOffersView: View {
                 if viewModel.canChat(offer) {
                     Button { viewModel.openChat(offer) } label: { Label("Sohbet", systemImage: "bubble.left.and.bubble.right.fill") }.buttonStyle(ChipButtonStyle(.outline))
                 }
+            }
+
+            // KARŞILIKLI İPTAL (15 Kasım): açık talep varsa kart, yoksa (uygunsa) "İptal talep et"
+            if let request = offer.cancelRequest {
+                CancelRequestCard(request: request, otherSide: "Yük Veren",
+                                  onWithdraw: { run(offer, "Talep geri çekildi") { _ = await viewModel.withdrawCancel(offer) } },
+                                  onApprove: { run(offer, "İş iptal edildi", kind: .unload) { _ = await viewModel.approveCancel(offer) } },
+                                  onReject: { run(offer, "İş devam ediyor") { _ = await viewModel.rejectCancel(offer) } })
+            } else if viewModel.canRequestCancel(offer) {
+                Button { cancelOffer = offer } label: { Label("İptal talep et", systemImage: "xmark.circle") }.buttonStyle(ChipButtonStyle(.danger))
             }
         }
         .themedRow() // ⮕ Design/FormStyle.swift

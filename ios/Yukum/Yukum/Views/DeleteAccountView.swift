@@ -46,7 +46,11 @@ struct DeleteAccountView: View {
                     Button(role: .destructive) {
                         Task { if await viewModel.deleteAccount() { onDeleted() } } // ⮕ AccountViewModel.deleteAccount → DELETE /api/v1/account
                     } label: {
-                        Text("Hesabımı Sil").font(.headline).foregroundStyle(.white)
+                        HStack(spacing: 10) {
+                            if viewModel.isDeleting { ProgressView().tint(.white) } // istek sürerken çark
+                            Text(viewModel.isDeleting ? "Siliniyor…" : "Hesabımı Sil")
+                        }
+                        .font(.headline).foregroundStyle(.white)
                             .frame(maxWidth: .infinity).frame(height: 54)
                             .background(palette.danger, in: .rect(cornerRadius: 14))
                     }

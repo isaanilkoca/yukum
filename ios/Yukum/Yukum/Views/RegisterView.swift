@@ -60,7 +60,7 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
             if viewModel.isSuccess { FormMessage(text: "Kayıt başarılı! Giriş yapabilirsiniz.", isError: false) }
 
             // Düğme yalnız TETİKLEYİCİ: kontroller, paket hazırlama ve gönderme ViewModel.register()'da | Task [SWIFT]: düğmede await kullanmamızı sağlar
-            Button { Task { await viewModel.register() } } label: { AccentButtonLabel(title: "Kayıt ol") } // ⮕ RegisterViewModel.register() → AuthService.register → POST /api/v1/auth/register/shipper
+            Button { Task { await viewModel.register() } } label: { AccentButtonLabel(title: "Kayıt ol", isLoading: viewModel.isLoading, loadingTitle: "Kaydediliyor…") } // ⮕ RegisterViewModel.register() → AuthService.register → POST /api/v1/auth/register/shipper
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]
                 .padding(.top, 4)
         }

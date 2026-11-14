@@ -9,7 +9,7 @@ import RealityKit // [SWIFT] Apple'ın 3B motoru (iOS'un içinde, ek kütüphane
 import UIKit      // [SWIFT] UIColor buradan gelir
 
 // ┌─ BAĞLANTI HARİTASI: CardboardBoxKit.swift ─────────────────────────────────────────
-// │ GELEN     : Design/BoxSceneBackground.swift (giriş ekranındaki düşen koliler) | Design/TruckLoadView.swift (kasaya dizilen koliler)
+// │ GELEN     : Design/LoginBoxDrop.swift (giriş ekranında düşen Yüküm kolisi)
 // │ GİDEN     : Design/CardboardArt.swift (karton dokusu, etiket resmi) | Design/DesignPalette.swift (koli renkleri)
 // │ REHBER    : Design/00_Rehber_Design.swift
 // └──────────────────────────────────────────────────────────────────────
@@ -84,7 +84,18 @@ struct CardboardBoxKit {
 
     // BU FONKSİYON: verilen ölçüde (metre) bir koli üretir. Konum, dönüş ve fizik EKLEMEZ; onları çağıran sahne verir.
     // ⮕ KULLANIM [makeBox]: kullanır: SceneRig › spawnBox, TruckLoadRig › buildCargo
+    // KALIP ÖNBELLEĞİ (15 Kasım performans): aynı ölçüdeki koli bir kez üretilir. Ölçüler sabit tohumlu → her girişte aynı ölçüler istenir,
+    //   ikinci girişten itibaren şekil üretimi (yuvarlatılmış kutu + bant + etiket) hiç yapılmaz. Çağıranlar her zaman KOPYASINI (clone) sahneye koyar.
+    private let cache = TemplateCache()
+
     func makeBox(size: SIMD3<Float>) -> ModelEntity {
+        if let cached = cache.items["\(size)"] as? ModelEntity { return cached }
+        let made = buildBox(size: size)
+        cache.items["\(size)"] = made
+        return made
+    }
+
+    private func buildBox(size: SIMD3<Float>) -> ModelEntity {
         var rng = SeededRandom(size) // SABİT (15 Kasım): aynı ölçüdeki koli hep aynı ton ve aynı etiketle çıkar ⮕ Design/SeededRandom.swift
         let box = ModelEntity(mesh: .generateBox(size: size, cornerRadius: 0.045), // [SWIFT] yuvarlatılmış köşeli kutu
                               materials: [materials.randomElement(using: &rng) ?? PhysicallyBasedMaterial()])

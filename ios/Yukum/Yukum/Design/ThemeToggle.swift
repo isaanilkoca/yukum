@@ -55,19 +55,19 @@ enum AppTheme: String, CaseIterable {
 // BU GÖRÜNÜM: küçük yuvarlak düğme; basınca 3 seçenekli menü açılır. Simgesi seçili modu gösterir.
 // Menu [SWIFT]: basınca seçenek listesi açan düğme | Picker menünün içinde: seçili olanın yanında tik çıkar.
 // ⮕ KULLANIM [ThemeToggle]: kullanır: LoginView › body, HomeView › toolbar
+// 15 Kasım (yönetici: "bi açık bi koyu olsa yeter"): üç seçenekli menü (Sistem/Açık/Koyu) yerine TEK DOKUNUŞLA açık ↔ koyu.
+//   İlk açılışta telefonun ayarı geçerli (kayıtlı değer "system"); bir kez basınca açık ya da koyu sabitlenir.
+// ⮕ KULLANIM [ThemeToggle]: kullanır: LoginView, HomeView (üst çubuk)
 struct ThemeToggle: View {
     @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system // [SWIFT] telefonda saklanan seçim
+    @Environment(\.colorScheme) private var colorScheme // şu an ekranda hangi mod var
 
     var body: some View {
-        Menu {
-            Picker("Görünüm", selection: $theme) {
-                ForEach(AppTheme.allCases, id: \.self) { option in
-                    Label(option.title, systemImage: option.icon).tag(option)
-                }
-            }
-        } label: {
-            Image(systemName: theme.icon)
-                .accessibilityLabel("Görünüm: \(theme.title)") // VoiceOver okusun
+        let isDark = colorScheme == .dark
+        Button { theme = isDark ? .light : .dark } label: {
+            Image(systemName: isDark ? "moon.fill" : "sun.max.fill") // şu anki mod
+                .contentTransition(.symbolEffect(.replace)) // [SWIFT] simge yumuşakça değişir
         }
+        .accessibilityLabel(isDark ? "Açık moda geç" : "Koyu moda geç")
     }
 }

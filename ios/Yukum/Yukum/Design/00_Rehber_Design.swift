@@ -7,8 +7,7 @@
 // Views/ klasöründeki ekranlar buradaki parçaları arka plan / süs olarak kullanır.
 //
 // HİÇBİR ŞEY DIŞARIDAN ALINMADI: hazır model, resim dosyası, animasyon dosyası ya da ek kütüphane yok.
-//   TEK İSTİSNA: Design/Truck.usdz — hazır 3B tır modeli ("Truck" by ROY, Sketchfab, CC-BY 4.0). Lisans atıf ister → Views/PrivacyView › Atıflar (silinmez).
-//   Kullanan: TruckLoadView ve TruckRoadView (ikisinde de yalnız dorse).
+//   (15 Kasım: ana ekranlardaki 3B dorse sahneleri ve hazır tır modeli Truck.usdz kaldırıldı → dışarıdan alınan hiçbir şey kalmadı.)
 // Hepsi Apple'ın iOS içinde gelen üç aracıyla, kodla üretiliyor:
 //
 //   ARAÇ            NE İÇİN                                   BU PROJEDE NEREDE
@@ -21,19 +20,17 @@
 // DOSYA                   NE YAPAR
 //
 //  DesignPalette           tüm renkler (gece / gündüz). Tema değişecekse yalnız burası.
-//  BoxSceneBackground      3B sahne: zemin, görünmez duvarlar, ışıklar, kamera. Bir ekranın arkasına konur.
-//  BoxSceneRig             kalıp kolileri hazırlar, kopyalarını sırayla bırakır, yansımaları eşitler, "durdu" haberini verir, yığın durunca sahneyi dondurur.
 //  CardboardArt            koli yüzeyindeki resimleri çizer (doku + baskı + etiket).
-//  ScreenTape              ekranı geçen koli bandı (2B).
 //  FormStyle               form görünümü: opak kart (FormCard) + etiketli giriş kutusu (LabeledInput). Hareketli arka planda formu net ayırır.
-//  TapedBoxBackground      koli sahnesi + bantlar birlikte: ekranlar bunu arka plan olarak kullanır (Views/LoginView).
-//  TruckLoadView           Yük Veren ana ekranı: hazır modelin yalnız dorsesi, şeffaf kasaya yükler dizilir (+ TruckModel: modeli bir kez yükler).
-//  TruckRoadView           Taşımacı ana ekranı: dorse yoldan yükleme alanına geri geri yanaşır, yerdeki yığın arka kapıdan içeri alınır; bir kez oynar, durur. Ufuk 2B Canvas, sahne 3B.
 //  ActionFeedback          işlem sonrası tek seferlik animasyon: Yük Veren → koli kapanır + bantlanır | Taşımacı → lastik izi. + ScreenBackground (ikincil ekran zemini).
-//  StillScene              PERFORMANS: 3B sahne bir kez oynar, bitince RESME döner ve 3B motor kapanır (ARView + snapshot). Üç sahne de bunu kullanır.
+//  LoginBoxDrop           giriş ekranı: formun altındaki alana tek Yüküm kolisi düşer (bantlarda YÜKÜM, ön yüzde logolu etiket), sonra resme döner.
+//  YukumLogo              Yüküm logosu (konum işareti + koli), uygulama simgesiyle aynı çizim; BrandTitle: üst çubuk başlığı.
+//  StillScene              PERFORMANS: 3B sahne bir kez oynar, bitince RESME döner ve 3B motor kapanır (ARView + snapshot). Giriş ekranındaki koli kullanır.
 //  SeededRandom            sabit tohumlu "rastgele": yığın, yükler ve dokular her açılışta birebir aynı (kullanıcı kararı 15 Kasım).
 //  FormStyle (alt kısım)   ikincil ekran parçaları: themedCard / themedRow / themedScreen, ChipButtonStyle, StatusBadge, EmptyStateCard, RouteLine.
 //
+// (15 Kasım) GİRİŞ EKRANI SADELEŞTİ: düşen koliler, ekran bantları ve ışıklı spot kaldırıldı (yönetici notu). Aşağıdaki koli tarifi
+//   dorselerdeki kolilerde (CardboardBoxKit) geçerli; "düşüş/fizik/yansıma" maddeleri tarihçe olarak duruyor.
 // ── KOLİ NASIL YAPILDI (RealityKit) ─────────────────────────────────────────────
 //   1. ŞEKİL    : MeshResource.generateBox(size:cornerRadius:) → köşesi yuvarlatılmış kutu. Hazır fonksiyon; ölçüyü biz veririz.
 //   2. MALZEME  : PhysicallyBasedMaterial → renk (tint) × doku (CardboardArt'ın çizdiği resim), pürüz (roughness), vernik (clearcoat).

@@ -78,10 +78,15 @@ struct LabeledInput<Content: View>: View {
 struct AccentButtonLabel: View {
     @Environment(\.colorScheme) private var colorScheme
     let title: String
+    var isLoading = false          // 15 Kasım (yönetici: "her servis isteğinde loader olsun"): istek sürerken çark + bekleme yazısı
+    var loadingTitle = "Lütfen bekleyin…"
 
     var body: some View {
         let palette = Palette(isDark: colorScheme == .dark)
-        Text(title)
+        HStack(spacing: 10) {
+            if isLoading { ProgressView().tint(palette.buttonText) } // [SWIFT] dönen çark
+            Text(isLoading ? loadingTitle : title)
+        }
             .font(.headline)
             .foregroundStyle(palette.buttonText)
             .frame(maxWidth: .infinity).frame(height: 54) // parmakla rahat basılır
@@ -266,4 +271,54 @@ struct RouteLine: View {
         .foregroundStyle(palette.label)
         .minimumScaleFactor(0.8)
     }
+}
+
+// ─── YÜKLENİYOR GÖSTERGELERİ (15 Kasım, yönetici: "her servis isteğinde veya bazı yerlerde loader olsun") ───
+
+// BU DEĞİŞTİRİCİ: liste içi işlemlerde (kabul, ret, geri çek, sil, favori...) ekranın üstünde küçük "İşleniyor…" kapsülü
+//   + işlem bitene kadar ekran dokunuşa kapalı (aynı düğmeye ikinci kez basılıp çift istek gitmesin).
+// NEDEN üstte küçük kapsül (tam ekran perde değil): kısa işlemlerde ekranı karartmak yorar; kullanıcı neyin beklendiğini görsün yeter.
+// ⮕ KULLANIM [BusyIndicator]: View.busyIndicator(_:) → ListingOffersView, MyOffersView, OldOffersView, FavoritesView, ListingDetailView, ChatView
+struct BusyIndicator: ViewModifier {
+    let isBusy: Bool
+    @Environment(\.colorScheme) private var colorScheme
+    func body(content: Content) -> some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        content
+            .disabled(isBusy) // [SWIFT] işlem sürerken içerideki düğmeler basılamaz
+            .overlay(alignment: .top) {
+                if isBusy {
+                    HStack(spacing: 8) {
+                        ProgressView().tint(palette.accent)
+                        Text("İşleniyor…").font(.footnote.weight(.semibold)).foregroundStyle(palette.title)
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 9)
+                    .background(palette.cardSurface, in: .capsule)
+                    .overlay(Capsule().strokeBorder(palette.cardBorder))
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: isBusy)
+    }
+}
+
+// BU GÖRÜNÜM: listenin İLK yüklenişinde boş durum yerine görünür ("Henüz yok" yazısı veri gelmeden çıkıp kullanıcıyı yanıltmasın)
+// ⮕ KULLANIM [LoadingCard]: ListingOffersView, OldOffersView, MyOffersView, FavoritesView, HomeView
+struct LoadingCard: View {
+    var text = "Yükleniyor…"
+    @Environment(\.colorScheme) private var colorScheme
+    var body: some View {
+        let palette = Palette(isDark: colorScheme == .dark)
+        HStack(spacing: 10) {
+            ProgressView().tint(palette.accent)
+            Text(text).font(.subheadline.weight(.semibold)).foregroundStyle(palette.label.opacity(0.8))
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 26)
+        .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16))
+    }
+}
+
+extension View {
+    func busyIndicator(_ isBusy: Bool) -> some View { modifier(BusyIndicator(isBusy: isBusy)) }
 }

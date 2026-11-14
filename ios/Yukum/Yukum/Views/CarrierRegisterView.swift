@@ -83,7 +83,7 @@ struct CarrierRegisterView: View {
             if viewModel.isSuccess { FormMessage(text: "Başarıyla kayıt oldunuz. Şimdi giriş yapabilirsiniz.", isError: false) }
 
             // Düğme yalnız TETİKLEYİCİ: kontroller, araç/kayıt paketlerini hazırlama ve gönderme ViewModel.register()'da
-            Button { Task { await viewModel.register() } } label: { AccentButtonLabel(title: "Kayıt ol") } // ⮕ CarrierRegisterViewModel.register() → AuthService.registerCarrier → POST /api/v1/auth/register/carrier
+            Button { Task { await viewModel.register() } } label: { AccentButtonLabel(title: "Kayıt ol", isLoading: viewModel.isLoading, loadingTitle: "Kaydediliyor…") } // ⮕ CarrierRegisterViewModel.register() → AuthService.registerCarrier → POST /api/v1/auth/register/carrier
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın)
                 .padding(.top, 4)
         }

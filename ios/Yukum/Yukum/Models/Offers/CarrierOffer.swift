@@ -47,4 +47,7 @@ struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan ü
     let note: String? // teklifle gönderdiğimiz not (boş olabilir) | NE İŞE YARAR: tutarı güncellerken notu SİLMEMEK için aynen geri göndeririz | String?: nil olabilir, JSON'da yoksa/null ise nil gelir
 
     let stage: String // işin aşaması: "NotStarted" / "PickedUp" (yük alındı) / "InTransit" (yolda) / "Delivered" (teslim edildi) | yalnız Accepted işte anlamlı | ekranda stageTitle ile Türkçe yazıya çevrilir
+    // KARŞILIKLI İPTAL (15 Kasım) | var + varsayılan nil: eski JSON/testler bozulmaz, gelirse çözülür
+    var cancelRequest: CancelRequestInfo? = nil // açık iptal talebi (yoksa nil) ⮕ Models/Offers/CancelRequestInfo.swift
+    var mutuallyCancelled: Bool? = nil          // true: iş karşılıklı anlaşmayla iptal edildi (status "Cancelled" ile birlikte)
 }

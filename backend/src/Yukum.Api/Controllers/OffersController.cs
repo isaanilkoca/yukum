@@ -22,7 +22,10 @@ public class OffersController(
     ICommandHandler<MarkSeenCommand, bool> markSeen,
     ICommandHandler<CompleteOfferCommand, OfferDto> completeOffer,
     ICommandHandler<WithdrawOfferCommand, OfferDto> withdrawOffer,
-    ICommandHandler<AdvanceStageCommand, OfferStageDto> advanceStage) : ControllerBase
+    ICommandHandler<AdvanceStageCommand, OfferStageDto> advanceStage,
+    ICommandHandler<RequestCancelCommand, bool> requestCancel,
+    ICommandHandler<RespondCancelCommand, bool> respondCancel,
+    ICommandHandler<WithdrawCancelCommand, bool> withdrawCancel) : ControllerBase
 {
     /// <summary>İlana teklif verir; aynı ilana tekrar verilirse eski teklifin tutarı güncellenir.</summary>
     // POST /api/v1/listings/{listingId}/offers
@@ -132,6 +135,52 @@ public class OffersController(
     [ProducesResponseType<OfferStageDto>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Advance(Guid offerId, CancellationToken cancellationToken) =>
         Ok(await advanceStage.HandleAsync(new AdvanceStageCommand(offerId, CurrentUserId), cancellationToken));
+
+    // ─── KARŞILIKLI İPTAL (15 Kasım) ─── iki rol de kullanır; taraf olma ve durum kuralları CancelRequestHandlers'da.
+
+    /// <summary>Kabul edilmiş, teslim edilmemiş işin iptalini ister (karşı tarafın onayına gider).</summary>
+    // POST /api/v1/offers/{offerId}/cancel-request
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/cancel-request")]
+    [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RequestCancel(Guid offerId, CancelRequestBody body, CancellationToken cancellationToken)
+    {
+        await requestCancel.HandleAsync(new RequestCancelCommand(offerId, CurrentUserId, body.Reason, body.Note, body.ReopenListing), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Karşı taraf iptal talebini onaylar (iş karşılıklı iptal olur; ilanın ne olacağını Yük Veren seçer).</summary>
+    // POST /api/v1/offers/{offerId}/cancel-request/approve
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/cancel-request/approve")]
+    [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ApproveCancel(Guid offerId, CancelApproveBody? body, CancellationToken cancellationToken)
+    {
+        await respondCancel.HandleAsync(new RespondCancelCommand(offerId, CurrentUserId, true, body?.ReopenListing), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Karşı taraf iptal talebini reddeder (iş devam eder).</summary>
+    // POST /api/v1/offers/{offerId}/cancel-request/reject
+    [HttpPost("~/api/v{version:apiVersion}/offers/{offerId:guid}/cancel-request/reject")]
+    [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RejectCancel(Guid offerId, CancellationToken cancellationToken)
+    {
+        await respondCancel.HandleAsync(new RespondCancelCommand(offerId, CurrentUserId, false, null), cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Talep eden, yanıt gelmeden talebini geri çeker.</summary>
+    // DELETE /api/v1/offers/{offerId}/cancel-request
+    [HttpDelete("~/api/v{version:apiVersion}/offers/{offerId:guid}/cancel-request")]
+    [Authorize(Roles = $"{RoleNames.Shipper},{RoleNames.Carrier}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> WithdrawCancel(Guid offerId, CancellationToken cancellationToken)
+    {
+        await withdrawCancel.HandleAsync(new WithdrawCancelCommand(offerId, CurrentUserId), cancellationToken);
+        return NoContent();
+    }
 
     // Jetondaki 'sub' (kullanıcı numarası).
     private Guid CurrentUserId => Guid.Parse(User.FindFirst("sub")!.Value);

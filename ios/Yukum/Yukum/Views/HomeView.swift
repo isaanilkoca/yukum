@@ -9,7 +9,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
-// │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, arkada tam ekran Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
+// │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, sade (3B yok, 15 Kasım), Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
 // │ Taşımacı tasarımı        →  carrierHome + carrierBackground (bu dosyanın sonunda): selamlama, "Yük ara" paneli (il/ilçe, Yakınımdakiler, Filtre), tabela başlık, rota kartları (Views/ListingRow › RouteCard) | arkada Design/TruckRoadView (dorse yanaşır, yük yığından alınır, bir kez oynar ve durur)
 // │ Hoş Geldin yazısı        →  viewModel.user                     →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
@@ -44,6 +44,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     
     @State private var showNotifications = false // true → bildirim listesi açılır (telefondaki bildirime dokununca)
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
+    @State private var listLoaded = false // ilk liste yüklemesi bitti mi → bitmeden "Henüz ilan yok" yerine "Yükleniyor…" (15 Kasım, yönetici: loader)
     @Environment(\.colorScheme) private var colorScheme // [SWIFT] açık/koyu mod → Palette seçimi (Yük Veren tasarımı)
     @Environment(\.openURL) private var openURL // openURL: bir adresi açar | burada iOS Ayarlar uygulamasını açmak için kullanılır | openURL [SWIFT]: bir adresi açar (Ayarlar uygulaması gibi)
 
@@ -106,7 +107,9 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             .sheet(isPresented: $showFilter) { // .sheet [SWIFT]: alttan açılan sayfa | showFilter true olunca görünür
                 OpenListingsFilterView(filter: viewModel.filter, cities: viewModel.cities) { viewModel.filter = $0 } // Uygula → ViewModel.filter → reloadKey → load()
             }
-            .navigationTitle("Yüküm") // [SWIFT] üst çubuktaki başlık | .navigationTitle [SWIFT]: üst çubuk başlığı
+            // ÜST ÇUBUK BAŞLIĞI (15 Kasım, yönetici notu): yazı yerine logo + "Yüküm" (Design/YukumLogo › BrandTitle)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .principal) { BrandTitle() } }
             .toolbar { // .toolbar [SWIFT]: üst çubuğa eleman koyar
                 // Zil: iki rolde de görünür | NavigationLink [SWIFT]: basınca ekranı bu yığına iter (Geri kendiliğinden gelir) ⮕ Views/NotificationsView
                 ToolbarItem(placement: .topBarTrailing) {
@@ -181,6 +184,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             .onAppear { Task { await viewModel.loadUnread() } }
             .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
                 await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
+                listLoaded = true // ilk yükleme bitti → boş liste artık gerçekten boş demek
             }
         }
     }
@@ -207,8 +211,8 @@ extension HomeView {
                     Text("Yükün yolda, aklın rahat.").font(.subheadline).foregroundStyle(palette.label.opacity(0.75))
                 }
 
-                // (14 Kasım) Dorse için ayrılmış boşluk KALDIRILDI (kullanıcı: "ayrı bir alanda değil"): dorse tüm ekranın arkasında (shipperBackground),
-                //   içerik doğrudan onun üstünde akar; kartlar yarı şeffaf olduğu için dorse ve dolumu arkadan görünür.
+                // (15 Kasım, kullanıcı: "kalacak animasyonlar: ilan verince kutu paketleme, silmedeki gibi basit animasyonlar; profesyonel olsun")
+                //   Ana ekrandaki 3B dorse sahnesi KALDIRILDI → sade ekran: selamlama, ana düğme, ilanlar. İşlem animasyonları: Design/ActionFeedback.
 
                 // 2) ANA EYLEM: üst çubuktaki + ile aynı yere gider; büyük düğme ilk ilanı verecek kişiye yolu gösterir
                 NavigationLink { CreateListingView() } label: { // ⮕ Views/CreateListingView.swift
@@ -224,7 +228,9 @@ extension HomeView {
                 // 3) İLANLAR: başlıkta sayı | ⮕ HomeViewModel.listings ← load() ← ListingService.myListings() → GET /api/v1/listings/mine
                 Text("İlanların (\(viewModel.listings.count))").font(.title3.bold()).foregroundStyle(palette.title)
 
-                if viewModel.listings.isEmpty {
+                if viewModel.listings.isEmpty && !listLoaded {
+                    LoadingCard() // ⮕ Design/FormStyle.swift
+                } else if viewModel.listings.isEmpty {
                     Text("Henüz ilanın yok, ilk ilanını ver.").foregroundStyle(palette.label.opacity(0.7))
                 } else {
                     LazyVStack(spacing: 10) {
@@ -237,28 +243,22 @@ extension HomeView {
                                 }
                                 .foregroundStyle(palette.title) // ListingRow'un ana yazıları palete uysun (.secondary gri yazılar kendi rengini korur)
                                 .padding(14)
-                                .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16)) // YARI ŞEFFAF (14 Kasım): kaydırınca arkadaki dorse kartların içinden görünür | koyu modda koyu, açıkta krem
+                                .background(palette.cardSurface.opacity(0.88), in: .rect(cornerRadius: 16)) // 15 Kasım: 0,55 → 0,88 (okunurluk; arkada sahne yok) | eski not: YARI ŞEFFAF (14 Kasım): kaydırınca arkadaki dorse kartların içinden görünür | koyu modda koyu, açıkta krem
                                 .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(palette.cardBorder))
                             }
                             .buttonStyle(.plain) // [SWIFT] NavigationLink yazıyı maviye boyamasın
                         }
                     }
                 }
-                // (14 Kasım) Model atıf yazısı ana ekrandan KALDIRILDI (kullanıcı istemedi) → Views/PrivacyView "Atıflar" bölümüne taşındı.
-                //   CC-BY 4.0 lisansı uygulamada kaynağın adının geçmesini şart koşar; yeri serbest, silinemez.
             }
         }
         .scrollIndicators(.hidden)
         .refreshable { await viewModel.load() } // aşağı çekince yenile (eski List'teki ile aynı iş)
     }
 
-    // BU GÖRÜNÜM: Yük Veren ekranının TAM EKRAN arka planı (giriş ekranındaki SceneBackground gibi): renk geçişi + ışık haleleri + 3B dorse.
+    // BU GÖRÜNÜM: Yük Veren ekranının TAM EKRAN arka planı: renk geçişi + ışık haleleri (HAREKETSİZ).
+    //   15 Kasım: 3B dorse önce kartların arkasından çerçeveye taşındı, sonra tamamen kaldırıldı (kullanıcı: profesyonel, sade).
     // BAĞLANTI: body'deki .background { if isShipper { shipperBackground } } çağırır | renkler Design/DesignPalette.swift
-    // DORSE: progress 1 sabit → koliler hazır olunca sırayla kasaya iner (TruckLoadRig.setProgress), sonra öyle kalır.
-    //   Bir kez oynar: TruckLoadView'ın rig'i @State → ekran yenilense de (liste değişse de) yeniden oynamaz. Dokunuşa tepki yok (karar 13 Kasım).
-    //   NEDEN veriye bağlı değil: iOS Listing modelinde ilan durumu yok; doluluk şimdilik süs.
-    // YERLEŞİM (14 Kasım, kullanıcı: "ayrı bir alanda değil, arka planda dolacak"): 3B görünüm TÜM EKRANI kaplar (giriş ekranındaki koli sahnesi gibi);
-    //   dorse ekranın ortasında durur, içerik (düğme, yarı şeffaf kartlar) onun üstünden akar. Önceden üstte 300 noktalık ayrı bir bölmedeydi.
     // ⮕ KULLANIM [shipperBackground]: kullanır: HomeView › body (.background)
     var shipperBackground: some View {
         let palette = Palette(isDark: colorScheme == .dark)
@@ -267,8 +267,6 @@ extension HomeView {
             // Işık haleleri: dorsenin arkasında bulanık amber bulutlar (giriş ekranıyla aynı, ucuz 2B katman) → sahne daha aydınlık
             SoftGlow(color: palette.glowA, width: 380, height: 320).offset(x: -120, y: -40)
             SoftGlow(color: palette.glowB, width: 360, height: 300).offset(x: 130, y: 120)
-            TruckLoadView(progress: 1) // ⮕ Design/TruckLoadView.swift (kamera dorseyi ekranın ENİNE sığdırır, dikeyde ortalar)
-                .id(colorScheme) // görünüm (açık/koyu) değişince dorse sahnesi yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
         }
         .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
         .allowsHitTesting(false) // [SWIFT] arka plan dokunuş almaz → dokunuşlar üstteki düğme ve kartlara gider
@@ -298,7 +296,9 @@ extension HomeView {
                     Text("Yük hazır, yol senin.").font(.subheadline).foregroundStyle(palette.label.opacity(0.75))
                 }
 
-                // 2) YÜK ARA PANELİ: eski ekrandaki tüm filtre öğeleri tek yarı şeffaf kartta
+                // (15 Kasım) Ana ekrandaki 3B yük teslim alma sahnesi KALDIRILDI (kullanıcı: "profesyonel, sade"); işlem animasyonları kalır.
+
+                // 2) YÜK ARA PANELİ: eski ekrandaki tüm filtre öğeleri tek kartta
                 carrierSearchPanel(palette: palette)
 
                 if let listError = viewModel.listError { FormMessage(text: listError, isError: true) } // doluysa uyarı yazısı (Yük Veren ile aynı değişken)
@@ -314,7 +314,9 @@ extension HomeView {
                 .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(palette.buttonText.opacity(0.8), lineWidth: 1.5).padding(3))
 
                 // 4) İLANLAR | ⮕ HomeViewModel.listings ← load()/loadMore() ← ListingService.openListings() → GET /api/v1/listings?...
-                if viewModel.listings.isEmpty {
+                if viewModel.listings.isEmpty && !listLoaded {
+                    LoadingCard(text: "İlanlar yükleniyor…")
+                } else if viewModel.listings.isEmpty {
                     VStack(spacing: 8) { // boş durum: yol simgesi + yönlendirme (filtre yüzünden boşsa geri alınabilsin diye panel yukarıda kalır)
                         Image(systemName: "road.lanes").font(.largeTitle).foregroundStyle(palette.accent.opacity(0.85))
                         Text("Şu an açık ilan yok.").font(.headline).foregroundStyle(palette.title)
@@ -409,18 +411,14 @@ extension HomeView {
             }
         }
         .padding(14)
-        .background(palette.cardSurface.opacity(0.62), in: .rect(cornerRadius: 18)) // yarı şeffaf: arkadaki yol görünür
+        .background(palette.cardSurface.opacity(0.88), in: .rect(cornerRadius: 18)) // 15 Kasım: 0,62 → 0,88 (okunurluk; arkada sahne yok)
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(palette.cardBorder))
     }
 
-    // BU GÖRÜNÜM: Taşımacı ekranının TAM EKRAN arka planı: yük teslim alma sahnesi, bir kez oynar (gökyüzü, dağlar, arazi de TruckRoadView'ın içinde çizilir).
-    // (14 Kasım) İlk sürümde bütün tır + sürekli akan yol vardı; kullanıcı istemedi: "yalnız dorse, yükün alınması, gelsin olsun dursun".
-    // BAĞLANTI: body'deki .background { ... else { carrierBackground } } | ⮕ Design/TruckRoadView.swift
+    // BU GÖRÜNÜM: Taşımacı ekranının TAM EKRAN arka planı: renk geçişi + haleler (HAREKETSİZ).
+    //   15 Kasım: 3B yük teslim alma sahnesi kaldırıldı (kullanıcı: profesyonel, sade).
     // ⮕ KULLANIM [carrierBackground]: kullanır: HomeView › body (.background)
     var carrierBackground: some View {
-        TruckRoadView()
-            .id(colorScheme) // açık/koyu değişince sahne yeni renklerle yeniden kurulur (3B malzemeler kurulurken bir kez seçilir)
-            .ignoresSafeArea() // [SWIFT] çentik ve alt çubuk dahil tüm ekran
-            .allowsHitTesting(false) // [SWIFT] dokunuş almaz → kartlara ve düğmelere gider
+        ScreenBackground() // ⮕ Design/ActionFeedback.swift
     }
 }

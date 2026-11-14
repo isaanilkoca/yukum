@@ -14,6 +14,8 @@ public class OfferConfiguration : IEntityTypeConfiguration<Offer>
 
         builder.Property(o => o.Amount).HasPrecision(12, 2);
         builder.Property(o => o.Note).HasMaxLength(500);
+        builder.Property(o => o.CancelReason).HasMaxLength(60);   // karşılıklı iptal nedeni (kısa)
+        builder.Property(o => o.CancelNote).HasMaxLength(300);
 
         // İlan silinmeye karşı korumalı (Restrict).
         builder.HasOne<Listing>().WithMany().HasForeignKey(o => o.ListingId).OnDelete(DeleteBehavior.Restrict);

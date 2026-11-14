@@ -42,4 +42,7 @@ struct ShipperHistoryOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON
     let stage: String // işin aşaması (CarrierOffer.stage ile aynı değerler) | Yük Veren işi buradan izler
     let carrierId: String // Taşımacı'nın numarası | NE İŞE YARAR: profiline gitmek için (GET /carriers/{carrierId})
     let reviewed: Bool // true = bu işe puan verdim | "Puan ver" düğmesi yalnız false iken çıkar
+    // KARŞILIKLI İPTAL (15 Kasım) | var + varsayılan nil: eski JSON/testler bozulmaz, gelirse çözülür
+    var cancelRequest: CancelRequestInfo? = nil // açık iptal talebi (yoksa nil) ⮕ Models/Offers/CancelRequestInfo.swift
+    var mutuallyCancelled: Bool? = nil          // true: iş karşılıklı anlaşmayla iptal edildi (status "Cancelled" ile birlikte)
 }

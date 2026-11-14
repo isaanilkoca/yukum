@@ -35,4 +35,9 @@ protocol OfferServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sah
     
     // ⮕ KULLANIM [shipperHistory]: çağırır: OldOffersViewModel › load()
     func shipperHistory() async throws -> [ShipperHistoryOffer]
+    // Karşılıklı iptal (15 Kasım) ⮕ OfferService
+    func requestCancel(offerId: String, reason: String, note: String?, reopenListing: Bool?) async throws
+    func approveCancel(offerId: String, reopenListing: Bool?) async throws
+    func rejectCancel(offerId: String) async throws
+    func withdrawCancel(offerId: String) async throws
 }

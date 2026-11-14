@@ -95,6 +95,27 @@ final class MyOffersViewModel {
         }
     }
 
+    // ─── KARŞILIKLI İPTAL (15 Kasım) ─── kurallar sunucuda (backend CancelRequestHandlers); burada yalnız ne zaman düğme çıkacağı
+    // canRequestCancel: kabul edilmiş, teslim edilmemiş ve açık talebi olmayan iş
+    func canRequestCancel(_ offer: CarrierOffer) -> Bool {
+        offer.status == "Accepted" && offer.stage != "Delivered" && offer.cancelRequest == nil
+    }
+    // Her işlem aynı kalıp: servise söyle → başarılıysa listeyi yenile → hata varsa Türkçe mesaj | -> Bool: ekran animasyonu yalnız başarıda oynatsın
+    func requestCancel(_ offer: CarrierOffer, reason: String, note: String?) async -> Bool {
+        await run { try await self.service.requestCancel(offerId: offer.id, reason: reason, note: note, reopenListing: nil) }
+    }
+    func approveCancel(_ offer: CarrierOffer) async -> Bool {
+        await run { try await self.service.approveCancel(offerId: offer.id, reopenListing: nil) }
+    }
+    func rejectCancel(_ offer: CarrierOffer) async -> Bool { await run { try await self.service.rejectCancel(offerId: offer.id) } }
+    func withdrawCancel(_ offer: CarrierOffer) async -> Bool { await run { try await self.service.withdrawCancel(offerId: offer.id) } }
+
+    private func run(_ work: @escaping () async throws -> Void) async -> Bool {
+        errorMessage = nil
+        do { try await work(); await load(); return true }
+        catch { if let message = error.userMessage { errorMessage = message }; return false }
+    }
+
     // ─── İş aşaması (yalnız KABUL EDİLMİŞ işte) ───
     // stage: API'nin aşama yazısını JobStage'e çevirir | ?? .notStarted: bilinmeyen yazıda güvenli varsayılan
     func stage(_ offer: CarrierOffer) -> JobStage { JobStage(rawValue: offer.stage) ?? .notStarted }

@@ -34,4 +34,26 @@ public class Offer : BaseEntity
 
     /// <summary>Yük Veren bu teklifi geçmişinden sildi mi? (kayıt durur, yalnız onun listesinden gizlenir)</summary>
     public bool HiddenByShipper { get; set; }
+
+    // ─── KARŞILIKLI İPTAL (15 Kasım) ───
+    // Kabul edilmiş, teslim edilmemiş işte bir taraf iptal ister; karşı taraf onaylarsa iş iptal olur. Tek taraf işi bozamaz.
+    // Talep yokken hepsi boş. Onay/ret/geri çekmede talep alanları temizlenir; onayda MutuallyCancelled işaretlenir (geçmişte "Karşılıklı iptal").
+
+    /// <summary>İptali isteyen kullanıcı (Yük Veren ya da Taşımacı). null = açık talep yok.</summary>
+    public Guid? CancelRequestedBy { get; set; }
+
+    /// <summary>İptal nedeni (kısa: "Araç arızası", "Yük hazır değil"...).</summary>
+    public string? CancelReason { get; set; }
+
+    /// <summary>İsteğe bağlı açıklama.</summary>
+    public string? CancelNote { get; set; }
+
+    /// <summary>Talebin zamanı.</summary>
+    public DateTime? CancelRequestedAt { get; set; }
+
+    /// <summary>Yük Veren'in seçimi (talebi Yük Veren açtıysa): onaylanınca ilan yeniden yayınlansın mı? Taşımacı açtıysa onaylarken seçer.</summary>
+    public bool? CancelReopenListing { get; set; }
+
+    /// <summary>İş karşılıklı anlaşmayla iptal edildi (Status = Cancelled ile birlikte).</summary>
+    public bool MutuallyCancelled { get; set; }
 }

@@ -29,9 +29,22 @@ public sealed class CancelListingHandler(
         if (listing.Status is ListingStatus.Completed or ListingStatus.Cancelled)
             throw new ConflictException("Bu ilan zaten tamamlanmış ya da kaldırılmış.");
 
+        // KABUL EDİLMİŞ TEKLİF VARKEN KALDIRILAMAZ (15 Kasım, yönetici kuralı: "teklif kabul edilince ilan silinmemeli, teslim olmadan silinmemeli").
+        //   Önceden kabul edilmiş iş de iptal ediliyor, taşımacının yola çıkmış işi bir anda düşüyordu.
+        //   Teslim edilmemiş iş → kaldırılamaz. Teslim edilmiş iş → kaldırma yerine "İşi Bitir ve Sil" (iş tamamlanır, puan ve geçmiş korunur).
+        //   Ilan Assigned iken düzenleme zaten UpdateListingHandler'da engelli.
+        if (listing.Status == ListingStatus.Assigned)
+        {
+            var delivered = await offers.AnyAsync(
+                o => o.ListingId == listing.Id && o.Status == OfferStatus.Accepted && o.Stage == JobStage.Delivered, cancellationToken);
+            throw new ConflictException(delivered
+                ? "Yük teslim edildi. İlanı kaldırmak yerine sohbetten \"İşi Bitir ve Sil\" ile işi tamamla."
+                : "Bu ilanda kabul edilmiş bir teklif var; yük teslim edilmeden ilan kaldırılamaz.");
+        }
+
         listing.Status = ListingStatus.Cancelled;
 
-        // Canlı teklifler (bekleyen + kabul edilmiş) iptal olur; reddedilenler olduğu gibi kalır.
+        // Bekleyen teklifler iptal olur; reddedilenler olduğu gibi kalır. (Kabul edilmiş teklif buraya gelemez: yukarıda engellendi.)
         var now = time.GetUtcNow().UtcDateTime;
         var live = await offers.ListAsync(
             o => o.ListingId == listing.Id && (o.Status == OfferStatus.Pending || o.Status == OfferStatus.Accepted),

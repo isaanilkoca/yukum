@@ -38,7 +38,7 @@ final class OldOffersViewModel {
     // KURAL: yalnız reddedilen ya da tamamlanan silinebilir | kabul edilen AKTİF İŞ, silinemez (API de 409 verir)
     // ⮕ ZİNCİR: Views/OldOffersView: .swipeActions { if viewModel.canHide(offer) { "Sil" } } — yalnız reddedilen/tamamlanan (kabul edilen aktif iş, silinmez)
     // ⮕ KULLANIM [canHide]: çağırır: OldOffersView › body, OldOffersViewModelTests (test)
-    func canHide(_ offer: ShipperHistoryOffer) -> Bool { ["Rejected", "Completed"].contains(offer.status) } // .contains [SWIFT]: içinde var mı diye bakar
+    func canHide(_ offer: ShipperHistoryOffer) -> Bool { ["Rejected", "Completed", "Cancelled"].contains(offer.status) } // 15 Kasım: karşılıklı iptal edilen de silinebilir // .contains [SWIFT]: içinde var mı diye bakar
 
     // ⮕ ZİNCİR: Views/OldOffersView: .task ve .refreshable | OfferService.shipperHistory()
     // ⮕ KULLANIM [load]: çağırır: OldOffersViewModel › hide(), OldOffersView › body, OldOffersViewModelTests (test)
@@ -58,6 +58,27 @@ final class OldOffersViewModel {
         } catch {
             if let message = error.userMessage { errorMessage = message }
         }
+    }
+
+    // ─── KARŞILIKLI İPTAL (15 Kasım) ─── kurallar sunucuda (backend CancelRequestHandlers); burada yalnız ne zaman düğme çıkacağı
+    // canRequestCancel: kabul edilmiş, teslim edilmemiş ve açık talebi olmayan iş
+    func canRequestCancel(_ offer: ShipperHistoryOffer) -> Bool {
+        offer.status == "Accepted" && offer.stage != "Delivered" && offer.cancelRequest == nil
+    }
+    // Her işlem aynı kalıp: servise söyle → başarılıysa listeyi yenile → hata varsa Türkçe mesaj | -> Bool: ekran animasyonu yalnız başarıda oynatsın
+    func requestCancel(_ offer: ShipperHistoryOffer, reason: String, note: String?, reopenListing: Bool) async -> Bool {
+        await run { try await self.service.requestCancel(offerId: offer.id, reason: reason, note: note, reopenListing: reopenListing) }
+    }
+    func approveCancel(_ offer: ShipperHistoryOffer, reopenListing: Bool) async -> Bool {
+        await run { try await self.service.approveCancel(offerId: offer.id, reopenListing: reopenListing) }
+    }
+    func rejectCancel(_ offer: ShipperHistoryOffer) async -> Bool { await run { try await self.service.rejectCancel(offerId: offer.id) } }
+    func withdrawCancel(_ offer: ShipperHistoryOffer) async -> Bool { await run { try await self.service.withdrawCancel(offerId: offer.id) } }
+
+    private func run(_ work: @escaping () async throws -> Void) async -> Bool {
+        errorMessage = nil
+        do { try await work(); await load(); return true }
+        catch { if let message = error.userMessage { errorMessage = message }; return false }
     }
 
     // ⮕ ZİNCİR: Views/OldOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forShipperHistory(offer)

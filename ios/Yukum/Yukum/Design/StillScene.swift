@@ -10,8 +10,7 @@ import RealityKit // [SWIFT] Apple'ın 3B motoru
 import UIKit      // [SWIFT] UIImage, UIViewRepresentable'ın UIKit tarafı
 
 // ┌─ BAĞLANTI HARİTASI: StillScene.swift ─────────────────────────────────────────
-// │ GELEN     : Design/BoxSceneBackground (giriş: düşen koliler) | Design/TruckLoadView (Yük Veren: dolan dorse)
-// │             Design/TruckRoadView (Taşımacı: yük teslim alma)
+// │ GELEN     : Design/LoginBoxDrop (giriş: düşen tek Yüküm kolisi) — 15 Kasım'dan beri tek 3B sahne
 // │ GİDEN     : RealityKit ARView (kamerasız, "nonAR" kipte)
 // │ REHBER    : Design/00_Rehber_Design.swift
 // └──────────────────────────────────────────────────────────────────────
@@ -26,11 +25,15 @@ import UIKit      // [SWIFT] UIImage, UIViewRepresentable'ın UIKit tarafı
 // NEDEN RealityView değil ARView: RealityView'ın fotoğraf çekme yolu yok; ARView.snapshot var. cameraMode .nonAR → telefon kamerası AÇILMAZ.
 // NEDEN zemin saydam: arkadaki 2B katmanlar (renk geçişi, dağlar) görünsün; fotoğraf da saydamlığı korur (PNG gibi alfa kanallı).
 
-// ⮕ KULLANIM [StillScene]: kullanır: SceneBackground › body, TruckLoadView › body, TruckRoadView › body
+// ⮕ KULLANIM [StillScene]: kullanır: LoginBoxDrop › body
 struct StillScene: View {
     // build: sahneyi kurar | root: her şeyin ekleneceği ata | scene: kare aboneliği gerekiyorsa (giriş ekranındaki fizik) | finish: "sahne durdu" çağrısı
     typealias Builder = @MainActor (_ root: Entity, _ scene: RealityKit.Scene, _ finish: @escaping @MainActor () -> Void) -> Void
     let build: Builder
+    // ERTELEME (15 Kasım, kullanıcı: "butonlar geç yükleniyor"): 3B kurulum (ARView + Metal + model + yükler) ana iş parçacığını
+    //   birkaç yüz ms meşgul eder. Ekran açılır açılmaz kurulursa geçiş animasyonu takılır, düğmeler geç gelir.
+    //   Önce arayüz çizilsin ve geçiş bitsin (≈0,35 sn), SONRA sahne kurulsun. Giriş ekranında daha kısa (ilk ekran, geçiş yok).
+    var startDelay: Duration = .milliseconds(350)
 
     @State private var still: UIImage? // dolunca 3B kalkar, bu resim kalır | @State: ekran yenilense de resim yaşar (sahne yeniden oynamaz)
 
@@ -42,7 +45,7 @@ struct StillScene: View {
             if let still {
                 Image(uiImage: still).resizable() // [SWIFT] resmi çerçeveye tam yay (ARView ile aynı çerçeve → piksel piksel aynı yer)
             } else {
-                StillSceneHost(build: build) { image in still = image }
+                StillSceneHost(build: build, startDelay: startDelay) { image in still = image }
             }
         }
     }
@@ -52,6 +55,7 @@ struct StillScene: View {
 // ⮕ KULLANIM [StillSceneHost]: kullanır: StillScene › body
 private struct StillSceneHost: UIViewRepresentable {
     let build: StillScene.Builder
+    let startDelay: Duration
     let onStill: (UIImage) -> Void
 
     // makeUIView [SWIFT]: görünüm İLK kez gerektiğinde 1 kez çalışır
@@ -59,16 +63,24 @@ private struct StillSceneHost: UIViewRepresentable {
         let view = ARView(frame: .zero, cameraMode: .nonAR, automaticallyConfigureSession: false) // [SWIFT] AR yok: sanal kamera, telefon kamerası kapalı
         view.environment.background = .color(.clear) // sahnenin zemini saydam
         view.backgroundColor = .clear
+        // ÇÖZÜNÜRLÜK (15 Kasım, kullanıcı: "kalite kötü"): ekranın GERÇEK piksel yoğunluğunda çiz (iPhone'da 3×).
+        //   Açıkça verilmezse ARView daha düşük ölçekte çizebiliyor → koli bulanık; fotoğraf da o çözünürlükte kalıyordu.
+        view.contentScaleFactor = UIScreen.main.nativeScale // [SWIFT] 1 nokta = kaç piksel
         let anchor = AnchorEntity(world: .zero) // [SWIFT] ARView'da her şey bir "çapa"ya bağlanır
         view.scene.addAnchor(anchor)
         let root = Entity()
         anchor.addChild(root)
 
-        build(root, view.scene) { [weak view] in // [weak view] [SWIFT]: görünüm bu arada kalktıysa tutup bellekte bekletme
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(120)) // son hareketin ekrana çizilmesini bekle (snapshot o kareyi alsın)
-                view?.snapshot(saveToHDR: false) { image in // [SWIFT] ARView'ın o anki karesi
-                    if let image { onStill(image) }
+        let scene = view.scene
+        Task { @MainActor [weak view] in
+            try? await Task.sleep(for: startDelay) // arayüz ve geçiş önce (yukarıdaki ERTELEME notu)
+            guard view != nil else { return }      // bu arada ekran kapandıysa hiç kurma
+            build(root, scene) { [weak view] in // [weak view] [SWIFT]: görünüm bu arada kalktıysa tutup bellekte bekletme
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(120)) // son hareketin ekrana çizilmesini bekle (snapshot o kareyi alsın)
+                    view?.snapshot(saveToHDR: false) { image in // [SWIFT] ARView'ın o anki karesi
+                        if let image { onStill(image) }
+                    }
                 }
             }
         }

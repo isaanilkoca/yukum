@@ -52,7 +52,7 @@ struct RatingView: View {
                                 feedback = ActionFeedback(.seal, "Puanın kaydedildi") { dismiss() }
                             }
                         }
-                    } label: { AccentButtonLabel(title: "Gönder") }
+                    } label: { AccentButtonLabel(title: "Gönder", isLoading: viewModel.isSending, loadingTitle: "Gönderiliyor…") }
                     .disabled(viewModel.isSending)
                 }
                 .padding(20)

@@ -82,7 +82,10 @@ struct ChatViewModelTests {
         let (vm, service) = make(interval: .milliseconds(10))
 
         let task = Task { await vm.startPolling() }
-        try await Task.sleep(for: .milliseconds(120))
+        // 15 Kasım: sabit 120 ms yerine "en az 3 yenileme olana kadar" bekle (üst sınır 2 sn).
+        //   NEDEN: tüm testler birlikte koşarken makine meşgulse 120 ms'de 3 yenileme yetişmiyordu → test ara sıra düşüyordu (kod doğruydu).
+        let deadline = ContinuousClock.now + .seconds(2)
+        while service.messageLoads < 3, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
         task.cancel() // ekran kapanınca .task iptal edilir
         await task.value
         let loadsAtStop = service.messageLoads

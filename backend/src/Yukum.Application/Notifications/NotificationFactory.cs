@@ -48,6 +48,16 @@ public static class NotificationFactory
     public static Notification ListingCancelled(Guid carrierId, Listing listing, Guid offerId) => New(
         carrierId, NotificationType.ListingCancelled, "İlan kaldırıldı", $"“{listing.Title}” ilanı yayından kaldırıldı.", listing.Id, offerId);
 
+    // ─── Karşılıklı iptal (15 Kasım) ───
+    public static Notification CancelRequested(Guid userId, Listing listing, Guid offerId, string requester, string reason) => New(
+        userId, NotificationType.CancelRequested, "İptal talebi", $"{requester} “{listing.Title}” işinin iptalini istiyor: {reason}. Onayla ya da reddet.", listing.Id, offerId);
+
+    public static Notification CancelApproved(Guid userId, Listing listing, Guid offerId) => New(
+        userId, NotificationType.CancelApproved, "İptal onaylandı", $"“{listing.Title}” işi karşılıklı olarak iptal edildi.", listing.Id, offerId);
+
+    public static Notification CancelRejected(Guid userId, Listing listing, Guid offerId) => New(
+        userId, NotificationType.CancelRejected, "İptal reddedildi", $"“{listing.Title}” işi için iptal talebin reddedildi; iş devam ediyor.", listing.Id, offerId);
+
     private static Notification New(Guid userId, NotificationType type, string title, string body, Guid listingId, Guid offerId) =>
         new() { UserId = userId, Type = type, Title = title, Body = body, ListingId = listingId, OfferId = offerId };
 }

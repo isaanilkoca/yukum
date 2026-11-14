@@ -35,6 +35,7 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
 
     @Environment(\.colorScheme) private var colorScheme // [SWIFT] açık/koyu mod → Palette
     @State private var feedback: ActionFeedback? // işlem sonrası lastik izi animasyonu ⮕ Design/ActionFeedback.swift
+    @State private var busy = false // favori isteği sürüyor → "İşleniyor…" (teklif gönderiminin çarkı düğmenin kendisinde)
 
     // GÖRÜNÜM (15 Kasım, L tasarım): Taşımacı ana ekranıyla aynı dil — zemin ScreenBackground, üstte RouteCard (rota),
     //   teklif formu FormCard + LabeledInput, turuncu AccentButtonLabel. İŞLEV DEĞİŞMEDİ: aynı ViewModel alanları ve çağrıları.
@@ -80,19 +81,21 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
                         }
                     }
                 } label: {
-                    AccentButtonLabel(title: viewModel.buttonTitle) // ⮕ Design/FormStyle.swift
+                    AccentButtonLabel(title: viewModel.buttonTitle, isLoading: viewModel.isLoading, loadingTitle: "Teklif gönderiliyor…") // ⮕ Design/FormStyle.swift
                 }
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın)
             }
             .padding(.horizontal, 20).padding(.vertical, 12)
         }
         .scrollDismissesKeyboard(.interactively) // [SWIFT] kaydırınca klavye kapanır
+        .busyIndicator(busy)
         .background { ScreenBackground() } // ⮕ Design/ActionFeedback.swift › ScreenBackground (renk geçişi + haleler)
         .tint(palette.accent) // [SWIFT] geri oku ve imleç turuncu
         .toolbar { // üst çubuğa kalp düğmesi
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     Task {
+                        busy = true; defer { busy = false }
                         await viewModel.toggleFavorite() // ⮕ ListingDetailViewModel.toggleFavorite (iyimser güncelleme, hatada geri alır + errorMessage)
                         if viewModel.errorMessage == nil { // yalnız BAŞARIDA iz geçer
                             feedback = ActionFeedback(viewModel.isFavorite ? .track : .unload, viewModel.isFavorite ? "Favorilere eklendi" : "Favorilerden çıkarıldı") // çıkarma: boşaltma

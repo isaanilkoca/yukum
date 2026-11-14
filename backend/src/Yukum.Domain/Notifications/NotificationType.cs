@@ -22,5 +22,14 @@ public enum NotificationType
     ReviewReceived = 6,
 
     /// <summary>Taşımacı: teklif verdiği ilan kaldırıldı.</summary>
-    ListingCancelled = 7
+    ListingCancelled = 7,
+
+    /// <summary>Karşı taraf kabul edilmiş işin iptalini istedi (onay bekliyor).</summary>
+    CancelRequested = 8,
+
+    /// <summary>İptal talebin onaylandı: iş karşılıklı iptal edildi.</summary>
+    CancelApproved = 9,
+
+    /// <summary>İptal talebin reddedildi: iş devam ediyor.</summary>
+    CancelRejected = 10
 }

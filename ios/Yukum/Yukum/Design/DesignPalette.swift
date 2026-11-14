@@ -54,56 +54,6 @@ struct Palette {
     var rimA: UIColor { isDark ? UIColor(red: 1.0, green: 0.62, blue: 0.25, alpha: 1) : UIColor(red: 1.0, green: 0.80, blue: 0.55, alpha: 1) }  // kenar ışığı 1: amber
     var rimB: UIColor { isDark ? UIColor(red: 0.62, green: 0.70, blue: 0.82, alpha: 1) : UIColor(red: 1.0, green: 0.95, blue: 0.85, alpha: 1) } // kenar ışığı 2: gecede soğuk gri (koliyi zeminden ayırır)
     var rimIntensity: Float { isDark ? 110000 : 14000 }
-    // Giriş ekranı: her şey düştükten sonra yanan tepe spotu (Design/BoxSceneRig › revealSpotlight) | dorse tavan lambası gibi soğuğa yakın beyaz
-    var spotColor: UIColor { UIColor(red: 1.0, green: 0.99, blue: 0.96, alpha: 1) }   // beyaz (çok hafif sıcak)
-    var spotIntensity: Float { isDark ? 900_000 : 0 } // 14 Kasım: 900 bin → 2,4 milyon (kullanıcı: "spot düşmüyor") | 4 milyonda koliler beyaza çekiyordu | sonra 1,3 milyon → 900 bin: kullanıcı "daha loş, sahne efekti" | gündüz 0: spot yalnız koyu modda
-    var beam: Color { Color(red: 1.0, green: 0.99, blue: 0.96) } // görünen huzme ve yer havuzu (BoxSceneBackground › SpotBeam): beyaz, parlak
-
-    // Dorse sahnesi (Design/TruckLoadView.swift) | hazır modelin YALNIZ dorsesi (kabin gizli) | kullanıcı isteğiyle sahne daha PARLAK
-    var trailerKeyIntensity: Float { isDark ? 8200 : 8600 }   // ana ışık: giriş sahnesinden (keyIntensity) ~%55 güçlü
-    var trailerFillIntensity: Float { isDark ? 3000 : 3400 }  // sağ-önden dolgu ışığı: gölgeli yüzler kararmasın
-    var cargoGlass: UIColor { isDark ? UIColor(red: 1.0, green: 0.93, blue: 0.82, alpha: 1) : UIColor(red: 0.55, green: 0.45, blue: 0.35, alpha: 1) } // şeffaf kasa camının rengi
-    var cargoEdge: UIColor { isDark ? UIColor(red: 1.0, green: 0.88, blue: 0.66, alpha: 1) : UIColor(red: 0.45, green: 0.33, blue: 0.22, alpha: 1) }  // kasa kenar çizgileri
-
-    // Yol + yükleme sahnesi (Design/TruckRoadView.swift, Taşımacı ana ekranı, 14 Kasım) | aynı sıcak aile: kum rengi arazi, kahve tepeler, sıcak asfalt
-    //   GECE: koyu arazi, turuncu ufuk ışığı (uzaktaki şehir), yükleme alanının projektörü yanar. GÜNDÜZ: buğday tarlası rengi arazi, krem gökyüzü.
-    var land: Color { isDark ? Color(red: 0.085, green: 0.065, blue: 0.048) : Color(red: 0.86, green: 0.77, blue: 0.60) }        // ufkun altı (2B), asfalt sonda buna karışır
-    var landHaze: Color { isDark ? Color(red: 0.17, green: 0.11, blue: 0.065) : Color(red: 0.93, green: 0.86, blue: 0.72) }     // ufka yakın arazi: pus (daha açık)
-    var hillFar: Color { isDark ? Color(red: 0.12, green: 0.085, blue: 0.060) : Color(red: 0.84, green: 0.72, blue: 0.56) }     // uzak sıradağ
-    var hillNear: Color { isDark ? Color(red: 0.095, green: 0.070, blue: 0.050) : Color(red: 0.76, green: 0.62, blue: 0.45) }   // yakın tepeler
-    var horizonGlow: Color { isDark ? Color(red: 1.0, green: 0.52, blue: 0.16).opacity(0.42) : Color(red: 1.0, green: 0.78, blue: 0.45).opacity(0.60) } // ufuktaki ışık: gece şehir, gündüz güneş
-    var star: Color { Color(red: 1.0, green: 0.95, blue: 0.85) } // yalnız gece
-    var asphalt: UIColor { isDark ? UIColor(red: 0.075, green: 0.068, blue: 0.060, alpha: 1) : UIColor(red: 0.40, green: 0.37, blue: 0.34, alpha: 1) }
-    var concrete: UIColor { isDark ? UIColor(red: 0.20, green: 0.185, blue: 0.17, alpha: 1) : UIColor(red: 0.72, green: 0.69, blue: 0.64, alpha: 1) } // yükleme alanı zemini (asfalttan açık)
-    var roadLine: UIColor { isDark ? UIColor(red: 0.82, green: 0.79, blue: 0.72, alpha: 1) : UIColor(red: 0.99, green: 0.98, blue: 0.94, alpha: 1) } // şerit çizgisi (ışıktan etkilenmez)
-    var postWhite: UIColor { UIColor(red: 0.93, green: 0.92, blue: 0.89, alpha: 1) }   // yol kenarı dikmesi
-    var reflector: UIColor { UIColor(red: 1.0, green: 0.52, blue: 0.04, alpha: 1) }    // dikme reflektörü + yükleme alanı çizgisi: marka turuncusu
-    var floodlight: UIColor { UIColor(red: 1.0, green: 0.93, blue: 0.80, alpha: 1) }   // yükleme alanı projektörü
-    var floodIntensity: Float { isDark ? 900_000 : 0 } // yalnız gece yanar (gündüz güneş yeter)
-
-    // Yük çeşitleri (Design/CargoKit.swift): tarım ürünleri ve gıda | gerçek ürün renkleri, kartonla aynı sıcak aile
-    var crateWood: UIColor { UIColor(red: 0.66, green: 0.47, blue: 0.27, alpha: 1) }   // meyve kasası tahtası
-    var palletWood: UIColor { UIColor(red: 0.78, green: 0.62, blue: 0.40, alpha: 1) }  // palet tahtası (açık çam)
-    var orange: UIColor { UIColor(red: 1.0, green: 0.50, blue: 0.04, alpha: 1) }       // portakal
-    var lemon: UIColor { UIColor(red: 1.0, green: 0.88, blue: 0.08, alpha: 1) }        // limon: canlı sarı (14 Kasım: daha doygun)
-    var tomato: UIColor { UIColor(red: 0.86, green: 0.12, blue: 0.06, alpha: 1) }      // domates
-    var avocado: UIColor { UIColor(red: 0.22, green: 0.34, blue: 0.08, alpha: 1) }     // avokado: gerçek yeşil, mat kabuk (14 Kasım: koyu-siyahımsı tondan açıldı)
-    // Zeytinyağı tenekesi (kullanıcının gösterdiği 10 L teneke görseli, 14 Kasım): sıcak parlak altın gövde, açık altın kenar, koyu yeşil yassı kapak + açık halka
-    // NOT: metal yüzey rengini çevresinden yansıtır; sahnemiz koyu olduğu için tam metal (metallic 1) teneke KARA görünüyordu
-    //   → renk açık tutuldu ve CargoKit'te metallic 0,55'e indirildi: görseldeki gibi altın okunur.
-    var tinGold: UIColor { UIColor(red: 0.92, green: 0.75, blue: 0.30, alpha: 1) }
-    var tinRim: UIColor { UIColor(red: 0.98, green: 0.88, blue: 0.56, alpha: 1) }
-    var capGreen: UIColor { UIColor(red: 0.05, green: 0.33, blue: 0.17, alpha: 1) }
-    var spoutWhite: UIColor { UIColor(red: 0.95, green: 0.95, blue: 0.92, alpha: 1) }
-    var sack: UIColor { UIColor(red: 0.80, green: 0.70, blue: 0.50, alpha: 1) }        // çuval (çuval bezi)
-    var sackPrint: UIColor { UIColor(red: 0.62, green: 0.22, blue: 0.12, alpha: 1) }   // çuvalın üstündeki baskı bandı
-    // Zeytinyağı şişesi (kullanıcının görselindeki cam şişe): şeffaf cam + içinde altın sarısı yağ + mantar tıpa
-    var glassTint: UIColor { UIColor(red: 0.90, green: 0.96, blue: 0.88, alpha: 1) }   // camın çok hafif yeşilimsi rengi
-    var oil: UIColor { UIColor(red: 0.88, green: 0.70, blue: 0.10, alpha: 1) }         // zeytinyağı: altın sarısı
-    var cork: UIColor { UIColor(red: 0.74, green: 0.56, blue: 0.36, alpha: 1) }        // şişe mantarı
-    // Meyve ayrıntıları: yaprak, çanak (domates), sap
-    var leaf: UIColor { UIColor(red: 0.16, green: 0.44, blue: 0.12, alpha: 1) }
-    var stem: UIColor { UIColor(red: 0.36, green: 0.26, blue: 0.12, alpha: 1) }
 
     // Bantlar
     var tape: UIColor { UIColor(red: 0.90, green: 0.78, blue: 0.56, alpha: 1) } // kolinin üstündeki bant: açık bej, parlak

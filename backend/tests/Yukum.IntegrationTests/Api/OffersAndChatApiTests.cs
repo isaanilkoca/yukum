@@ -454,8 +454,10 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task Cancelling_is_owner_only_and_works_on_an_assigned_job_but_not_twice_or_after_completion()
+    public async Task Cancelling_is_owner_only_and_not_allowed_on_an_assigned_job_delivered_or_not_nor_twice_or_after_completion()
     {
+        // 15 Kasım kuralı: kabul edilmiş teklif varken ilan kaldırılamaz (teslim edilmemişse "teslim olmadan" mesajı,
+        //   teslim edilmişse "İşi Bitir ve Sil" yönlendirmesi). Kabul edilmiş teklif İPTAL OLMAZ.
         var c = await StartAsync();
         var shipper = await NewUser(c, true); var other = await NewUser(c, true); var carrier = await NewUser(c, false);
         var listing = await NewListing(c, shipper);
@@ -464,23 +466,126 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
         var byOther = await Call(c, other, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");       // başkasının ilanı: 404
         var byCarrier = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");   // rol: 403
-        var cancel = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");      // atanmış iş iptali
-        var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");       // tekrar: 409
+        var whileAssigned = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel"); // teslim edilmedi: 409
+        var assignedBody = await whileAssigned.Content.ReadAsStringAsync();
+        await Deliver(c, carrier, offer);
+        var afterDelivery = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");  // teslim edildi: yine 409 (İşi Bitir yolu)
+        var deliveredBody = await afterDelivery.Content.ReadAsStringAsync();
         var carrierMine = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
 
-        var done = await NewListing(c, shipper);
-        var doneOffer = await NewOffer(c, carrier, done, 500);
-        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/accept");
-        await Deliver(c, carrier, doneOffer);
-        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{doneOffer}/complete");
-        var afterComplete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{done}/cancel");   // tamamlanmış iş iptal edilemez
+        var open = await NewListing(c, shipper);                                                          // açık ilan: kaldırılır, ikinci kez 409
+        var openCancel = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{open}/cancel");
+        var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{open}/cancel");
+
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/complete");
+        var afterComplete = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/cancel");   // tamamlanmış iş iptal edilemez
 
         Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, byCarrier.StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, cancel.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, whileAssigned.StatusCode);
+        Assert.Contains("teslim edilmeden", assignedBody);
+        Assert.Equal(HttpStatusCode.Conflict, afterDelivery.StatusCode);
+        Assert.Contains("İşi Bitir ve Sil", deliveredBody);
+        Assert.Contains(carrierMine.EnumerateArray(), o => o.GetProperty("status").GetString() == "Accepted");   // kabul edilmiş teklif İPTAL OLMADI
+        Assert.Equal(HttpStatusCode.NoContent, openCancel.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, again.StatusCode);
-        Assert.Contains(carrierMine.EnumerateArray(), o => o.GetProperty("status").GetString() == "Cancelled");   // kabul edilmiş teklif iptal oldu
         Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
+    }
+
+    // ---------- karşılıklı iptal (15 Kasım) ----------
+    private static async Task<string[]> NotificationTypes(HttpClient c, string token) =>
+        (await Json(await Call(c, token, HttpMethod.Get, "/api/v1/notifications"))).GetProperty("items").EnumerateArray()
+            .Select(n => n.GetProperty("type").ToString()).ToArray();
+
+    [Fact]
+    public async Task Carrier_requests_cancel_shipper_approves_and_republishes_the_listing()
+    {
+        // SENARYO: teklif kabul edildi, araç bozuldu. Taşımacı iptal ister, Yük Veren onaylar ve ilanı yeniden yayınlar.
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+
+        var request = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası", note = "Motor arıza verdi" });
+        var twice = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası" });
+        var ownApprove = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request/approve");
+        var carrierView = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine")))[0].GetProperty("cancelRequest");
+        var shipperView = (await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history")))[0].GetProperty("cancelRequest");
+        var shipperTypes = await NotificationTypes(c, shipper);
+
+        var approve = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request/approve", new { reopenListing = true });
+        var carrierOffer = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine")))[0];
+        var mine = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"));
+
+        Assert.Equal(HttpStatusCode.NoContent, request.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, twice.StatusCode);                       // tek açık talep
+        Assert.Equal(HttpStatusCode.Conflict, ownApprove.StatusCode);                  // kendi talebini onaylayamaz
+        Assert.True(carrierView.GetProperty("byMe").GetBoolean());
+        Assert.False(shipperView.GetProperty("byMe").GetBoolean());
+        Assert.Equal("Araç arızası", shipperView.GetProperty("reason").GetString());
+        Assert.Equal("Motor arıza verdi", shipperView.GetProperty("note").GetString());
+        Assert.Contains("CancelRequested", shipperTypes);
+        Assert.Equal(HttpStatusCode.NoContent, approve.StatusCode);
+        Assert.Equal("Cancelled", carrierOffer.GetProperty("status").GetString());
+        Assert.True(carrierOffer.GetProperty("mutuallyCancelled").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, carrierOffer.GetProperty("cancelRequest").ValueKind); // talep kapandı
+        Assert.Contains(mine.EnumerateArray(), l => l.GetProperty("id").GetString() == listing); // ilan yeniden yayında
+        Assert.Contains("CancelApproved", await NotificationTypes(c, carrier));
+    }
+
+    [Fact]
+    public async Task Shipper_requests_cancel_carrier_rejects_then_approves_and_the_listing_is_removed_as_the_shipper_chose()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Yük hazır değil", reopenListing = false });
+        var reject = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request/reject");
+        var afterReject = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine")))[0];
+        var shipperTypes = await NotificationTypes(c, shipper);
+
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Yük hazır değil", reopenListing = false });
+        var approve = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request/approve");
+        var mine = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/listings/mine"));
+
+        Assert.Equal(HttpStatusCode.NoContent, reject.StatusCode);
+        Assert.Equal("Accepted", afterReject.GetProperty("status").GetString());     // reddedildi: iş sürüyor
+        Assert.Equal(JsonValueKind.Null, afterReject.GetProperty("cancelRequest").ValueKind);
+        Assert.Contains("CancelRejected", shipperTypes);
+        Assert.Equal(HttpStatusCode.NoContent, approve.StatusCode);
+        Assert.DoesNotContain(mine.EnumerateArray(), l => l.GetProperty("id").GetString() == listing); // Yük Veren "kaldır" seçmişti
+    }
+
+    [Fact]
+    public async Task Cancel_requests_need_an_active_undelivered_job_a_party_and_a_reason_and_can_be_withdrawn_only_by_the_requester()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); var outsider = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, listing, 1000);
+
+        var onPending = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası" });
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/accept");
+        var byOutsider = await Call(c, outsider, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası" });
+        var noReason = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = " " });
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası" });
+        var withdrawByOther = await Call(c, shipper, HttpMethod.Delete, $"/api/v1/offers/{offer}/cancel-request");
+        var withdraw = await Call(c, carrier, HttpMethod.Delete, $"/api/v1/offers/{offer}/cancel-request");
+        var approveNothing = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request/approve");
+        await Deliver(c, carrier, offer);
+        var afterDelivery = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/cancel-request", new { reason = "Araç arızası" });
+
+        Assert.Equal(HttpStatusCode.Conflict, onPending.StatusCode);       // kabul edilmemiş teklif
+        Assert.Equal(HttpStatusCode.NotFound, byOutsider.StatusCode);      // taraf değil
+        Assert.Equal(HttpStatusCode.BadRequest, noReason.StatusCode);      // neden zorunlu
+        Assert.Equal(HttpStatusCode.Conflict, withdrawByOther.StatusCode); // yalnız talep eden geri çeker
+        Assert.Equal(HttpStatusCode.NoContent, withdraw.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, approveNothing.StatusCode);  // açık talep yok
+        Assert.Equal(HttpStatusCode.Conflict, afterDelivery.StatusCode);   // teslimden sonra "İşi Bitir"
     }
 
     // ---------- ilan listesi: filtre, sıralama, sayfalama ----------
