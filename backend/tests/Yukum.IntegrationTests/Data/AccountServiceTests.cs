@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,10 @@ public class AccountServiceTests(SqlServerFixture sql)
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        // 15 Kasım: AuthService "Auth" ayarını okur (VerificationOptions). Bu testler kodsuz kayıt+giriş yapar → doğrulama kapalı;
+        //   kod adımı Api/VerificationApiTests'te gerçek API ile sınanır.
+        services.AddSingleton<Microsoft.Extensions.Configuration.IConfiguration>(new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["Auth:RequireVerifiedEmail"] = "false" }).Build());
         services.AddSingleton<TimeProvider>(time);
         services.AddScoped<AppDbContext>(_ => db.NewContext());
         services.AddRepositories();

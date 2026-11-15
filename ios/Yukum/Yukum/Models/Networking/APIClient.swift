@@ -123,7 +123,7 @@ struct APIClient {
         // Diğer hatalar (400, 404, 409, 423...): sunucu Türkçe açıklama gönderir (ProblemDetails) → ekrana o yazılır
         let apiError = try? JSONDecoder().decode(APIErrorResponse.self, from: data) // try?: çevrilemezse nil | try? [SWIFT]: hata olursa çökme, nil ver
         let firstFieldError = apiError?.errors?.values.first?.first // ilk alan hatası (örn. "Başlık boş olamaz.")
-        throw APIError(message: firstFieldError ?? apiError?.detail ?? fallback) // ??: soldaki boşsa sağdakine geç
+        throw APIError(message: firstFieldError ?? apiError?.detail ?? fallback, code: apiError?.code) // ??: soldaki boşsa sağdakine geç | code: makine kodu (15 Kasım)
     }
 
     // execute: tek bir HTTP isteğini kurar ve gönderir | -> (cevap içeriği, durum kodu)

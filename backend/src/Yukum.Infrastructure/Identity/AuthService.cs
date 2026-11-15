@@ -14,7 +14,8 @@ namespace Yukum.Infrastructure.Identity;
 /// Güvenlik ilkeleri: (1) kullanıcı yok / şifre yanlış aynı cevabı verir, (2) kullanıcı olmasa bile şifre doğrulama süresi
 /// kadar zaman harcanır (süre farkından "bu e-posta kayıtlı" anlaşılmasın), (3) hesap devre dışılığı yalnız doğru şifreden sonra söylenir.
 /// </summary>
-public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, TimeProvider time) : IAuthService
+public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppUser> hasher, TimeProvider time,
+    Microsoft.Extensions.Options.IOptions<VerificationOptions> verification) : IAuthService
 {
     private const string UnavailableMessage = "Hesabınız şu an kullanılamıyor. Lütfen destek ile iletişime geçin.";
 
@@ -61,6 +62,9 @@ public sealed class AuthService(UserManager<AppUser> users, IPasswordHasher<AppU
         // Şifre doğru: artık hesabın durumunu söylemek güvenli (kullanıcı kimliğini kanıtladı).
         if (!user.IsActive || user.IsBlocked)
             throw new ForbiddenException(UnavailableMessage);
+        // 15 Kasım (kullanıcı kararı): e-postası doğrulanmamış hesap giriş yapamaz. Şifre DOĞRUYSA söylenir (yabancıya hesap durumu sızmaz).
+        if (verification.Value.RequireVerifiedEmail && !user.EmailConfirmed)
+            throw new EmailNotVerifiedException();
 
         // Başarılı giriş: hatalı deneme sayacı sıfırlanır.
         await users.ResetAccessFailedCountAsync(user);

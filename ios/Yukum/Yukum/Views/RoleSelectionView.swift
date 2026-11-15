@@ -42,7 +42,7 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad (dosya adı k
 
     private func registered(_ email: String) {
         let r = role
-        feedback = ActionFeedback(r == .shipper ? .seal : .track, "Kayıt tamam! Giriş yapabilirsin") { onDone(email, r); dismiss() }
+        feedback = ActionFeedback(r == .shipper ? .seal : .track, "Kayıt tamam! E-postana kod gönderdik") { onDone(email, r); dismiss() }
     }
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)

@@ -150,6 +150,13 @@ builder.Services.AddProblemDetails(options =>
 // Build: yukarıda kaydedilen servislerle uygulama nesnesi kurulur. Bundan sonrası İSTEK HATTI'dır (middleware): SIRA ÖNEMLİDİR.
 var app = builder.Build();
 
+// 15 Kasım: geliştirme e-posta göndericisi (kodları GÜNLÜĞE yazar) canlıda açılırsa kodu günlüğü okuyan herkes görür → uygulama hiç açılmaz.
+//   Canlıya çıkmadan gerçek gönderici (Resend) eklenmeli: Infrastructure/Identity/LogEmailSender.cs notu.
+if (!app.Environment.IsDevelopment() && app.Services.GetRequiredService<Yukum.Application.Abstractions.Identity.IEmailSender>() is Yukum.Infrastructure.Identity.LogEmailSender)
+    throw new InvalidOperationException("Canlı ortamda LogEmailSender kullanılamaz: gerçek bir e-posta göndericisi kaydedin.");
+if (!app.Environment.IsDevelopment() && app.Configuration.GetValue<bool>("Email:FallbackToLog"))
+    throw new InvalidOperationException("Canlı ortamda Email:FallbackToLog açık olamaz (kodlar günlüğe yazılır).");
+
 // Her isteğin tüm log satırlarına, hata cevabındaki traceId ile aynı numarayı yazar.
 // Basit bir ara katman: isteğe numara (traceId) bağlar, sonraki katmana geçer. Bu istek için yazılan her log satırı aynı numarayı taşır.
 app.Use(async (context, next) =>

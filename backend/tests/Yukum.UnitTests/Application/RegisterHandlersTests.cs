@@ -19,8 +19,8 @@ public class RegisterHandlersTests
     {
         var geography = Substitute.For<IGeographyRepository>();
         geography.CityExistsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(call => call.Arg<int>() is >= 1 and <= 81);
-        _shipper = new RegisterShipperHandler(new RegisterShipperValidator(geography), _accounts);
-        _carrier = new RegisterCarrierHandler(new RegisterCarrierValidator(geography), _accounts);
+        _shipper = new RegisterShipperHandler(new RegisterShipperValidator(geography), _accounts, Substitute.For<IVerificationService>());
+        _carrier = new RegisterCarrierHandler(new RegisterCarrierValidator(geography), _accounts, Substitute.For<IVerificationService>());
     }
 
     private static RegisterShipperCommand ShipperCommand() => new(

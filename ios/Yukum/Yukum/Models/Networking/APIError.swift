@@ -20,4 +20,5 @@ nonisolated struct APIError: Error { // Error [SWIFT]: fırlatılabilir hata
     // isSessionExpired: bu hata "oturum bitti, yeniden giriş gerek" demek mi | NE İŞE YARAR: ekranlar bunu ayırt edip giriş ekranına dönebilir | varsayılan false: eski kodlar APIError(message:) yazmaya devam eder
     // ⮕ KULLANIM [isSessionExpired]: okur: AuthSessionTests (test)
     var isSessionExpired = false
+    var code: String? = nil // 15 Kasım: sunucunun makine kodu (APIErrorResponse.code) | "email_not_verified" → LoginViewModel.verifyTarget
 }

@@ -18,4 +18,9 @@ protocol AuthServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sahi
     func registerCarrier(_ body: RegisterCarrierRequest) async throws -> RegisterResponse
     // ⮕ KULLANIM [login]: çağırır: LoginViewModel › login()
     func login(_ body: LoginRequest) async throws -> LoginResponse
+    // 15 Kasım: e-posta doğrulama + şifremi unuttum (gönder uçları her zaman başarılı: e-postanın kayıtlı olup olmadığı söylenmez)
+    func sendVerificationCode(_ body: CodeRequest) async throws
+    func verifyEmail(_ body: VerifyEmailRequest) async throws
+    func forgotPassword(_ body: CodeRequest) async throws
+    func resetPassword(_ body: ResetPasswordRequest) async throws
 }

@@ -26,6 +26,7 @@ public partial class AuthorizationMatrixTests(SqlServerFixture sql)
     [
         "POST api/v1/auth/login", "POST api/v1/auth/refresh", "POST api/v1/auth/logout",
         "POST api/v1/auth/register/shipper", "POST api/v1/auth/register/carrier",
+        "POST api/v1/auth/verify-email/send", "POST api/v1/auth/verify-email", "POST api/v1/auth/password/forgot", "POST api/v1/auth/password/reset", // 15 Kasım: giriş yapamayan kişi kullanır
         "GET api/v1/cities", "GET api/v1/cities/{cityId:int}/districts"
     ];
 

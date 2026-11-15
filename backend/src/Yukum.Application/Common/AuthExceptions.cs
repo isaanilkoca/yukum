@@ -25,5 +25,15 @@ public sealed class AccountLockedException(TimeSpan retryAfter)
 /// <param name="message">Kullanıcıya gösterilebilecek kısa Türkçe açıklama.</param>
 public sealed class ForbiddenException(string message) : Exception(message);
 
+/// <summary>
+/// Şifre doğru ama e-posta doğrulanmamış (15 Kasım). API'de 403 + ProblemDetails "code": "email_not_verified":
+/// iOS bu kodu görünce giriş yerine doğrulama kodu ekranını açar (aynı 403 "hesap devre dışı"dan bu alanla ayrılır).
+/// </summary>
+public sealed class EmailNotVerifiedException() : Exception("E-posta adresin henüz doğrulanmadı. E-postana gelen kodu gir.")
+{
+    /// <summary>İstemcinin ayırt ettiği makine kodu.</summary>
+    public const string Code = "email_not_verified";
+}
+
 /// <summary>Yenileme jetonu geçersiz: bilinmiyor, süresi dolmuş, iptal edilmiş ya da başka cihaza ait. Cevap 401; istemci yeniden giriş ister.</summary>
 public sealed class InvalidRefreshTokenException() : Exception("Oturum süresi doldu, lütfen tekrar giriş yapın.");

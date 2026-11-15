@@ -51,6 +51,20 @@ struct AuthService {
         await AuthSession.shared.signIn(response) // jetonları sakla | actor'a erişim "await" ister
         return response
     }
+
+    // ── 15 Kasım: e-posta doğrulama + şifremi unuttum | hepsi jetonsuz (kullanıcı henüz giriş yapamıyor) · akış: backend Application/Accounts/VerificationContracts.cs
+    func sendVerificationCode(_ body: CodeRequest) async throws {
+        try await api.sendNoContent(.post, "/api/v1/auth/verify-email/send", body: body, authorized: false, fallback: "Kod gönderilemedi.")
+    }
+    func verifyEmail(_ body: VerifyEmailRequest) async throws {
+        try await api.sendNoContent(.post, "/api/v1/auth/verify-email", body: body, authorized: false, fallback: "Kod doğrulanamadı.")
+    }
+    func forgotPassword(_ body: CodeRequest) async throws {
+        try await api.sendNoContent(.post, "/api/v1/auth/password/forgot", body: body, authorized: false, fallback: "Kod gönderilemedi.")
+    }
+    func resetPassword(_ body: ResetPasswordRequest) async throws {
+        try await api.sendNoContent(.post, "/api/v1/auth/password/reset", body: body, authorized: false, fallback: "Şifre değiştirilemedi.")
+    }
 }
 
 // AuthService, kendi sözleşmesini karşılar (Services/Protocols/): ViewModel'ler somut sınıfa değil sözleşmeye bağlıdır, testte sahtesi verilir

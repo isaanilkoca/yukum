@@ -26,6 +26,11 @@ public sealed class YukumApiFactory : WebApplicationFactory<Program>
         // Profil fotoğrafları: testler proje klasörüne (App_Data) dosya bırakmasın; her fabrika kendi geçici klasörünü kullanır.
         builder.UseSetting("Storage:AvatarPath", AvatarDirectory);
 
+        // 15 Kasım: testlerin çoğu kayıt olup hemen giriş yapar; e-posta kodu adımını yalnız VerificationApiTests sınar (orada true yapılır).
+        builder.UseSetting("Auth:RequireVerifiedEmail", "false");
+        // Geliştiricinin user-secrets'taki Resend anahtarı testlere SIZMASIN: testler asla gerçek e-posta göndermez (kota + gereksiz ağ isteği)
+        builder.UseSetting("Email:ResendApiKey", "");
+
         builder.ConfigureTestServices(services =>
             services.AddControllers().AddApplicationPart(typeof(YukumApiFactory).Assembly));
     }

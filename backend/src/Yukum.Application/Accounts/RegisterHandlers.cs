@@ -5,7 +5,7 @@ using Yukum.Application.Abstractions.Messaging;
 namespace Yukum.Application.Accounts;
 
 /// <summary>Yük Veren kaydını işler: doğrular, e-posta ve telefonu normalleştirir, hesabı oluşturur.</summary>
-public sealed class RegisterShipperHandler(IValidator<RegisterShipperCommand> validator, IAccountService accounts)
+public sealed class RegisterShipperHandler(IValidator<RegisterShipperCommand> validator, IAccountService accounts, IVerificationService verification)
     : ICommandHandler<RegisterShipperCommand, RegisteredUserDto>
 {
     /// <summary>Geçersizse <see cref="ValidationException"/>, e-posta/telefon kayıtlıysa <see cref="Common.ConflictException"/> fırlatır.</summary>
@@ -29,12 +29,15 @@ public sealed class RegisterShipperHandler(IValidator<RegisterShipperCommand> va
             TaxOffice = AccountNormalization.OptionalText(command.TaxOffice)
         };
         // 3) Hesabı oluştur (Infrastructure/AccountService.cs): kullanıcı + rol + profil TEK işlemde. E-posta/telefon kayıtlıysa ConflictException → 409.
-        return await accounts.RegisterShipperAsync(normalized, cancellationToken);
+        var created = await accounts.RegisterShipperAsync(normalized, cancellationToken);
+        // 4) 15 Kasım: e-posta doğrulama kodu gönderilir (iOS kayıttan sonra kod ekranına geçer) ⮕ VerificationContracts.cs
+        await verification.SendCodeAsync(normalized.Email!, Yukum.Domain.Accounts.UserType.Shipper, Yukum.Domain.Accounts.VerificationPurpose.EmailVerification, cancellationToken);
+        return created;
     }
 }
 
 /// <summary>Taşımacı kaydını işler: doğrular, e-posta ve telefonu normalleştirir, hesabı oluşturur.</summary>
-public sealed class RegisterCarrierHandler(IValidator<RegisterCarrierCommand> validator, IAccountService accounts)
+public sealed class RegisterCarrierHandler(IValidator<RegisterCarrierCommand> validator, IAccountService accounts, IVerificationService verification)
     : ICommandHandler<RegisterCarrierCommand, RegisteredUserDto>
 {
     /// <summary>Geçersizse <see cref="ValidationException"/>, e-posta/telefon kayıtlıysa <see cref="Common.ConflictException"/> fırlatır.</summary>
@@ -53,7 +56,10 @@ public sealed class RegisterCarrierHandler(IValidator<RegisterCarrierCommand> va
             Vehicles = (command.Vehicles ?? []).Select(v => v with { PlateNumber = AccountNormalization.OptionalText(v.PlateNumber) }).ToList() // araçsız kayıt: boş liste
         };
         // 3) Hesabı oluştur: kullanıcı + rol + profil + araçlar + çalışma illeri TEK işlemde (biri düşerse hiçbiri kaydedilmez).
-        return await accounts.RegisterCarrierAsync(normalized, cancellationToken);
+        var created = await accounts.RegisterCarrierAsync(normalized, cancellationToken);
+        // 4) 15 Kasım: e-posta doğrulama kodu ⮕ VerificationContracts.cs
+        await verification.SendCodeAsync(normalized.Email!, Yukum.Domain.Accounts.UserType.Carrier, Yukum.Domain.Accounts.VerificationPurpose.EmailVerification, cancellationToken);
+        return created;
     }
 }
 

@@ -51,12 +51,10 @@ public sealed class GlobalExceptionHandler(
             if (exception is AccountLockedException locked)
                 httpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(locked.RetryAfter.TotalSeconds)).ToString();
 
-            return await Write(httpContext, exception, new ProblemDetails
-            {
-                Status = expected.Status,
-                Title = expected.Title,
-                Detail = expected.Detail
-            });
+            var problem = new ProblemDetails { Status = expected.Status, Title = expected.Title, Detail = expected.Detail };
+            // 15 Kasım: makine kodu → iOS 403'ün "doğrulanmamış e-posta" olduğunu anlar (APIErrorResponse.code)
+            if (exception is EmailNotVerifiedException) problem.Extensions["code"] = EmailNotVerifiedException.Code;
+            return await Write(httpContext, exception, problem);
         }
 
         // 3) Hiçbiri değilse BEKLENMEYEN hatadır (bizim hatamız): ayrıntı loga (hata düzeyinde) yazılır, istemciye sade 500 gider.
@@ -81,6 +79,7 @@ public sealed class GlobalExceptionHandler(
         InvalidRefreshTokenException e => (StatusCodes.Status401Unauthorized, "Oturum geçersiz", e.Message),
         AccountLockedException e => (StatusCodes.Status423Locked, "Hesap geçici olarak kilitlendi", e.Message),
         ForbiddenException e => (StatusCodes.Status403Forbidden, "Erişim engellendi", e.Message),
+        EmailNotVerifiedException e => (StatusCodes.Status403Forbidden, "E-posta doğrulanmadı", e.Message),
         // Tanımadığımız hata: null döner, yukarıda 500 yoluna düşer.
         _ => null
     };

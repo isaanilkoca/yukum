@@ -65,6 +65,18 @@ public static class DependencyInjection
         services.AddScoped<IPriceReferenceRepository, PriceReferenceRepository>();
         services.AddScoped<IEngagementRepository, EngagementRepository>();
         services.AddScoped<IBlockRepository, BlockRepository>(); // 15 Kasım: engelleme (iki yönlü kontrol, kalıcı kaldırma)
+        // 15 Kasım: e-posta kodları | "Auth" bölümü (RequireVerifiedEmail, varsayılan true)
+        services.AddOptions<VerificationOptions>().BindConfiguration("Auth");
+        services.AddScoped<IVerificationService, VerificationService>();
+        // E-posta göndericisi: "Email:ResendApiKey" doluysa Resend (gerçek e-posta), boşsa LogEmailSender (günlüğe yazar; Program.cs canlıda buna izin vermez)
+        services.AddOptions<EmailOptions>().BindConfiguration("Email");
+        services.AddSingleton<Yukum.Application.Abstractions.Identity.IEmailSender>(sp =>
+            string.IsNullOrWhiteSpace(sp.GetRequiredService<IOptions<EmailOptions>>().Value.ResendApiKey)
+                ? new LogEmailSender(sp.GetRequiredService<ILogger<LogEmailSender>>())
+                : new ResendEmailSender(new HttpClient { Timeout = TimeSpan.FromSeconds(10) },
+                    sp.GetRequiredService<IOptions<EmailOptions>>(), sp.GetRequiredService<ILogger<ResendEmailSender>>(),
+                    // Email:FallbackToLog (yalnız appsettings.Development.json): Resend gönderemezse günlüğe yaz
+                    sp.GetRequiredService<IOptions<EmailOptions>>().Value.FallbackToLog ? new LogEmailSender(sp.GetRequiredService<ILogger<LogEmailSender>>()) : null));
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
 

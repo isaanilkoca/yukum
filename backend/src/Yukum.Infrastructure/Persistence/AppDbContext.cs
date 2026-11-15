@@ -75,6 +75,9 @@ public class AppDbContext : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>
     /// <summary>Kullanıcı şikâyetleri (yönetici panelinde incelenecek).</summary>
     public DbSet<UserReport> UserReports => Set<UserReport>();
 
+    /// <summary>E-posta doğrulama / şifre sıfırlama kodları (yalnız özetleri).</summary>
+    public DbSet<VerificationCode> VerificationCodes => Set<VerificationCode>();
+
     /// <summary>Zaman kaynağı. Doğrudan DateTime.UtcNow yerine bu kullanılır ki testlerde saat sabitlenebilsin.</summary>
     // Zaman kaynağı. Testlerde saat sabitlenebilsin diye DateTime.UtcNow yerine bu kullanılır.
     protected TimeProvider Time { get; }

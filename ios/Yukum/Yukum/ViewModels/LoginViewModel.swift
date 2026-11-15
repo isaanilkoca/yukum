@@ -50,6 +50,9 @@ final class LoginViewModel {
     var isRestoring = true
     // ⮕ ZİNCİR: Views/LoginView: .fullScreenCover(item: $viewModel.loggedInUser) { user in HomeView(user: user) } — dolunca ana sayfa açılır, HomeView'ın dismiss()'i nil yapar | MODEL: LoginUser
     // ⮕ KULLANIM [loggedInUser]: YAZAR: LoginViewModel › restoreSession(), LoginViewModel › login() | bağlar(okur+yazar): LoginView › body | okur: LoginViewModelTests (test)
+    // 15 Kasım: e-posta doğrulama kod ekranı | dolunca LoginView .sheet(item:) VerifyEmailView'ı açar ⮕ Models/Auth/VerificationRequests.swift
+    var verifyTarget: VerifyTarget?
+    var infoMessage: String? // yeşil bilgi yazısı (örn. "Şifren değişti, giriş yapabilirsin")
     var loggedInUser: LoginUser? // giriş başarılıysa dolar → ekran HomeView'ı tam ekran açar | çıkışta ekran nil yapar
 
     init(auth: AuthServicing = AuthService(), session: SessionRestoring = AuthSession.shared, deviceId: @escaping () -> String = { DeviceID.current }, defaults: UserDefaults = .standard) { // @escaping [SWIFT]: closure fonksiyon bittikten sonra da saklanıp çağrılabilir
@@ -95,6 +98,7 @@ final class LoginViewModel {
         // isLoading → BİZİM: true iken LoginView düğmeyi kilitler | errorMessage = nil: eski hata silinir
         isLoading = true
         errorMessage = nil
+        infoMessage = nil
         // defer { ... } → [Swift] fonksiyondan HER çıkışta (başarı/hata/return) çalışır: düğme tekrar açılır
         defer { isLoading = false }
 
@@ -112,7 +116,30 @@ final class LoginViewModel {
         } catch {
             // catch → [Swift] try başarısız olursa buraya düşer | error: Swift'in verdiği hata
             // error.userMessage → BİZİM (Models/Networking/Error+UserMessage.swift): hatayı Türkçe metne çevirir (iptal ise nil → yazı gösterilmez)
+            // 15 Kasım: şifre DOĞRU ama e-posta doğrulanmamış (sunucu 403 + code "email_not_verified") → kırmızı yazı yerine kod ekranı açılır
+            //   loginAfter: true → kod doğrulanınca verified() aynı şifreyle girişi kendisi tekrarlar (şifre henüz silinmedi)
+            if let api = error as? APIError, api.code == "email_not_verified" {
+                verifyTarget = VerifyTarget(emailOrPhone: identity, role: role, loginAfter: true)
+                return
+            }
             if let message = error.userMessage { errorMessage = message }
         }
+    }
+
+    // 15 Kasım: kayıt bitti → alanlar dolar + kod ekranı hemen açılır (şifre yok → doğrulanınca giriş kendiliğinden yapılmaz)
+    // ÇAĞIRAN: LoginView → RoleSelectionView(onDone:)
+    func registered(email: String, role: LoginRole) {
+        emailOrPhone = email
+        self.role = role
+        password = ""
+        verifyTarget = VerifyTarget(emailOrPhone: email, role: role, loginAfter: false)
+    }
+
+    // 15 Kasım: kod ekranı "doğrulandı" dedi | girişten geldiyse aynı şifreyle giriş tekrarlanır, kayıttan geldiyse şifre istenir
+    // ÇAĞIRAN: LoginView → VerifyEmailView(onVerified:)
+    func verified(_ target: VerifyTarget) async {
+        verifyTarget = nil
+        if target.loginAfter && !password.isEmpty { await login() }
+        else { infoMessage = "E-postan doğrulandı. Şifrenle giriş yapabilirsin." }
     }
 }

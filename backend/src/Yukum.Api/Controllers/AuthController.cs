@@ -28,8 +28,58 @@ public class AuthController(
     ICommandHandler<RegisterCarrierCommand, RegisteredUserDto> registerCarrier,
     ICommandHandler<LoginCommand, LoginResponse> login,
     ICommandHandler<RefreshCommand, LoginResponse> refresh,
-    ICommandHandler<LogoutCommand, bool> logout) : ControllerBase
+    ICommandHandler<LogoutCommand, bool> logout,
+    ICommandHandler<SendVerificationCodeCommand, bool> sendVerification,
+    ICommandHandler<VerifyEmailCommand, bool> verifyEmail,
+    ICommandHandler<ForgotPasswordCommand, bool> forgotPassword,
+    ICommandHandler<ResetPasswordCommand, bool> resetPassword) : ControllerBase
 {
+    // ── E-POSTA DOĞRULAMA + ŞİFREMİ UNUTTUM (15 Kasım) · akış haritası: Application/Accounts/VerificationContracts.cs ──
+
+    /// <summary>E-posta doğrulama kodunu (yeniden) gönderir. Her zaman 204: e-postanın kayıtlı olup olmadığı söylenmez.</summary>
+    // POST /api/v1/auth/verify-email/send   gövde: { emailOrPhone, role }
+    [HttpPost("verify-email/send")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SendVerification(SendVerificationCodeCommand command, CancellationToken cancellationToken)
+    {
+        await sendVerification.HandleAsync(command, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>E-posta doğrulama kodunu girer. Doğruysa 204 (artık giriş yapılabilir), yanlış/süresi dolmuşsa 400.</summary>
+    // POST /api/v1/auth/verify-email   gövde: { emailOrPhone, role, code }
+    [HttpPost("verify-email")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> VerifyEmail(VerifyEmailCommand command, CancellationToken cancellationToken)
+    {
+        await verifyEmail.HandleAsync(command, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Şifremi unuttum: sıfırlama kodu gönderir. Her zaman 204.</summary>
+    // POST /api/v1/auth/password/forgot   gövde: { emailOrPhone, role }
+    [HttpPost("password/forgot")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordCommand command, CancellationToken cancellationToken)
+    {
+        await forgotPassword.HandleAsync(command, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Kod + yeni şifre. Doğruysa 204: şifre değişir, tüm cihazlardaki oturumlar kapanır.</summary>
+    // POST /api/v1/auth/password/reset   gövde: { emailOrPhone, role, code, newPassword }
+    [HttpPost("password/reset")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword(ResetPasswordCommand command, CancellationToken cancellationToken)
+    {
+        await resetPassword.HandleAsync(command, cancellationToken);
+        return NoContent();
+    }
+
     /// <summary>E-posta ya da telefon + şifre ile giriş yapar ve kısa ömürlü erişim jetonu (JWT) verir.</summary>
     /// <param name="command">Giriş bilgileri (cihaz kimliği zorunludur).</param>
     /// <param name="cancellationToken">İstemci isteği iptal ederse işlem de durur.</param>

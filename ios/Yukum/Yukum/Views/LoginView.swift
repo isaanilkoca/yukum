@@ -31,6 +31,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // colorScheme: telefon açık modda mı koyu modda mı | @Environment [SWIFT]: sistemin verdiği ortam bilgisini okur
     // ⮕ KULLANIM [colorScheme]: okur: LoginView › body (palette seçimi)
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showForgot = false // 15 Kasım: Şifremi unuttum sayfası açık mı
     @State private var homeShown = false // ana ekran üstte açık mı | true → arkadaki 3B giriş sahnesi kaldırılır (aşağıda ZStack)
     @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system // görünüm seçimi (⮕ Design/ThemeToggle.swift) | ana ekrana da uygulanır (aşağıda)
 
@@ -96,6 +97,13 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     LabeledInput(label: "Şifre", systemImage: "lock.fill") {
                         SecureField("Şifreniz", text: $viewModel.password) // SecureField [SWIFT]: yazılan nokta nokta görünür | ⮕ LoginViewModel.password
                     }
+                    // 15 Kasım: Şifremi unuttum → Views/ForgotPasswordView (e-posta/telefon + hesap türü dolu gider)
+                    Button("Şifremi unuttum") { showForgot = true }
+                        .font(.footnote.weight(.semibold)).tint(palette.accent)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+
+                    // 15 Kasım: yeşil bilgi (e-posta doğrulandı / şifre değişti)
+                    if let info = viewModel.infoMessage { FormMessage(text: info, isError: false) }
 
                     // if let: doluysa göster, nil ise çizilmez | simge + kırmızı yazı: hata olduğu renk görmeyen kullanıcıya da belli olsun
                     if let errorMessage = viewModel.errorMessage {
@@ -114,9 +122,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     NavigationLink { // NavigationLink [SWIFT]: kendisi düğme, basınca ilk süslü parantezdeki ekrana geçer (Button içine konmaz) | label: görünümü
                         // 15 Kasım: kayıt bitince giriş ekranına dönülür; e-posta ve hesap türü dolu gelir, şifre alanı temiz (yalnız şifre yazılır)
                         RoleSelectionView(initialRole: viewModel.role) { email, role in // Views/RoleSelectionView.swift → TEK kayıt ekranı
-                            viewModel.emailOrPhone = email
-                            viewModel.role = role
-                            viewModel.password = ""
+                            viewModel.registered(email: email, role: role) // 15 Kasım: alanlar dolar + kod ekranı açılır ⮕ LoginViewModel.registered
                         }
                     } label: {
                         Text("Hesabın yok mu? **Kayıt ol**") // ** ** [SWIFT]: Markdown kalın yazı
@@ -159,6 +165,17 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
         // HomeView'daki "Çıkış Yap" dismiss() ile bu ekranı kapatır → loggedInUser tekrar nil olur → giriş ekranına dönülür.
         // item: Identifiable ister, LoginUser'a bu yüzden Identifiable eklendi (Models/Auth/).
         // onDismiss [SWIFT]: tam ekran kapanınca (çıkış) çalışır → giriş sahnesi geri gelir
+        // 15 Kasım: e-posta doğrulama kodu (kayıttan sonra / doğrulanmamış girişte) ⮕ Views/VerifyEmailView
+        .sheet(item: $viewModel.verifyTarget) { target in
+            VerifyEmailView(target: target) { Task { await viewModel.verified(target) } } // ⮕ LoginViewModel.verified
+        }
+        // 15 Kasım: Şifremi unuttum ⮕ Views/ForgotPasswordView
+        .sheet(isPresented: $showForgot) {
+            ForgotPasswordView(emailOrPhone: viewModel.emailOrPhone, role: viewModel.role) {
+                viewModel.password = ""
+                viewModel.infoMessage = "Şifren değişti. Yeni şifrenle giriş yapabilirsin."
+            }
+        }
         .fullScreenCover(item: $viewModel.loggedInUser, onDismiss: { homeShown = false }) { user in // [SWIFT]: loggedInUser dolunca tam ekran açar, nil olunca kapatır | $ = bağ | user: dolan kullanıcı (adı bizim) | ⮕ LoginViewModel.loggedInUser (LoginUser) dolunca HomeView açılır | .fullScreenCover [SWIFT]: tam ekran açılan ekran
             HomeView(user: user) // Views/HomeView.swift'e kullanıcıyı veriyoruz
                 // GÖRÜNÜM AYARI ana ekrana da (14 Kasım hatası: ana ekranda düğme çalışmıyordu).

@@ -19,6 +19,7 @@ nonisolated struct APIErrorResponse : Decodable { // Decodable [SWIFT]: JSON'dan
     let detail : String?              // genel Türkçe mesaj (örn. "Bu e-posta zaten kayıtlı")
     // ⮕ KULLANIM [errors]: okur: APIClient › perform()
     let errors: [String: [String]]?   // alan adı → o alanın hata mesajları (örn. "password": ["Şifre en az 8 karakter olmalı"])
+    let code: String?                 // 15 Kasım: makine kodu (örn. "email_not_verified") → LoginViewModel kod ekranını açar | çoğu hatada yok (nil)
 }
 
 // ÖZET:
