@@ -46,3 +46,13 @@ struct CancelRequestTests {
         #expect(vm.errorMessage == "Bu iş için zaten açık bir iptal talebi var.")
     }
 }
+
+// 15 Kasım: iptal nedenleri role göre ayrı (Yük Veren "Araç arızası" seçemez); hepsi sunucu sınırına (60 karakter) sığar
+struct CancelReasonsTests {
+    @Test func eachRoleSeesOnlyItsOwnReasons() {
+        #expect(!CancelReasons.list(isShipper: true).contains("Araç arızası"))
+        #expect(CancelReasons.list(isShipper: false).contains("Araç arızası"))
+        #expect(CancelReasons.list(isShipper: true).last == "Diğer" && CancelReasons.list(isShipper: false).last == "Diğer")
+        #expect((CancelReasons.shipper + CancelReasons.carrier).allSatisfy { $0.count <= 60 })
+    }
+}

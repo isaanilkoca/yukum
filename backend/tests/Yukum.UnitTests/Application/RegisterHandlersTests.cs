@@ -75,7 +75,8 @@ public class RegisterHandlersTests
     [Fact]
     public async Task An_invalid_carrier_request_never_reaches_the_account_service()
     {
-        var command = new RegisterCarrierCommand("Veli", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, null, [], true);
+        // 15 Kasım: araçsız kayıt artık geçerli → geçersiz örnek olarak KVKK onayı verilmemiş istek kullanılır
+        var command = new RegisterCarrierCommand("Veli", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, null, [], false);
 
         await Assert.ThrowsAsync<ValidationException>(() => _carrier.HandleAsync(command));
 

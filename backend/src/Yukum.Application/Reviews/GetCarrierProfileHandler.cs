@@ -12,7 +12,8 @@ public sealed class GetCarrierProfileHandler(
     IRepository<Review> reviews,
     IRepository<Listing> listings,
     IUserDirectory users,
-    IGeographyRepository geography) : IQueryHandler<GetCarrierProfileQuery, CarrierProfileDto>
+    IGeographyRepository geography,
+    IRepository<Yukum.Domain.Accounts.Vehicle> vehicles) : IQueryHandler<GetCarrierProfileQuery, CarrierProfileDto>
 {
     private const int MaxReviews = 20; // profilde en yeni 20 yorum (sayfalama gerekirse sonra)
 
@@ -40,7 +41,11 @@ public sealed class GetCarrierProfileHandler(
         }).ToList();
 
         return new CarrierProfileDto(summary.UserId, summary.FullName, summary.About, summary.AverageRating,
-            summary.RatingCount, summary.CompletedJobCount, items);
+            summary.RatingCount, summary.CompletedJobCount, items,
+            summary.AvatarUrl, summary.HomeCityId is { } c ? cities.GetValueOrDefault(c) : null, summary.MemberSince,
+            // Araçları (15 Kasım): Yük Veren aracın türünü/yaşını görüp karar verir; en yeni model üstte | plaka gönderilmez
+            (await vehicles.ListAsync(v => v.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken))
+                .OrderByDescending(v => v.Year ?? 0).Select(v => new PublicVehicleDto(v.Type, v.Brand, v.Model, v.Year, v.CapacityKg)).ToList());
     }
 
     // Gizlilik: "Ali Veli" → "Ali V." (soyadın yalnız baş harfi) | tek kelimeyse olduğu gibi

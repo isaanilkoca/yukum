@@ -19,6 +19,11 @@ struct ReviewService {
     func carrierProfile(id: String) async throws -> CarrierProfile {
         try await api.send(.get, "/api/v1/carriers/\(id)", fallback: "Profil yüklenemedi.")
     }
+
+    // shipperProfile (15 Kasım, 8. adım): GET /api/v1/shippers/{id} → ReviewsController.ShipperProfile → GetShipperProfileHandler
+    func shipperProfile(id: String) async throws -> ShipperPublicProfile {
+        try await api.send(.get, "/api/v1/shippers/\(id)", fallback: "Profil yüklenemedi.")
+    }
 }
 
 extension ReviewService: ReviewServicing {} // extension [SWIFT]: mevcut türe sonradan uyum ekler

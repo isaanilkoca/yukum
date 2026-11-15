@@ -75,7 +75,18 @@ struct ListingOffersView: View {
                 EmptyStateCard(icon: "tray", title: "Henüz teklif gelmedi.", detail: "Taşımacılar teklif verince burada görünür.")
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
             } else {
-                ForEach(viewModel.offers) { offer in
+                // SIRALA (15 Kasım): yalnız birden çok teklif varken | Menu + Picker [SWIFT]: seçili olanın yanında tik
+                if viewModel.offers.count > 1 {
+                    @Bindable var vm = viewModel
+                    Menu {
+                        Picker("Sırala", selection: $vm.sort) { ForEach(OfferSort.allCases) { Text($0.title).tag($0) } }
+                    } label: {
+                        Label("Sırala: \(viewModel.sort.title)", systemImage: "arrow.up.arrow.down").font(.subheadline.weight(.semibold))
+                    }
+                    .buttonStyle(ChipButtonStyle(.outline))
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                }
+                ForEach(viewModel.sortedOffers) { offer in // ⮕ ListingOffersViewModel.sortedOffers (telefonda sıralanır)
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .firstTextBaseline) {
                             VStack(alignment: .leading, spacing: 2) {
@@ -85,6 +96,17 @@ struct ListingOffersView: View {
                             Spacer()
                             Text("\(Int(offer.amount)) ₺").font(.title3.bold()).foregroundStyle(palette.accent)
                         }
+                        // ARAÇ + TESLİM + TECRÜBE (15 Kasım): karar için karşılaştırma bilgileri | eski teklifte araç/tarih yok → satır çizilmez
+                        if let vehicle = offer.vehicleText {
+                            Label(vehicle, systemImage: "truck.box.fill").font(.caption.weight(.semibold)).foregroundStyle(palette.title)
+                        }
+                        HStack(spacing: 12) {
+                            if let delivery = offer.estimatedDeliveryDate {
+                                Label("Teslim: \(RouteCard.trDate(delivery))", systemImage: "calendar.badge.clock")
+                            }
+                            if let jobs = offer.carrierCompletedJobCount { Label("\(jobs) tamamlanan iş", systemImage: "flag.checkered") }
+                        }
+                        .font(.caption).foregroundStyle(palette.label.opacity(0.8))
                         if let note = offer.note {
                             Text(note).font(.caption).foregroundStyle(palette.label.opacity(0.75))
                         }

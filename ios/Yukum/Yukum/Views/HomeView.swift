@@ -19,7 +19,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // │ Kutu ikonundaki rozet    →  viewModel.unseenCount ← load()     →  OfferService.unseenCount()      →  GET /api/v1/offers/mine/unseen-count  →  UnseenCount
 // │ Çıkış Yap                →  viewModel.signOut()                 →  AuthSession.signOut()           →  POST /api/v1/auth/logout         →  (yok)
 // │ Oturum bitti uyarısı     →  NotificationCenter .sessionExpired  →  AuthSession yayınlar            →  -                                →  dismiss() ile giriş ekranına
-// │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | "Yeni ilan ver" → CreateListingView (tek yol, + kaldırıldı), OldOffersView, MyOffersView
+// │ Satıra dokunma / ikonlar →  Yük Veren: ListingOffersView(listing:) | Taşımacı: ListingDetailView(listing:) | "Yeni ilan ver" → CreateListingView (tek yol, + kaldırıldı) | sol üst profil fotoğrafı → ProfileView (Eski Teklifler, Tekliflerim, Araçlarım, Beğendiklerim, Hesap — 15 Kasım, 8. adım)
 // └──────────────────────────────────────────────────────────────────────
 
 // BU EKRAN: giriş sonrası ana ekran. Rol "Shipper" ise Yük Veren, değilse Taşımacı anasayfası gösterir.
@@ -38,9 +38,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
     // ⮕ KULLANIM [openURL]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | çıkışta kullanılır
     
-    @State private var showDeleteAccount = false // "Hesabı Sil" sayfası açık mı | true → .sheet görünür
     
-    @State private var showPrivacy = false // "Gizlilik ve KVKK" sayfası açık mı | true → .sheet görünür
     
     @State private var showNotifications = false // true → bildirim listesi açılır (telefondaki bildirime dokununca)
     @State private var showFilter = false // Filtre sayfası açık mı | true → .sheet görünür
@@ -75,24 +73,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                 }
                 
-                // ALT SATIR (15 Kasım, L tasarım): üç hesap eylemi tek satırda, temanın kapsül düğmeleriyle (önceden mavi/kırmızı sistem düğmeleri alt alta)
-                //   Gizlilik ve KVKK → PrivacyView | Hesabı Sil → DeleteAccountView (şifre onayı orada) | Çıkış Yap → signOut + dismiss
-                HStack(spacing: 8) {
-                    Button { showPrivacy = true } label: { Label("Gizlilik", systemImage: "hand.raised.fill") }
-                        .buttonStyle(ChipButtonStyle(.outline))
-                        .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
-                    Button { showDeleteAccount = true } label: { Label("Hesabı Sil", systemImage: "person.crop.circle.badge.xmark") }
-                        .buttonStyle(ChipButtonStyle(.danger)) // ⮕ aşağıdaki .sheet → Views/DeleteAccountView
-                    Button {
-                        // ÇIKIŞ: önce yerel oturum silinir (Keychain + bellek), sonra sunucuya haber verilir | ⮕ Models/Networking/AuthSession.swift → signOut
-                        Task {
-                            await viewModel.signOut() // ⮕ HomeViewModel.signOut() → AuthSession.signOut() → POST /api/v1/auth/logout
-                            dismiss() // bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranına dönülür
-                        }
-                    } label: { Label("Çıkış", systemImage: "rectangle.portrait.and.arrow.right") }
-                        .buttonStyle(ChipButtonStyle(.accent))
-                }
-                .frame(maxWidth: .infinity)
+                // ALT SATIR KALDIRILDI (15 Kasım, 8. adım): Hesap Bilgilerim, Araçlarım, Gizlilik, Hesabı Sil, Çıkış → Views/ProfileView (sol üst profil fotoğrafı)
 
             }.padding() // .padding [SWIFT]: etrafında boşluk bırakır
             // Tam ekran arka plan, role göre: Yük Veren → yukarıdan dolan dorse | Taşımacı → yanaşıp yükü yerden teslim alan dorse (14 Kasım)
@@ -101,11 +82,9 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // → ekran kapanır ve kullanıcı giriş ekranına döner (jeton zaten silindi) | NEDEN gerekli: arka plandaki istekler 401 alıp yenileyemediğinde kullanıcı boşta kalmasın
             .onReceive(NotificationCenter.default.publisher(for: .sessionExpired)) { _ in dismiss() } // ⮕ yayıncı: AuthSession.expireSession() (Models/Networking/Notification+SessionExpired.swift) | NotificationCenter [SWIFT]: uygulama içi anons panosu (biri yayınlar, ilgilenen dinler)
             
-            // Hesap silme sayfası: başarılı olunca onDeleted çalışır → dismiss() bu ekranı kapatır → LoginView'daki loggedInUser nil olur → giriş ekranı (yerel oturum zaten silindi)
-            .sheet(isPresented: $showDeleteAccount) { DeleteAccountView(onDeleted: { dismiss() }) } // .sheet [SWIFT]: alttan açılan sayfa
 
             .sheet(isPresented: $showFilter) { // .sheet [SWIFT]: alttan açılan sayfa | showFilter true olunca görünür
-                OpenListingsFilterView(filter: viewModel.filter, cities: viewModel.cities) { viewModel.filter = $0 } // Uygula → ViewModel.filter → reloadKey → load()
+                OpenListingsFilterView(filter: viewModel.filter, cities: viewModel.cities) { viewModel.applyFilter($0) } // Uygula → HomeViewModel.applyFilter (uzaklık seçildiyse konum istenir) → reloadKey → load()
             }
             // ÜST ÇUBUK BAŞLIĞI (15 Kasım, yönetici notu): yazı yerine logo + "Yüküm" (Design/YukumLogo › BrandTitle)
             .navigationBarTitleDisplayMode(.inline)
@@ -132,35 +111,23 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                 }
                 // GÖRÜNÜM DÜĞMESİ (Sistem / Açık / Koyu): iki rolde de sol üstte | ⮕ Design/ThemeToggle.swift (giriş ekranındakiyle aynı ayar)
                 ToolbarItem(placement: .topBarLeading) { ThemeToggle() }
-                if viewModel.isShipper { // yalnız Yük Veren ilan açabilir
-                    // (14 Kasım) Sağ üstteki + düğmesi KALDIRILDI: ilan vermenin iki yolu vardı (+ ve "Yeni ilan ver"); kullanıcı tek yol istedi.
-                    //   İlan artık yalnız ana ekrandaki turuncu "Yeni ilan ver" düğmesinden verilir (shipperHome).
-                    ToolbarItem(placement: .topBarLeading) { // GÖRÜNÜM kararı: "Eski teklifler" yalnız Yük Veren'de çıkar | .topBarLeading: sol üst köşe
-                        NavigationLink {
-                            OldOffersView() // Views/OldOffersView.swift → karara bağlanmış teklifler + silme
-                        } label: {
-                            Image(systemName: "clock.arrow.circlepath") // SF Symbols: geçmiş ikonu
-                        }
-                    }
-                } else { // Taşımacı
-                    ToolbarItem(placement: .topBarLeading) { // Favoriler yalnız Taşımacı'da: sol üst kalp
-                        NavigationLink { FavoritesView() } label: { Image(systemName: "heart") } // Views/FavoritesView.swift
-                    }
-
-                    // "Tekliflerim" düğmesi yalnız Taşımacı'da çıkar (Yük Veren'in + düğmesiyle aynı yer, roller farklı olduğu için çakışmaz)
-                    ToolbarItem(placement: .topBarTrailing) { // sağ üst köşe
-                        NavigationLink { // basınca süslü parantezdeki ekrana geçer
-                            MyOffersView() // Views/MyOffersView.swift → Taşımacı'nın tüm teklifleri (bekleyen/kabul/red) + silme
-                        } label: { // label: düğmenin görünen kısmı
-                            Image(systemName: "tray.full") // SF Symbols: gelen kutusu ikonu
-                                .overlay(alignment: .topTrailing) { // .overlay [SWIFT]: ikonun ÜSTÜNE katman koyar | alignment: .topTrailing = sağ üst köşe
-                                    if viewModel.unseenCount > 0 { // > büyüktür | görülmemiş karar varsa rozet çizilir, yoksa hiç çizilmez
-                                        Text("\(viewModel.unseenCount)").font(.caption2).foregroundColor(.white) // rozetin içindeki sayı | ⮕ HomeViewModel.unseenCount ← OfferService.unseenCount() → UnseenCount.count
-                                            .padding(4).background(Color.red).clipShape(Circle()) // .padding: etrafında boşluk | .background: kırmızı zemin | .clipShape(Circle()): yuvarlak yapar | Color [SWIFT]: renk | Circle [SWIFT]: daire şekli | .background [SWIFT]: arka plan | .clipShape [SWIFT]: görünümü şekle göre keser
-                                            .offset(x: 10, y: -10) // .offset [SWIFT]: rozeti ikonun biraz sağ-üstüne kaydırır | x: sağa, y: yukarı (eksi)
-                                    }
-                                }
-                        }
+                // PROFİL (15 Kasım, 8. adım): sol üstte kendi fotoğrafın → Views/ProfileView
+                //   Eski Teklifler (saat), Favoriler (kalp), Tekliflerim (kutu) simgeleri profile taşındı → üst çubuk sade: profil · tema | logo | zil
+                //   Görülmemiş teklif kararı varsa fotoğrafın köşesinde turuncu nokta (sayı profilde "Tekliflerim" satırında)
+                ToolbarItem(placement: .topBarLeading) {
+                    NavigationLink {
+                        ProfileView(isShipper: viewModel.isShipper, name: viewModel.user.displayName, me: viewModel.me,
+                                    unseenCount: viewModel.unseenCount, activeJobCount: viewModel.activeJobCount,
+                                    onRename: { name in viewModel.renameUser(name) },   // ⮕ HomeViewModel.renameUser (selamlama + profil başlığı)
+                                    onRefresh: { await viewModel.loadMe(); await viewModel.loadActiveJobCount() }, // profil her göründüğünde fotoğraf/puan + devam eden iş sayısı tazelenir
+                                    onSignOut: { await viewModel.signOut(); dismiss() }, // ⮕ AuthSession.signOut → giriş ekranı
+                                    onDeleted: { dismiss() })                            // hesap silindi → giriş ekranı (yerel oturum zaten silindi)
+                    } label: {
+                        AvatarView(url: viewModel.me?.avatarUrl, name: viewModel.user.displayName, size: 32) // ⮕ Design/AvatarView.swift
+                            .overlay(alignment: .topTrailing) {
+                                if viewModel.unseenCount > 0 { Circle().fill(Color.orange).frame(width: 10, height: 10).offset(x: 2, y: -2) }
+                            }
+                            .accessibilityLabel(viewModel.unseenCount > 0 ? "Profil, yeni teklif kararı var" : "Profil")
                     }
                 }
             }
@@ -181,7 +148,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
             // Uygulama açıkken bildirim geldi → zil sayısını tazele
             .onReceive(NotificationCenter.default.publisher(for: .pushReceived)) { _ in Task { await viewModel.loadUnread() } }
             // .onAppear [SWIFT]: ekran HER göründüğünde çalışır (bildirim listesinden Geri ile dönünce de) → rozet güncel kalır
-            .onAppear { Task { await viewModel.loadUnread() } }
+            .onAppear { Task { await viewModel.loadUnread(); await viewModel.loadMe() } } // loadMe (15 Kasım): profil fotoğrafı / ad tazelenir
             .task(id: viewModel.reloadKey) { // ⮕ HomeViewModel.reloadKey: bu yazı değişince load() yeniden çalışır
                 await viewModel.load() // asıl iş ViewModel'de | aynı işi hem .task hem .refreshable çağırıyor, kod tekrarlanmasın | ⮕ HomeViewModel.load(coordinate:) → ilgili Service → APIClient → API
                 listLoaded = true // ilk yükleme bitti → boş liste artık gerçekten boş demek
@@ -303,6 +270,9 @@ extension HomeView {
 
                 if let listError = viewModel.listError { FormMessage(text: listError, isError: true) } // doluysa uyarı yazısı (Yük Veren ile aynı değişken)
 
+                // 2b) SONUÇ + SIRALA + ETKİN FİLTRELER (15 Kasım, sahibinden tarzı) ⮕ aşağıdaki carrierResultsBar
+                carrierResultsBar(palette: palette)
+
                 // 3) BAŞLIK: turuncu yol tabelası (yol çalışması tabelaları turuncudur → marka rengiyle aynı) | içte ince çerçeve: gerçek tabela kenarı
                 HStack(spacing: 8) {
                     Image(systemName: "road.lanes")
@@ -319,8 +289,14 @@ extension HomeView {
                 } else if viewModel.listings.isEmpty {
                     VStack(spacing: 8) { // boş durum: yol simgesi + yönlendirme (filtre yüzünden boşsa geri alınabilsin diye panel yukarıda kalır)
                         Image(systemName: "road.lanes").font(.largeTitle).foregroundStyle(palette.accent.opacity(0.85))
-                        Text("Şu an açık ilan yok.").font(.headline).foregroundStyle(palette.title)
-                        Text("Filtreyi gevşet ya da biraz sonra tekrar bak.").font(.caption).foregroundStyle(palette.label.opacity(0.7))
+                        // 15 Kasım: boşluğun SEBEBİ söylenir (filtre mi, gerçekten ilan yok mu) + tek dokunuşla geri alma
+                        Text(viewModel.filter.matchMyVehicles ? "Araçlarına uygun açık ilan yok." : viewModel.filterChips.isEmpty ? "Şu an açık ilan yok." : "Filtrene uyan ilan yok.")
+                            .font(.headline).foregroundStyle(palette.title)
+                        Text(viewModel.filterChips.isEmpty ? "Biraz sonra tekrar bak." : "Filtreleri gevşetirsen daha çok ilan görürsün.").font(.caption).foregroundStyle(palette.label.opacity(0.7))
+                        if !viewModel.filterChips.isEmpty {
+                            Button(viewModel.filter.matchMyVehicles && viewModel.filterChips.count == 1 ? "Araç filtresini kaldır" : "Filtreleri temizle") { viewModel.clearFilters() }
+                                .buttonStyle(ChipButtonStyle(.accent))
+                        }
                     }
                     .frame(maxWidth: .infinity).padding(.vertical, 24)
                     .background(palette.cardSurface.opacity(0.55), in: .rect(cornerRadius: 16))
@@ -415,10 +391,50 @@ extension HomeView {
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(palette.cardBorder))
     }
 
+    // BU GÖRÜNÜM (15 Kasım, sahibinden tarzı): "128 ilan" + Sırala menüsü + etkin filtre kapsülleri (dokun → kaldır) + Tümünü temizle
+    //   Sıralama filtreden AYRI (sahibinden'deki gibi): Menu → filter.sort → reloadKey → load() | kapsüller: HomeViewModel.filterChips / removeChip
+    // ⮕ KULLANIM [carrierResultsBar]: carrierHome
+    func carrierResultsBar(palette: Palette) -> some View {
+        @Bindable var viewModel = viewModel
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(listLoaded ? "\(viewModel.totalCount.formatted()) ilan" : " ").font(.subheadline.bold()).foregroundStyle(palette.title)
+                Spacer()
+                Menu {
+                    Picker("Sırala", selection: $viewModel.filter.sort) {
+                        Text(viewModel.nearMe ? "En yakın (varsayılan)" : "En yeni (varsayılan)").tag(ListingSort?.none)
+                        ForEach(ListingSort.allCases) { Text($0.title).tag(ListingSort?.some($0)) }
+                    }
+                } label: {
+                    Label(viewModel.filter.sort?.title ?? "Sırala", systemImage: "arrow.up.arrow.down").font(.footnote.bold())
+                }
+                .buttonStyle(ChipButtonStyle(.outline))
+            }
+            if !viewModel.filterChips.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) { // ScrollView(.horizontal) [SWIFT]: sığmayan kapsüller yana kayar
+                    HStack(spacing: 6) {
+                        ForEach(viewModel.filterChips) { chip in
+                            Button { viewModel.removeChip(chip.id) } label: { Label(chip.title, systemImage: "xmark").labelStyle(TrailingIconLabelStyle()) }
+                                .buttonStyle(ChipButtonStyle(.accent))
+                        }
+                        Button("Tümünü temizle") { viewModel.clearFilters() }.buttonStyle(ChipButtonStyle(.outline))
+                    }
+                }
+            }
+        }
+    }
+
     // BU GÖRÜNÜM: Taşımacı ekranının TAM EKRAN arka planı: renk geçişi + haleler (HAREKETSİZ).
     //   15 Kasım: 3B yük teslim alma sahnesi kaldırıldı (kullanıcı: profesyonel, sade).
     // ⮕ KULLANIM [carrierBackground]: kullanır: HomeView › body (.background)
     var carrierBackground: some View {
         ScreenBackground() // ⮕ Design/ActionFeedback.swift
+    }
+}
+
+// Kapsülde yazı önce, ✕ sonra ("50 km ✕") | LabelStyle [SWIFT]: Label'ın simge/yazı yerleşimini özelleştirir
+struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) { configuration.title; configuration.icon.imageScale(.small) }
     }
 }

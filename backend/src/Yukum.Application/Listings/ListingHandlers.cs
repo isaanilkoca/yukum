@@ -58,7 +58,8 @@ public sealed class CreateListingHandler(
     /// <summary>İlanı istemciye giden modele çevirir; il ve ilçe adlarını sözlüklerden alır.</summary>
     internal static ListingDto ToDto(Listing l, IReadOnlyDictionary<int, string> cityNames, IReadOnlyDictionary<int, string> districtNames) => new(l.Id, l.Title, l.Description,
         l.WeightKg, l.VehicleType, l.FromCityId, cityNames[l.FromCityId], l.FromDistrictId, districtNames[l.FromDistrictId],
-        l.ToCityId, cityNames[l.ToCityId], l.ToDistrictId, districtNames[l.ToDistrictId], l.PickupDate, l.Budget, l.CreatedAt);
+        l.ToCityId, cityNames[l.ToCityId], l.ToDistrictId, districtNames[l.ToDistrictId], l.PickupDate, l.Budget, l.CreatedAt,
+        l.ShipperId, l.Status);
 }
 
 /// <summary>Yük Veren'in kendi ilanlarını yeniden eskiye sıralı getirir.</summary>
@@ -69,7 +70,8 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
     public async Task<IReadOnlyList<ListingDto>> HandleAsync(GetMyListingsQuery query, CancellationToken cancellationToken = default)
     {
         // Ana sayfada yalnız AÇIK (canlı) ilanlar: teklifi kabul edilen ilan atanmıştır, geçmişe (offers/history) gider.
-        var mine = await listings.ListAsync(l => l.ShipperId == query.ShipperId && l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken);
+        // IncludeClosed (profil > İlanlarım, 15 Kasım): atanmış, tamamlanmış ve kaldırılmış ilanlar da gelir (durum rozetiyle gösterilir).
+        var mine = await listings.ListAsync(l => l.ShipperId == query.ShipperId && (query.IncludeClosed || l.Status == ListingStatus.Open), asNoTracking: true, cancellationToken);
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, mine, cancellationToken);
         return mine.OrderByDescending(l => l.CreatedAt).Select(l => CreateListingHandler.ToDto(l, names, districts)).ToList();
@@ -77,7 +79,8 @@ public sealed class GetMyListingsHandler(IRepository<Listing> listings, IGeograp
 }
 
 /// <summary>Taşımacı için açık ilanları filtreleyip sıralayıp sayfalayarak getirir.</summary>
-public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRepository<Listing> listings, IGeographyRepository geography, IEngagementRepository engagement)
+public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRepository<Listing> listings, IGeographyRepository geography, IEngagementRepository engagement,
+    IRepository<Yukum.Domain.Accounts.Vehicle> vehicles)
     : IQueryHandler<GetOpenListingsQuery, PagedResult<ListingDto>>
 {
     /// <summary>
@@ -91,12 +94,29 @@ public sealed class GetOpenListingsHandler(IListingSearchRepository search, IRep
         var sort = query.Sort ?? (hasLocation ? ListingSort.Nearest : ListingSort.Newest);
         if (sort == ListingSort.Nearest && !hasLocation) sort = ListingSort.Newest;
 
+        // "Yalnız araçlarıma uygun": Taşımacı'nın araç türleri → uygun ilan türleri (büyük araç küçüğün işini de yapar)
+        var allowed = query.MatchMyVehicles
+            ? Vehicles.VehicleCompatibility.ListingTypesFor((await vehicles.ListAsync(v => v.CarrierId == query.CarrierId, asNoTracking: true, cancellationToken)).Select(v => v.Type))
+            : null;
         var filter = new OpenListingFilter(query.CarrierId, query.FromCityId, query.FromDistrictId, query.ToCityId,
-            query.MinBudget, query.MaxBudget, query.VehicleType, query.PickupFrom, query.PickupTo);
+            query.MinBudget, query.MaxBudget, query.VehicleType, query.PickupFrom, query.PickupTo, allowed,
+            query.MinWeightKg, query.MaxWeightKg);
 
         IReadOnlyList<Listing> items;
         int total;
         Dictionary<int, (double Lat, double Lon)> points = [];
+
+        // UZAKLIK FİLTRESİ (15 Kasım): "konumuma 50 km içinde" — her sıralamayla birlikte çalışır.
+        //   Mesafe ilçe merkez koordinatından (GeoMath, kuş uçuşu) BELLEKTE hesaplanır: önce filtreye uyanların hafif özeti, sonra yarıçap içindekilerin
+        //   numaraları filtreye (OnlyIds) eklenir → sıralama/sayfalama yine SQL'de (ya da Nearest ise aşağıdaki bellek yolunda).
+        if (query.MaxDistanceKm is { } radius && hasLocation)
+        {
+            var candidates = await search.ListOpenPointsAsync(filter, cancellationToken);
+            var near = await DistrictPointsAsync(geography, candidates.Select(p => p.FromCityId).Distinct(), cancellationToken);
+            var inside = candidates.Where(p => near.TryGetValue(p.FromDistrictId, out var pt)
+                && GeoMath.DistanceKm(query.Lat!.Value, query.Lon!.Value, pt.Lat, pt.Lon) <= radius).Select(p => p.Id).ToList();
+            filter = filter with { OnlyIds = inside };
+        }
 
         if (sort == ListingSort.Nearest)
         {

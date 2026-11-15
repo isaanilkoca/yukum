@@ -46,7 +46,7 @@ struct APIClient {
     // ⮕ KULLANIM [send]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     func send<Response: Decodable>(_ method: HTTPMethod = .get, _ path: String, query: [URLQueryItem] = [], body: (any Encodable)? = nil, // Decodable [SWIFT]: JSON'dan bu türde değer üretilebilir | Encodable [SWIFT]: bu türdeki değer JSON'a çevrilebilir | URLQueryItem [SWIFT]: adreste ?ad=değer çifti
                                    authorized: Bool = true, fallback: String = "Bir hata oluştu.") async throws -> Response { // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
-        let data = try await perform(method, path, query: query, body: body, authorized: authorized, fallback: fallback) // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
+        let data = try await perform(method, path, query: query, payload: body.map { Payload.json($0) }, authorized: authorized, fallback: fallback) // await [SWIFT]: cevap gelene kadar bekle (başka işler çalışmaya devam eder)
         return try JSONDecoder().decode(Response.self, from: data) // JSON → Response (örn. [Listing]) | JSONDecoder [SWIFT]: JSON'u struct'a çevirir | .decode [SWIFT]: JSON'dan Swift nesnesine çevirir
     }
 
@@ -54,12 +54,44 @@ struct APIClient {
     // ⮕ KULLANIM [sendNoContent]: çağırır: ChatService › send(), ChatService › clear(), ChatService › complete(), ListingService › cancel(), OfferService › decide(), OfferService › markSeen() … +1
     func sendNoContent(_ method: HTTPMethod, _ path: String, body: (any Encodable)? = nil,
                        authorized: Bool = true, fallback: String = "Bir hata oluştu.") async throws {
-        _ = try await perform(method, path, query: [], body: body, authorized: authorized, fallback: fallback)
+        _ = try await perform(method, path, query: [], payload: body.map { Payload.json($0) }, authorized: authorized, fallback: fallback)
+    }
+
+    // ─── 15 Kasım: Hesap Bilgilerim / profil fotoğrafı için iki ek yetenek (jeton + 401 yenileme + hata çevirme AYNI yoldan geçer) ───
+
+    // Payload [BİZİM]: isteğin gövdesi ya JSON (çoğu uç) ya da hazır baytlar + türü (fotoğraf yükleme: multipart/form-data)
+    // enum + ilişkili değer [SWIFT]: her durum kendi verisini taşır (.json(paket) / .raw(baytlar, tür))
+    enum Payload {
+        case json(any Encodable)
+        case raw(Data, contentType: String)
+    }
+
+    // upload: tek dosyayı multipart/form-data ile gönderir, JSON cevabı Response'a çevirir
+    // ÇAĞIRAN: AccountService.uploadAvatar → POST /api/v1/account/avatar (sunucu "file" alanını okur: AccountController.UploadAvatar)
+    // multipart [HTTP]: gövde "sınır" (boundary) yazısıyla parçalara bölünür; her parçanın kendi başlığı (ad, dosya adı, tür) olur
+    func upload<Response: Decodable>(_ path: String, field: String, fileName: String, mimeType: String, data file: Data,
+                                     fallback: String = "Bir hata oluştu.") async throws -> Response {
+        let boundary = "Yukum-\(UUID().uuidString)" // gövdede geçmeyecek benzersiz ayraç
+        var body = Data()
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"\(field)\"; filename=\"\(fileName)\"\r\n".utf8))
+        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(file)
+        body.append(Data("\r\n--\(boundary)--\r\n".utf8)) // kapanış ayracı: sonunda "--"
+        let data = try await perform(.post, path, query: [], payload: .raw(body, contentType: "multipart/form-data; boundary=\(boundary)"),
+                                     authorized: true, fallback: fallback)
+        return try JSONDecoder().decode(Response.self, from: data)
+    }
+
+    // data: cevabı ÇEVİRMEDEN ham bayt olarak döner (resim) | ÇAĞIRAN: Design/AvatarView → GET /api/v1/avatars/{id}
+    // NEDEN AsyncImage değil: AsyncImage [SWIFT] isteğe Authorization başlığı ekleyemez; fotoğraf ucu [Authorize] (jetonsuz 401)
+    func data(_ path: String, fallback: String = "Bir hata oluştu.") async throws -> Data {
+        try await perform(.get, path, query: [], payload: nil, authorized: true, fallback: fallback)
     }
 
     // ─── Asıl iş ───
     // ⮕ KULLANIM [perform]: çağırır: APIClient › send(), APIClient › sendNoContent()
-    private func perform(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], body: (any Encodable)?,
+    private func perform(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], payload: Payload?,
                          authorized: Bool, fallback: String) async throws -> Data { // Data [SWIFT]: ham bayt dizisi
         // 1) Jeton hazırla. Uygulama yeni açıldıysa bellekte jeton yoktur ama Keychain'de yenileme jetonu olabilir: önce yenile.
         var token: String? = nil
@@ -72,12 +104,12 @@ struct APIClient {
         }
 
         // 2) İsteği at
-        var (data, status) = try await execute(method, path, query: query, body: body, token: token)
+        var (data, status) = try await execute(method, path, query: query, payload: payload, token: token)
 
         // 3) 401 = erişim jetonu süresi doldu → yenile, BİR KEZ tekrarla
         if authorized && status == 401 {
             let fresh = try await auth.tokenAfterFailure(of: token) // eşzamanlı isteklerde tek yenileme (AuthSession "tek uçuş")
-            (data, status) = try await execute(method, path, query: query, body: body, token: fresh)
+            (data, status) = try await execute(method, path, query: query, payload: payload, token: fresh)
             if status == 401 { // yenilenen jetonla da 401: oturum gerçekten geçersiz
                 await auth.expireSession()
                 throw APIError(message: "Oturum süresi doldu, tekrar giriş yapın.", isSessionExpired: true)
@@ -96,7 +128,7 @@ struct APIClient {
 
     // execute: tek bir HTTP isteğini kurar ve gönderir | -> (cevap içeriği, durum kodu)
     // ⮕ KULLANIM [execute]: çağırır: APIClient › perform()
-    private func execute(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], body: (any Encodable)?,
+    private func execute(_ method: HTTPMethod, _ path: String, query: [URLQueryItem], payload: Payload?,
                          token: String?) async throws -> (Data, Int) {
         // URLComponents [SWIFT]: adresi parça parça kurar (boşluk/Türkçe karakter kodlamasını kendisi yapar)
         var components = URLComponents(string: baseURL + path)!
@@ -104,9 +136,14 @@ struct APIClient {
         var request = URLRequest(url: components.url!) // URLRequest [SWIFT]: gidecek istek zarfı (adres, yöntem, başlıklar, gövde)
         request.httpMethod = method.rawValue
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") } // kimlik kartı | API kim olduğumuzu ve rolümüzü buradan okur
-        if let body {
+        switch payload {
+        case .json(let body)?:
             request.setValue("application/json", forHTTPHeaderField: "Content-Type") // içinde JSON var
             request.httpBody = try JSONEncoder().encode(body) // paketi JSON'a çevir | JSONEncoder [SWIFT]: struct'ı JSON'a çevirir | .encode [SWIFT]: Swift nesnesinden JSON'a çevirir
+        case .raw(let data, let contentType)?:
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type") // örn. multipart/form-data; boundary=...
+            request.httpBody = data
+        case nil: break // gövdesiz istek (GET, DELETE)
         }
         let (data, response) = try await session.data(for: request) // gönder, cevabı bekle | internet yoksa burada hata fırlar
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0) // HTTPURLResponse [SWIFT]: sunucunun cevap bilgisi (durum kodu dahil)

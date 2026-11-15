@@ -10,7 +10,6 @@ import SwiftUI // import SwiftUI [SWIFT]: ekran çizim kütüphanesi
 // ┌─ BAĞLANTI HARİTASI: CarrierRegisterView (Taşımacı kayıt ALANLARI) ─────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
 // │ Kişi alanları + KVKK     →  viewModel.fullName, email, phone, password, kvkkAccepted ($ bağlar)  →  (register() okur)  →  -  →  RegisterCarrierRequest
-// │ Araç Picker + kapasite + plaka  →  viewModel.vehicleType, capacityKg, plateNumber  →  (register() VehicleRequest'e çevirir)  →  -  →  VehicleType (seçenekler), VehicleRequest
 // │ Kayıt ol düğmesi         →  viewModel.register()                →  AuthService.registerCarrier()   →  POST /api/v1/auth/register/carrier →  RegisterCarrierRequest ([VehicleRequest]) → RegisterResponse
 // │ Hata / başarı yazıları   →  viewModel.errorMessage, isSuccess   →  (sunucunun Türkçe mesajı)       →  -                                →  APIErrorResponse
 // └──────────────────────────────────────────────────────────────────────
@@ -29,6 +28,8 @@ struct CarrierRegisterView: View {
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): CarrierRegisterView › body | okur: CarrierRegisterView › body
     @State private var viewModel = CarrierRegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
+    // 15 Kasım: başarıda e-posta yukarı iletilir (RoleSelectionView giriş ekranına döndürür)
+    var onRegistered: (String) -> Void = { _ in }
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
@@ -53,29 +54,10 @@ struct CarrierRegisterView: View {
                 SecureField("En az 8 karakter", text: $viewModel.password).textContentType(.newPassword)
             }
 
-            // ARAÇ BİLGİLERİ: ara başlık
-            Text("Araç bilgileri")
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(palette.title)
-                .padding(.top, 6)
-
-            // Picker: açılır liste | selection: $viewModel.vehicleType → seçilen değer ViewModel'deki değişkene yazılır
-            LabeledInput(label: "Araç türü", systemImage: "truck.box.fill") {
-                Picker("Araç türü", selection: $viewModel.vehicleType) {
-                    Text("Seçiniz").tag("") // tag(""): hiçbir şey seçilmemişken bu yazı görünür | .tag [SWIFT]: Picker seçeneğinin değeri
-                    ForEach(VehicleType.allCases) { type in // ⮕ Models/Vehicles/VehicleType.swift (ilan formuyla aynı tek kaynak)
-                        Text(type.title).tag(type.rawValue) // title: Türkçe ad | rawValue: API'ye giden değer
-                    }
-                }
-                .pickerStyle(.menu) // açılır menü | .pickerStyle [SWIFT]
-                .frame(maxWidth: .infinity, alignment: .leading) // kutunun içinde sola yaslı
-            }
-            LabeledInput(label: "Kapasite (kg)", systemImage: "scalemass.fill") {
-                TextField("Örn. 12000", text: $viewModel.capacityKg).keyboardType(.numberPad) // .numberPad: yalnız rakam klavyesi
-            }
-            LabeledInput(label: "Plaka (isteğe bağlı)", systemImage: "number") {
-                TextField("34 ABC 123", text: $viewModel.plateNumber).textInputAutocapitalization(.characters) // plaka büyük harf
-            }
+            // ARAÇ BİLGİLERİ KALDIRILDI (15 Kasım, yönetici: "ilk amaç kullanıcıyı kaydetmek; içerde araç kaydetme sayfası olmalı")
+            //   → araçlar giriş yaptıktan sonra Araçlarım'dan eklenir (Views/VehiclesView). Kullanıcı bunu bilsin diye kısa not:
+            Label("Araçlarını giriş yaptıktan sonra Araçlarım'dan ekleyebilirsin. Teklif vermek için en az bir araç gerekir.", systemImage: "truck.box.fill")
+                .font(.footnote).foregroundStyle(palette.label.opacity(0.8))
 
             FormConsent(isOn: $viewModel.kvkkAccepted) // KVKK onayı + "metni oku" ⮕ Design/FormStyle.swift
 
@@ -87,6 +69,7 @@ struct CarrierRegisterView: View {
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın)
                 .padding(.top, 4)
         }
+        .onChange(of: viewModel.isSuccess) { _, ok in if ok { onRegistered(viewModel.email.trimmingCharacters(in: .whitespaces)) } } // 15 Kasım: başarı → RoleSelectionView giriş ekranına döndürür
     }
 }
 

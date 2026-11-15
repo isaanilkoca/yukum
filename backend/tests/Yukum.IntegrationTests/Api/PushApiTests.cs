@@ -83,7 +83,7 @@ public class PushApiTests(SqlServerFixture sql)
             : new
             {
                 fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, serviceCityIds = new[] { 33 },
-                vehicles = new object[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true
+                vehicles = new object[] { new { type = "Truck", capacityKg = 24000, brand = "Volvo", model = "FH", year = 2020 } }, kvkkAccepted = true
             };
         Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body)).StatusCode);
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "pd" + n, deviceName = "test" });
@@ -105,7 +105,7 @@ public class PushApiTests(SqlServerFixture sql)
 
     // Teklif verir: Yük Veren'e "Yeni teklif" bildirimi yazılır
     private static async Task Offer(HttpClient c, string carrierToken, string listingId, decimal amount = 1000) =>
-        Assert.Equal(HttpStatusCode.OK, (await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { amount, note = "not" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount, note = "not" })).StatusCode);
 
     private static string DeviceToken(char fill) => new(fill, 64);   // 64 onaltılık karakter
 

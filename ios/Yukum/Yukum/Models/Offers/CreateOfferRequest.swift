@@ -24,5 +24,8 @@ struct CreateOfferRequest : Encodable {
     let amount: Int // teklif tutarı TL | API'deki "amount" ile aynı ad olmalı    l
     // ⮕ KULLANIM [note]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let note: String? // isteğe bağlı not | ?: boş olabilir, nil ise JSON'a yazılmaz
+    // 15 Kasım: hangi araçla + ne zaman teslim (Yük Veren bunlara göre sıralar) | sunucu: CreateOfferHandler
+    var vehicleId: String? = nil          // nil: tek aracı varsa sunucu onu seçer
+    var estimatedDeliveryDate: String? = nil // "yyyy-MM-dd" (sunucu DateOnly) | yükleme tarihi ile +90 gün arası
     
 }

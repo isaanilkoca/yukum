@@ -15,6 +15,7 @@ enum ListingSort: String, CaseIterable, Identifiable {
     case newest = "Newest"
     case priceAsc = "PriceAsc"
     case priceDesc = "PriceDesc"
+    case pickupSoonest = "PickupSoonest" // 15 Kasım: yükleme tarihi en yakın (backend ListingSort.PickupSoonest)
 
     var id: String { rawValue }
     var title: String { // ekrandaki Türkçe ad
@@ -22,6 +23,7 @@ enum ListingSort: String, CaseIterable, Identifiable {
         case .newest: "En yeni"
         case .priceAsc: "Fiyat (artan)"
         case .priceDesc: "Fiyat (azalan)"
+        case .pickupSoonest: "Yükleme tarihi (en yakın)"
         }
     }
 }

@@ -43,7 +43,7 @@ public class NotificationsApiTests(SqlServerFixture sql)
             : new
             {
                 fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, serviceCityIds = new[] { 33 },
-                vehicles = new object[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true
+                vehicles = new object[] { new { type = "Truck", capacityKg = 24000, brand = "Volvo", model = "FH", year = 2020 } }, kvkkAccepted = true
             };
         Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body)).StatusCode);
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "nd" + n, deviceName = "test" });
@@ -65,7 +65,7 @@ public class NotificationsApiTests(SqlServerFixture sql)
 
     private static async Task<string> NewOffer(HttpClient c, string carrierToken, string listingId, decimal amount = 1000)
     {
-        var r = await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { amount, note = "not" });
+        var r = await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount, note = "not" });
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         return (await Json(r)).GetProperty("id").GetString()!;
     }

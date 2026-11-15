@@ -39,6 +39,10 @@ final class MyOffersViewModel {
     // ⮕ KULLANIM [historyOffers]: okur: MyOffersView › body, MyOffersViewModelTests (test)
     var historyOffers: [CarrierOffer] { offers.filter { $0.status != "Pending" } }
 
+    // ─── KAPSAM (15 Kasım, kullanıcı: "kabul edilen / işlemde olan işler eski tekliflerde değil, DEVAM EDEN İŞLER'de olsun") ───
+    // pending: bekleyen teklifler (Tekliflerim) | active: kabul edilmiş, bitmemiş işler (Devam Eden İşler) | history: sonuçlananlar (Geçmiş)
+    func offers(in scope: OfferScope) -> [CarrierOffer] { offers.filter { scope.contains(status: $0.status) } }
+
     init(service: OfferServicing = OfferService()) { self.service = service }
 
     // KURAL: yalnız BİTMİŞ teklif silinebilir (reddedilen, tamamlanan, iptal edilen) | bekleyen: karar yok | kabul edilen: AKTİF İŞ (API de 409 verir)
@@ -178,4 +182,17 @@ final class MyOffersViewModel {
     // ⮕ ZİNCİR: Views/MyOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forCarrier(offer)
     // ⮕ KULLANIM [openChat]: çağırır: MyOffersView › offerRow(), MyOffersViewModelTests (test)
     func openChat(_ offer: CarrierOffer) { chat = ChatContext.forCarrier(offer) }
+}
+
+// Teklif listelerinin kapsamı (iki rol, 15 Kasım) | ⮕ KULLANIM [OfferScope]: MyOffersView (Taşımacı), OldOffersView (Yük Veren), ProfileView
+//   Kabul edilmiş iş teslim edilip TAMAMLANANA kadar "Devam Eden"; tamamlanınca, reddedilince, iptal/geri çekilince "Geçmiş".
+enum OfferScope {
+    case pending, active, history
+    func contains(status: String) -> Bool {
+        switch self {
+        case .pending: status == "Pending"
+        case .active: status == "Accepted"
+        case .history: !["Pending", "Accepted"].contains(status)
+        }
+    }
 }

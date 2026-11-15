@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Yukum.Application.Abstractions.Persistence;
 using Yukum.Application.Common;
 using Yukum.Application.Listings;
+using Yukum.Domain.Accounts;
 using Yukum.Domain.Listings;
 
 namespace Yukum.Infrastructure.Persistence;
@@ -24,6 +25,7 @@ public class ListingSearchRepository(AppDbContext context) : IListingSearchRepos
         {
             ListingSort.PriceAsc => query.OrderBy(l => l.Budget == null).ThenBy(l => l.Budget).ThenByDescending(l => l.CreatedAt).ThenBy(l => l.Id),
             ListingSort.PriceDesc => query.OrderBy(l => l.Budget == null).ThenByDescending(l => l.Budget).ThenByDescending(l => l.CreatedAt).ThenBy(l => l.Id),
+            ListingSort.PickupSoonest => query.OrderBy(l => l.PickupDate).ThenByDescending(l => l.CreatedAt).ThenBy(l => l.Id), // 15 Kasım
             _ => query.OrderByDescending(l => l.CreatedAt).ThenBy(l => l.Id)
         };
 
@@ -43,9 +45,11 @@ public class ListingSearchRepository(AppDbContext context) : IListingSearchRepos
         var carrierId = f.CarrierId;
         var query = context.Listings.AsNoTracking().Where(l => l.Status == ListingStatus.Open);
 
-        // Ana liste = yalnız DOKUNULMAMIŞ ilanlar: bu taşımacının teklif verdiği ilan (durumu ne olursa olsun) listeden çıkar.
-        // SQL: WHERE NOT EXISTS (SELECT 1 FROM Offers o WHERE o.ListingId = l.Id AND o.CarrierId = @carrierId)
-        query = query.Where(l => !context.Offers.Any(o => o.ListingId == l.Id && o.CarrierId == carrierId));
+        // Ana liste = yalnız DOKUNULMAMIŞ ilanlar: bu taşımacının teklif verdiği ilan listeden çıkar.
+        // İSTİSNA (15 Kasım, kullanıcı: "karşılıklı iptalden sonra ilan aynı taşımacıya tekrar düşmüyor"): KARŞILIKLI İPTAL edilmiş teklif sayılmaz →
+        //   Yük Veren ilanı yeniden yayınlarsa (CancelRequestHandlers: reopen) aynı Taşımacı da görür ve YENİ teklif verebilir (CreateOfferHandler).
+        // SQL: WHERE NOT EXISTS (SELECT 1 FROM Offers o WHERE o.ListingId = l.Id AND o.CarrierId = @carrierId AND o.MutuallyCancelled = 0)
+        query = query.Where(l => !context.Offers.Any(o => o.ListingId == l.Id && o.CarrierId == carrierId && !o.MutuallyCancelled));
 
         if (f.FromCityId is { } fromCity) query = query.Where(l => l.FromCityId == fromCity);
         if (f.FromDistrictId is { } fromDistrict) query = query.Where(l => l.FromDistrictId == fromDistrict);
@@ -53,7 +57,16 @@ public class ListingSearchRepository(AppDbContext context) : IListingSearchRepos
         // Bütçesi boş (null) ilan, fiyat aralığı verilince eşleşmez (karşılaştırma null ile false olur): fiyatı bilinmeyen aralığa girmez.
         if (f.MinBudget is { } min) query = query.Where(l => l.Budget >= min);
         if (f.MaxBudget is { } max) query = query.Where(l => l.Budget <= max);
-        if (f.VehicleType is { } vehicle) query = query.Where(l => l.VehicleType == vehicle);
+        // Araç filtresi (15 Kasım): "Farketmez" (Any) ilanlar HER araç filtresinde görünür; filtre olarak Any seçilirse süzme yapılmaz.
+        if (f.VehicleType is { } vehicle && vehicle != VehicleType.Any) query = query.Where(l => l.VehicleType == vehicle || l.VehicleType == VehicleType.Any);
+        // "Yalnız araçlarıma uygun" (15 Kasım): uygun türler handler'da hesaplanır (Application/Vehicles/VehicleCompatibility: büyük araç küçüğü kapsar)
+        // SQL: AND l.VehicleType IN (1, 2, 3, 5, 100)
+        if (f.AllowedVehicleTypes is { } allowed) query = query.Where(l => allowed.Contains(l.VehicleType));
+        // Ağırlık aralığı (15 Kasım)
+        if (f.MinWeightKg is { } minKg) query = query.Where(l => l.WeightKg >= minKg);
+        if (f.MaxWeightKg is { } maxKg) query = query.Where(l => l.WeightKg <= maxKg);
+        // Uzaklık filtresinden kalanlar (15 Kasım): handler mesafeyi ilçe koordinatıyla bellekte hesaplar, buraya numara listesi gelir | SQL: AND l.Id IN (...)
+        if (f.OnlyIds is { } only) query = query.Where(l => only.Contains(l.Id));
         if (f.PickupFrom is { } from) query = query.Where(l => l.PickupDate >= from);
         if (f.PickupTo is { } to) query = query.Where(l => l.PickupDate <= to);
         return query;

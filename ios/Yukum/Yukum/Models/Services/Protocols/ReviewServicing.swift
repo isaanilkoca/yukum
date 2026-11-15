@@ -15,4 +15,5 @@ protocol ReviewServicing { // protocol [SWIFT]: sözleşme: "bu fonksiyonlara sa
     func create(offerId: String, _ body: CreateReviewRequest) async throws
     // carrierProfile: Taşımacı profili (ortalama, yorumlar) | API: GET /api/v1/carriers/{id}
     func carrierProfile(id: String) async throws -> CarrierProfile
+    func shipperProfile(id: String) async throws -> ShipperPublicProfile // 15 Kasım: Yük Veren profili (ShipperProfileView)
 }

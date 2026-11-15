@@ -26,6 +26,8 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
     // viewModel: formun durumu ve mantığı | @State: ekran yenilense de AYNI nesne yaşar (yazılan alanlar kaybolmaz)
     // ⮕ KULLANIM [viewModel]: bağlar(okur+yazar): RegisterView › body | okur: RegisterView › body
     @State private var viewModel = RegisterViewModel() // @State [SWIFT]: ekranın hafızası: değişince ekran yenilenir
+    // 15 Kasım (kullanıcı: "kayıttan sonra giriş ekranına atmıyor"): başarıda e-posta yukarı (RoleSelectionView → LoginView) iletilir
+    var onRegistered: (String) -> Void = { _ in }
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some View {
@@ -64,6 +66,7 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]
                 .padding(.top, 4)
         }
+        .onChange(of: viewModel.isSuccess) { _, ok in if ok { onRegistered(viewModel.email.trimmingCharacters(in: .whitespaces)) } } // 15 Kasım: başarı → RoleSelectionView giriş ekranına döndürür
     }
 }
 

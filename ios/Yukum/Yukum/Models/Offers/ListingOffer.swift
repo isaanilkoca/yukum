@@ -27,4 +27,19 @@ struct ListingOffer: Decodable, Identifiable { // Identifiable [SWIFT]: benzersi
     let carrierId: String // Taşımacı'nın numarası | NE İŞE YARAR: tıklayınca profiline gitmek için
     let carrierRating: Double // ortalama puan (0 = henüz puan yok) | API decimal(3,2) gönderir, Double'a çözülür
     let carrierRatingCount: Int // kaç kişi puan verdi | 0 ise "Yeni" yazılır, yıldız çizilmez
+    // 15 Kasım: teklifteki araç + teslim tarihi + Taşımacı'nın tamamlanan işi | eski tekliflerde nil (sıralamada sona düşer)
+    var vehicleType: String? = nil
+    var vehicleBrand: String? = nil
+    var vehicleModel: String? = nil
+    var vehicleYear: Int? = nil
+    var estimatedDeliveryDate: String? = nil // "yyyy-MM-dd"
+    var carrierCompletedJobCount: Int? = nil
+
+    // "Tır · Mercedes-Benz Actros · 2019" | araç bilgisi yoksa nil
+    var vehicleText: String? {
+        guard let vehicleType else { return nil }
+        let type = VehicleType(rawValue: vehicleType)?.title ?? vehicleType
+        let name = [vehicleBrand, vehicleModel].compactMap { $0 }.joined(separator: " ")
+        return [type, name.isEmpty ? nil : name, vehicleYear.map(String.init)].compactMap { $0 }.joined(separator: " · ")
+    }
 }

@@ -28,8 +28,21 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad (dosya adı k
     @State private var role: LoginRole // seçili hesap türü | başlangıç değeri girişten gelir
 
     // init: girişte hangi hesap türü seçiliyse kayıt da o türle açılır | State(initialValue:) [SWIFT]: @State'i elle başlatma yolu
-    init(initialRole: LoginRole = .shipper) {
+    init(initialRole: LoginRole = .shipper, onDone: @escaping (String, LoginRole) -> Void = { _, _ in }) {
         _role = State(initialValue: initialRole)
+        self.onDone = onDone
+    }
+
+    // ─── KAYITTAN SONRA GİRİŞE DÖNÜŞ (15 Kasım, kullanıcı: "kayıttan sonra giriş ekranına atmıyor", iki rol) ───
+    // ZİNCİR: RegisterView/CarrierRegisterView başarı → onRegistered(e-posta) → registered(): rolün olumlu animasyonu (Yük Veren: koli
+    //   bantlanır, Taşımacı: lastik izi) → bitince onDone(e-posta, rol) → LoginView alanları doldurur + dismiss() → giriş ekranı (yalnız şifre yazılır)
+    private let onDone: (String, LoginRole) -> Void
+    @State private var feedback: ActionFeedback?
+    @Environment(\.dismiss) private var dismiss // [SWIFT] NavigationLink ile açılan bu sayfayı kapatır (Geri gibi)
+
+    private func registered(_ email: String) {
+        let r = role
+        feedback = ActionFeedback(r == .shipper ? .seal : .track, "Kayıt tamam! Giriş yapabilirsin") { onDone(email, r); dismiss() }
     }
 
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
@@ -67,9 +80,9 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad (dosya adı k
 
                         // Seçili role göre form alanları | .transition: değişince yumuşak geçiş
                         if role == .shipper {
-                            RegisterView()        // ⮕ Views/RegisterView.swift (Yük Veren alanları + Kayıt ol)
+                            RegisterView(onRegistered: registered)        // ⮕ Views/RegisterView.swift (Yük Veren alanları + Kayıt ol)
                         } else {
-                            CarrierRegisterView() // ⮕ Views/CarrierRegisterView.swift (Taşımacı alanları + araç + Kayıt ol)
+                            CarrierRegisterView(onRegistered: registered) // ⮕ Views/CarrierRegisterView.swift (Taşımacı alanları + Kayıt ol)
                         }
                     }
                     .animation(.easeInOut(duration: 0.25), value: role) // [SWIFT] rol değişince kart boyu yumuşakça uzar/kısalır
@@ -80,6 +93,7 @@ struct RoleSelectionView: View { // RoleSelectionView [BİZİM] ad (dosya adı k
             .scrollDismissesKeyboard(.interactively) // [SWIFT] kaydırınca klavye kapanır
         }
         .navigationBarTitleDisplayMode(.inline) // geri oku kalır, büyük başlık çubuğu yer kaplamaz
+        .actionFeedback($feedback) // ⮕ Design/ActionFeedback.swift: animasyon biter → then (giriş ekranına dönüş)
     }
 }
 

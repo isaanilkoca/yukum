@@ -37,3 +37,6 @@ graphify-out/
 
 # Claude Code yerel ayarları (kişisel yollar içerir, commit edilmez)
 .claude/settings.local.json
+
+# Profil fotoğrafları (yerel geliştirme diski; kişisel veri, commit edilmez)
+App_Data/

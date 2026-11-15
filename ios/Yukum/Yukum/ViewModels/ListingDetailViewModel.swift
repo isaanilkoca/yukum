@@ -52,11 +52,47 @@ final class ListingDetailViewModel {
 
     var isFavorite: Bool // kalbin durumu | ilk değer listeden gelir (Listing.isFavorite), sonra kullanıcı değiştirir
 
-    init(listing: Listing, service: OfferServicing = OfferService(), listingService: ListingServicing = ListingService()) {
+    init(listing: Listing, service: OfferServicing = OfferService(), listingService: ListingServicing = ListingService(),
+         vehicleService: VehicleServicing = VehicleService()) {
         self.listing = listing
         self.service = service
         self.listingService = listingService
+        self.vehicleService = vehicleService
         self.isFavorite = listing.isFavorite
+        // Teslim tarihi varsayılanı: yüklemeden 1 gün sonra (Taşımacı değiştirir) | sınırlar sunucuyla aynı: yükleme ... yükleme + 90 gün
+        let pickup = Self.pickupDate(of: listing)
+        self.deliveryDate = Calendar.current.date(byAdding: .day, value: 1, to: pickup) ?? pickup
+    }
+
+    // ─── TEKLİFTE ARAÇ + TESLİM TARİHİ (15 Kasım) ───
+    // ZİNCİR: ListingDetailView .task → loadVehicles() → VehicleService.mine → GET /api/v1/vehicles → araç seçici
+    //   submit() → CreateOfferRequest(vehicleId, estimatedDeliveryDate) → POST /api/v1/listings/{id}/offers → CreateOfferHandler (araç kopyalanır)
+    //   → Yük Veren ListingOffersView'da aracı/tarihi görür ve sıralar
+    private let vehicleService: VehicleServicing
+    var vehicles: [Vehicle] = []        // Taşımacı'nın araçları (seçici)
+    var selectedVehicleId: String?      // seçilen araç | tek araç varsa kendiliğinden seçilir
+    var deliveryDate: Date              // tahmini teslim (işin bitirme vakti)
+
+    // DatePicker sınırı: yükleme tarihi → +90 gün
+    var deliveryRange: ClosedRange<Date> {
+        let pickup = Self.pickupDate(of: listing)
+        return pickup...(Calendar.current.date(byAdding: .day, value: 90, to: pickup) ?? pickup)
+    }
+
+    func loadVehicles() async {
+        guard let list = try? await vehicleService.mine() else { return } // hata sessiz: sunucu yine kuralı uygular
+        vehicles = list
+        if selectedVehicleId == nil { selectedVehicleId = (list.first { $0.hasDetails } ?? list.first)?.id } // bilgisi tam olan ilk araç
+    }
+
+    // "2026-12-01" → Date (yerel takvim, gün başı) | çözülemezse bugün
+    nonisolated static func pickupDate(of listing: Listing) -> Date {
+        let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"
+        return f.date(from: listing.pickupDate) ?? Calendar.current.startOfDay(for: Date())
+    }
+    nonisolated static func dayString(_ date: Date) -> String {
+        let f = DateFormatter(); f.calendar = Calendar(identifier: .gregorian); f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
     }
 
     // toggleFavorite: kalbe basınca | İYİMSER GÜNCELLEME (optimistic update): kalp ÖNCE hemen döner, istek arkadan gider
@@ -110,7 +146,13 @@ final class ListingDetailViewModel {
         }
         // 2) Paketi hazırla | not boşsa nil gönder (JSON'a hiç yazılmaz), doluysa baş/son boşluğu temizlenmiş yazı
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
-        let body = CreateOfferRequest(amount: amount, note: trimmedNote.isEmpty ? nil : trimmedNote)
+        // Araç: birden çok araç varken seçim şart; seçilen aracın marka/model/yılı eksikse önce tamamlanmalı (sunucu da reddeder)
+        if vehicles.count > 1 && selectedVehicleId == nil { errorMessage = "Teklif için aracını seç."; return false }
+        if let id = selectedVehicleId, let v = vehicles.first(where: { $0.id == id }), !v.hasDetails {
+            errorMessage = "Seçtiğin aracın marka, model ve yılını Araçlarım'dan tamamla."; return false
+        }
+        let body = CreateOfferRequest(amount: amount, note: trimmedNote.isEmpty ? nil : trimmedNote,
+                                      vehicleId: selectedVehicleId, estimatedDeliveryDate: Self.dayString(deliveryDate))
 
         isLoading = true // düğme kilitlenir
         errorMessage = nil

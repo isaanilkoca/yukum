@@ -29,6 +29,7 @@ struct CarrierOffer: Decodable, Identifiable { // Decodable [SWIFT]: JSON'dan ü
     let amount: Double // verdiğimiz teklif tutarı | Double: API 48000.0 gibi ondalıklı gönderir | ekranda Int(amount) ile 48000 yazılır
     // ⮕ KULLANIM [status]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let status: String // teklifin durumu: "Pending" (beklemede) / "Accepted" (kabul) / "Rejected" (red) | switch ile renkli yazıya çevrilir | yalnız karar verilmişler (Pending değil) silinebilir
+    var hasMessages: Bool? = nil // 15 Kasım: bekleyen teklifte sohbet başladı → Tekliflerim'de "Görüşülüyor" etiketi (sunucu: CarrierOfferDto.HasMessages)
     // ⮕ KULLANIM [isNew]: okur: MyOffersView › offerRow(), MyOffersViewModelTests (test)
     let isNew: Bool // Bool: true/false | true = Yük Veren karar verdi (kabul/red) AMA Taşımacı henüz Tekliflerim ekranını açıp görmedi | backend: Offer.CarrierSeen=false ve karar verilmiş
     //NE İŞE YARAR: push bildirim yerine uygulama içi "Yeni" rozeti | NEREDE: MyOffersView'da satırdaki kırmızı hap | ekran açılınca markSeen() false yapar

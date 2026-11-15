@@ -48,13 +48,16 @@ public sealed record ListingDto(
     DateOnly PickupDate,
     decimal? Budget,
     DateTime CreatedAt,
+    Guid ShipperId,       // 15 Kasım (8. adım): ilan sahibi → Taşımacı ilan detayından Yük Veren profilini açar (GET /shippers/{id})
+    ListingStatus Status, // 15 Kasım: "İlanlarım" (profil) açık + geçmiş ilanları durum rozetiyle gösterir
+    // NEDEN bu ikisi varsayılansız: "Guid X = default" OpenAPI şema üreticisini çökertiyordu (varsayılanı belgeye yazarken Guid'e çeviremiyor → /openapi/v1.json 500).
     decimal? MyOfferAmount = null, // yalnız Taşımacı'nın açık ilan listesinde dolar: bu ilana verdiği teklif, yoksa null
     OfferStatus? MyOfferStatus = null, // aynı yerde o teklifin durumu (Pending/Rejected), yoksa null
     double? DistanceKm = null, // yalnız konum verilmişse dolar
     bool IsFavorite = false); // yalnız Taşımacı listelerinde dolar: bu ilanı favorilemiş mi // yalnız konum verilmişse dolar: Taşımacı'nın konumu ile ilanın kalkış noktası arası kuş uçuşu km
 
 /// <summary>Sorgu: Yük Veren'in kendi ilanları.</summary>
-public sealed record GetMyListingsQuery(Guid ShipperId);
+public sealed record GetMyListingsQuery(Guid ShipperId, bool IncludeClosed = false); // IncludeClosed (15 Kasım): profil > İlanlarım tüm ilanları ister; ana ekran yalnız açıkları
 
 /// <summary>Açık ilan listesinin sıralama seçenekleri.</summary>
 public enum ListingSort
@@ -66,7 +69,9 @@ public enum ListingSort
     /// <summary>Bütçe azalan (bütçesi belli olmayanlar en sonda).</summary>
     PriceDesc,
     /// <summary>Taşımacı'nın konumuna en yakın üstte (lat+lon gerekir).</summary>
-    Nearest
+    Nearest,
+    /// <summary>Yükleme tarihi en yakın olan üstte (15 Kasım: Taşımacı "işi ne zaman alacağım"a göre sıralar).</summary>
+    PickupSoonest
 }
 
 /// <summary>
@@ -87,7 +92,10 @@ public sealed record GetOpenListingsQuery(
     DateOnly? PickupTo = null,
     ListingSort? Sort = null,
     int Page = 1,
-    int PageSize = 20);
+    int PageSize = 20,
+    bool MatchMyVehicles = false, // 15 Kasım: yalnız Taşımacı'nın araç türlerine uyan (ve "Farketmez") ilanlar
+    int? MaxDistanceKm = null,     // 15 Kasım (sahibinden tarzı): konumuma en çok X km (lat+lon gerekir), diğer filtrelerle BİRLİKTE çalışır
+    int? MinWeightKg = null, int? MaxWeightKg = null);
 
 /// <summary>Komut: ilan sahibi ilanı yayından kaldırır (açık ilan, ya da atanmış iş iptali).</summary>
 public sealed record CancelListingCommand(Guid ListingId, Guid ShipperId);

@@ -17,5 +17,10 @@ protocol AccountServicing {
     // ÇAĞIRAN: AccountViewModel.deleteAccount() | API: POST /api/v1/account/delete | başarıda cevap gövdesi yok (204)
     
     func deleteAccount(_ body: DeleteAccountRequest) async throws
-    
+
+    // ─── Hesap Bilgilerim (15 Kasım) | KULLANAN: ViewModels/AccountInfoViewModel | sahtesi: YukumTests/Support/FakeAccountService ───
+    func profile() async throws -> AccountProfile                                   // GET  /api/v1/account/me
+    func update(_ body: UpdateAccountProfileRequest) async throws -> AccountProfile // PUT  /api/v1/account/me → güncel hâli döner
+    func uploadAvatar(jpeg: Data) async throws -> String                            // POST /api/v1/account/avatar → yeni avatarUrl
+    func deleteAvatar() async throws                                                // DELETE /api/v1/account/avatar
 }

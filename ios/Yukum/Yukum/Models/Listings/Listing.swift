@@ -50,6 +50,9 @@ struct Listing: Decodable, Identifiable { // Decodable [SWIFT]: gelen JSON'dan �
     let toCityId: Int
     let toDistrictId: Int
     let isFavorite: Bool // bu Taşımacı ilanı favorilemiş mi | API her ilan cevabında gönderir (Yük Veren listelerinde hep false) | detay ekranındaki kalbin ilk durumu
+    // 15 Kasım (8. adım) | var + ? [SWIFT]: JSON'da yoksa nil (eski cevaplar bozulmaz), testlerde yazmak gerekmez
+    var shipperId: String? = nil // ilan sahibi → Taşımacı ilan detayından Yük Veren profilini açar (Views/ShipperProfileView)
+    var status: String? = nil    // "Open" / "Assigned" / "Completed" / "Cancelled" — yalnız İlanlarım (?all=true) rozet için kullanır
 
 
 }

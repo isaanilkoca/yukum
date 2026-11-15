@@ -18,6 +18,8 @@ final class FakeListingService: ListingServicing {
     
     func create(_ body: CreateListingRequest) async throws -> ListingResponse { createBodies.append(body); return try createResult.get() }
     func myListings() async throws -> [Listing] { myListingsCalls += 1; return try myListingsResult.get() }
+    var allMyListingsResult: Result<[Listing], Error> = .success([])
+    func allMyListings() async throws -> [Listing] { try allMyListingsResult.get() }
     func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing> {
         openListingsCalls.append((filter, page, lat, lon)); return try openListingsResult.get()
     }

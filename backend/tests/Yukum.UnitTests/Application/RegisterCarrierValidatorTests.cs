@@ -81,12 +81,11 @@ public class RegisterCarrierValidatorTests
 
     // ---------- araçlar ----------
     [Fact]
-    public async Task At_least_one_vehicle_is_required()
+    public async Task Vehicles_are_optional_at_registration()
     {
-        (await _validator.TestValidateAsync(Valid() with { Vehicles = null }))
-            .ShouldHaveValidationErrorFor(c => c.Vehicles).WithErrorMessage("En az bir araç eklemelisiniz.");
-        (await _validator.TestValidateAsync(Valid() with { Vehicles = [] }))
-            .ShouldHaveValidationErrorFor(c => c.Vehicles).WithErrorMessage("En az bir araç eklemelisiniz.");
+        // 15 Kasım (yönetici kararı): kayıtta araç sorulmaz; araçlar sonra "Araçlarım"dan eklenir.
+        (await _validator.TestValidateAsync(Valid() with { Vehicles = null })).ShouldNotHaveValidationErrorFor(c => c.Vehicles);
+        (await _validator.TestValidateAsync(Valid() with { Vehicles = [] })).ShouldNotHaveValidationErrorFor(c => c.Vehicles);
     }
 
     [Fact]

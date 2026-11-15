@@ -1,12 +1,14 @@
+using Yukum.Domain.Accounts;
 using Yukum.Domain.Listings;
 
 namespace Yukum.Application.Offers;
 
 /// <summary>İstemcinin gönderdiği teklif (ilan numarası adresten, taşımacı jetondan gelir).</summary>
-public sealed record CreateOfferRequest(decimal Amount, string? Note);
+// 15 Kasım: VehicleId (Araçlarım'dan; tek aracı varsa boş bırakılabilir) + EstimatedDeliveryDate (zorunlu)
+public sealed record CreateOfferRequest(decimal Amount, string? Note, Guid? VehicleId, DateOnly? EstimatedDeliveryDate);
 
 /// <summary>Komut: Taşımacı bir ilana teklif verir (varsa tutarını günceller).</summary>
-public sealed record CreateOfferCommand(Guid ListingId, Guid CarrierId, decimal Amount, string? Note);
+public sealed record CreateOfferCommand(Guid ListingId, Guid CarrierId, decimal Amount, string? Note, Guid? VehicleId, DateOnly? EstimatedDeliveryDate);
 
 /// <summary>İstemciye giden teklif bilgisi.</summary>
 public sealed record OfferDto(Guid Id, Guid ListingId, decimal Amount, string? Note, OfferStatus Status);
@@ -25,7 +27,9 @@ public sealed record GetListingOffersQuery(Guid ListingId, Guid ShipperId);
 
 /// <summary>Yük Veren'in gördüğü teklif satırı (taşımacı adıyla).</summary>
 public sealed record ListingOfferDto(Guid Id, string CarrierName, decimal Amount, string? Note, OfferStatus Status, DateTime CreatedAt,
-    Guid CarrierId, decimal CarrierRating, int CarrierRatingCount);
+    Guid CarrierId, decimal CarrierRating, int CarrierRatingCount,
+    // 15 Kasım: Yük Veren sıralar/karşılaştırır (araç türü, marka-model, yaş, tamamlanan iş, teslim tarihi). Eski tekliflerde araç/tarih null.
+    VehicleType? VehicleType, string? VehicleBrand, string? VehicleModel, int? VehicleYear, DateOnly? EstimatedDeliveryDate, int CarrierCompletedJobCount);
 
 /// <summary>Komut: Yük Veren bir teklifi kabul eder (Accept=true) ya da reddeder (false).</summary>
 public sealed record DecideOfferCommand(Guid OfferId, Guid ShipperId, bool Accept);
@@ -38,7 +42,8 @@ public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitl
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName,
     string ShipperName, int WeightKg, DateOnly PickupDate,
     decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt, JobStage Stage,
-    CancelRequestDto? CancelRequest = null, bool MutuallyCancelled = false);
+    CancelRequestDto? CancelRequest = null, bool MutuallyCancelled = false,
+    bool HasMessages = false); // 15 Kasım: bekleyen teklifte sohbet başladı mı → iOS "Görüşülüyor" etiketi
 
 /// <summary>Sorgu: Yük Veren'in karar verdiği (kabul/red) tekliflerin geçmişi (silinenler hariç).</summary>
 public sealed record GetShipperOfferHistoryQuery(Guid ShipperId);

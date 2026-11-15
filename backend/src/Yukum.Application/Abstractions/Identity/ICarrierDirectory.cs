@@ -1,7 +1,8 @@
 namespace Yukum.Application.Abstractions.Identity;
 
 /// <summary>Taşımacı profilinin özeti (ad + puan bilgileri).</summary>
-public sealed record CarrierSummary(Guid UserId, string FullName, string? About, decimal AverageRating, int RatingCount, int CompletedJobCount);
+public sealed record CarrierSummary(Guid UserId, string FullName, string? About, decimal AverageRating, int RatingCount, int CompletedJobCount,
+    string? AvatarUrl = null, int? HomeCityId = null, DateTime MemberSince = default); // 15 Kasım (8. adım): profilde fotoğraf, il, üyelik tarihi
 
 /// <summary>Taşımacı profil bilgisini okur ve puan/iş sayacını günceller. Uygulama katmanı EF'e dokunmaz, bu sözleşmeyle konuşur.</summary>
 public interface ICarrierDirectory

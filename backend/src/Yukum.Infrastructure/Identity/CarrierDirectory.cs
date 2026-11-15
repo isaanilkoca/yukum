@@ -15,7 +15,7 @@ public class CarrierDirectory(AppDbContext context) : ICarrierDirectory
         var rows = await (from p in context.CarrierProfiles.AsNoTracking()
                           join u in context.Users.AsNoTracking() on p.UserId equals u.Id
                           where ids.Contains(p.UserId)
-                          select new CarrierSummary(p.UserId, u.FullName, p.About, p.AverageRating, p.RatingCount, p.CompletedJobCount))
+                          select new CarrierSummary(p.UserId, u.FullName, p.About, p.AverageRating, p.RatingCount, p.CompletedJobCount, u.AvatarUrl, p.HomeCityId, u.CreatedAt))
             .ToListAsync(cancellationToken);
         return rows.ToDictionary(r => r.UserId);
     }

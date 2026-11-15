@@ -51,7 +51,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
             : new
             {
                 fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, serviceCityIds = new[] { 33 },
-                vehicles = new object[] { new { type = "Truck", plateNumber = "33 ABC 123", capacityKg = 24000, capacityVolume = 90 } },
+                vehicles = new object[] { new { type = "Truck", plateNumber = "33 ABC 123", capacityKg = 24000, capacityVolume = 90, brand = "Mercedes-Benz", model = "Actros", year = 2019 } },
                 kvkkAccepted = true
             };
         var reg = await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body);
@@ -76,7 +76,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
     private static async Task<string> NewOffer(HttpClient c, string carrierToken, string listingId, decimal amount = 1000)
     {
-        var r = await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { amount, note = "not" });
+        var r = await Call(c, carrierToken, HttpMethod.Post, $"/api/v1/listings/{listingId}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount, note = "not" });
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         return (await Json(r)).GetProperty("id").GetString()!;
     }
@@ -126,7 +126,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
         var hugeBudget = await Call(c, shipper, HttpMethod.Post, "/api/v1/listings", Body(1000, 123123123122));
         var hugeWeight = await Call(c, shipper, HttpMethod.Post, "/api/v1/listings", Body(5_000_000, 5000));
-        var hugeOffer = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 123123123122m });
+        var hugeOffer = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 123123123122m });
 
         Assert.Equal(HttpStatusCode.BadRequest, hugeBudget.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, hugeWeight.StatusCode);
@@ -190,7 +190,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
         var listing = await NewListing(c, shipper);
 
-        var offerByShipper = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 100 });
+        var offerByShipper = await Call(c, shipper, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 100 });
         var listingByCarrier = await Call(c, carrier, HttpMethod.Post, "/api/v1/listings", new { title = "x" });
 
         Assert.Equal(HttpStatusCode.Forbidden, offerByShipper.StatusCode);
@@ -229,7 +229,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
         var accept = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerA}/accept");
         var again = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offerB}/accept");   // ilan artık atandı: 409
-        var lateOffer = await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 500 }); // atanmış ilana teklif: 409
+        var lateOffer = await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 500 }); // atanmış ilana teklif: 409
         var offers = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/offers/history"));   // kabul/red verilenler geçmişte
         var open = await Items(await Call(c, b, HttpMethod.Get, "/api/v1/listings"));
         var pendingLeft = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
@@ -449,7 +449,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, (await Call(c, a, HttpMethod.Post, $"/api/v1/offers/{offerA}/messages", new { text = "x" })).StatusCode);
         Assert.Equal(1, (await Json(await Call(c, a, HttpMethod.Get, $"/api/v1/offers/{offerA}/messages"))).GetArrayLength());
         // yeni teklif verilemez, taşımacı iptal edileni silebilir
-        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 5 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await Call(c, b, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 5 })).StatusCode);
         Assert.Equal(HttpStatusCode.NoContent, (await Call(c, a, HttpMethod.Delete, $"/api/v1/offers/{offerA}")).StatusCode);
     }
 
@@ -492,6 +492,74 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(HttpStatusCode.Conflict, afterComplete.StatusCode);
     }
 
+    // ---------- araçlarım (15 Kasım) ----------
+    private static async Task<string> NewCarrierWithoutVehicle(HttpClient c)
+    {
+        var n = Interlocked.Increment(ref _counter);
+        var email = $"nv{n}@x.com";
+        var reg = await c.PostAsJsonAsync("/api/v1/auth/register/carrier", new
+        {
+            fullName = $"Aracsiz {n}", email, phone = $"0533{1000000 + n}", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true
+        });
+        Assert.Equal(HttpStatusCode.Created, reg.StatusCode); // kayıtta araç zorunlu değil
+        var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "nv" + n, deviceName = "test" });
+        return (await Json(login)).GetProperty("accessToken").GetString()!;
+    }
+
+    [Fact]
+    public async Task A_carrier_without_a_vehicle_cannot_offer_until_one_is_added()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewCarrierWithoutVehicle(c);
+        var listing = await NewListing(c, shipper);
+
+        var before = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 1000 });
+        var beforeBody = await before.Content.ReadAsStringAsync();
+        var add = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Truck", plateNumber = $"34 YK {Interlocked.Increment(ref _counter) % 90000 + 10000}", brand = "Ford", model = "Cargo", year = 2018 });
+        var after = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 1000 });
+
+        Assert.Equal(HttpStatusCode.Conflict, before.StatusCode);
+        Assert.Contains("Araçlarım", beforeBody);
+        Assert.Equal(HttpStatusCode.Created, add.StatusCode);
+        Assert.True(after.IsSuccessStatusCode); // araç eklendi → teklif kabul (teklif ucu 200 döner)
+    }
+
+    [Fact]
+    public async Task Vehicles_can_be_listed_added_edited_and_deleted_with_plate_rules_and_ownership()
+    {
+        var c = await StartAsync();
+        var carrier = await NewCarrierWithoutVehicle(c); var other = await NewCarrierWithoutVehicle(c); var shipper = await NewUser(c, true);
+        var plate = $"06 TR {Interlocked.Increment(ref _counter) % 90000 + 10000}";
+
+        var add = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Lorry", plateNumber = plate.ToLowerInvariant().Replace(" ", ""), capacityKg = 12000, brand = "Ford", model = "Cargo", year = 2018 });
+        var added = await Json(add);
+        var id = added.GetProperty("id").GetString();
+        var noPlate = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Truck", brand = "Ford", model = "Cargo", year = 2018 });
+        var badPlate = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Truck", plateNumber = "99 ZZ 1", brand = "Ford", model = "Cargo", year = 2018 });
+        var duplicate = await Call(c, other, HttpMethod.Post, "/api/v1/vehicles", new { type = "Truck", plateNumber = plate, brand = "Ford", model = "Cargo", year = 2018 });
+        var editByOther = await Call(c, other, HttpMethod.Put, $"/api/v1/vehicles/{id}", new { type = "Truck", plateNumber = plate, brand = "Ford", model = "Cargo", year = 2018 });
+        var byShipper = await Call(c, shipper, HttpMethod.Get, "/api/v1/vehicles");
+        var edit = await Call(c, carrier, HttpMethod.Put, $"/api/v1/vehicles/{id}", new { type = "Refrigerated", plateNumber = plate, brand = "Ford", model = "Cargo", year = 2018 });
+        var list = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/vehicles"));
+        var otherList = await Json(await Call(c, other, HttpMethod.Get, "/api/v1/vehicles"));
+        var delete = await Call(c, carrier, HttpMethod.Delete, $"/api/v1/vehicles/{id}");
+        var afterDelete = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/vehicles"));
+
+        Assert.Equal(HttpStatusCode.Created, add.StatusCode);
+        Assert.Equal(plate, added.GetProperty("plateNumber").GetString());              // tek biçime çevrildi ("06 TR 12345")
+        Assert.Equal(HttpStatusCode.BadRequest, noPlate.StatusCode);                     // plaka zorunlu
+        Assert.Equal(HttpStatusCode.BadRequest, badPlate.StatusCode);                    // biçim
+        Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);                     // aynı plaka iki kez yok
+        Assert.Equal(HttpStatusCode.NotFound, editByOther.StatusCode);                   // başkasının aracı
+        Assert.Equal(HttpStatusCode.Forbidden, byShipper.StatusCode);                    // yalnız Taşımacı
+        Assert.Equal(HttpStatusCode.OK, edit.StatusCode);
+        Assert.Equal("Refrigerated", list[0].GetProperty("type").GetString());
+        Assert.Equal(JsonValueKind.Null, list[0].GetProperty("capacityKg").ValueKind);   // kapasite isteğe bağlı (düzenlemede verilmedi)
+        Assert.Equal(0, otherList.GetArrayLength());
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+        Assert.Equal(0, afterDelete.GetArrayLength());
+    }
+
     // ---------- karşılıklı iptal (15 Kasım) ----------
     private static async Task<string[]> NotificationTypes(HttpClient c, string token) =>
         (await Json(await Call(c, token, HttpMethod.Get, "/api/v1/notifications"))).GetProperty("items").EnumerateArray()
@@ -532,6 +600,161 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         Assert.Equal(JsonValueKind.Null, carrierOffer.GetProperty("cancelRequest").ValueKind); // talep kapandı
         Assert.Contains(mine.EnumerateArray(), l => l.GetProperty("id").GetString() == listing); // ilan yeniden yayında
         Assert.Contains("CancelApproved", await NotificationTypes(c, carrier));
+    }
+
+    [Fact]
+    public async Task After_mutual_cancel_the_republished_listing_reaches_the_same_carrier_who_can_offer_again()
+    {
+        // 15 Kasım (kullanıcı: "karşılıklı iptalden sonra aynı taşıyıcıya ilan tekrar düşmüyor"): yeniden yayınlanan ilan aynı Taşımacı'nın
+        // açık listesine döner; yeni teklif YENİ kayıt olur, eski teklif geçmişte "Karşılıklı iptal" olarak kalır.
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var listing = await NewListing(c, shipper);
+        var first = await NewOffer(c, carrier, listing, 1000);
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{first}/accept");
+        await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{first}/cancel-request", new { reason = "Araç arızası" });
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{first}/cancel-request/approve", new { reopenListing = true })).StatusCode);
+
+        var open = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?page=1&pageSize=50"));
+        Assert.Contains(open.GetProperty("items").EnumerateArray(), l => l.GetProperty("id").GetString() == listing);
+
+        var second = await NewOffer(c, carrier, listing, 1200);
+        Assert.NotEqual(first, second);
+        var mine = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"))).EnumerateArray().ToList();
+        Assert.Equal("Cancelled", mine.Single(o => o.GetProperty("id").GetString() == first).GetProperty("status").GetString());
+        Assert.Equal("Pending", mine.Single(o => o.GetProperty("id").GetString() == second).GetProperty("status").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{second}/accept")).StatusCode); // yeni teklif kabul edilebilir
+
+        // Yeni teklif açıkken listeden yine düşer (yalnız karşılıklı iptal istisnadır)
+        var again = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?page=1&pageSize=50"));
+        Assert.DoesNotContain(again.GetProperty("items").EnumerateArray(), l => l.GetProperty("id").GetString() == listing);
+    }
+
+    [Fact]
+    public async Task Any_vehicle_listings_show_under_every_vehicle_filter_and_a_car_can_be_registered_but_any_cannot()
+    {
+        // 15 Kasım: ilanda "Farketmez" (Any), araçta "Otomobil" (Car)
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var any = await NewListingWith(c, shipper, "Küçük paket", 33, 34, 500, "Any", 10);
+        var truckOnly = await NewListingWith(c, shipper, "Tır yükü", 33, 34, 5000, "Truck", 10);
+
+        var pickup = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?vehicleType=Pickup&page=1&pageSize=50")))
+            .GetProperty("items").EnumerateArray().Select(l => l.GetProperty("id").GetString()).ToList();
+        Assert.Contains(any, pickup);
+        Assert.DoesNotContain(truckOnly, pickup);
+
+        Assert.Equal(HttpStatusCode.Created, (await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Car", plateNumber = "34 ZZ 1234", brand = "Fiat", model = "Egea", year = 2021 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Any", plateNumber = "34 ZZ 1235", brand = "Fiat", model = "Egea", year = 2021 })).StatusCode);
+    }
+
+    // ─── 15 Kasım: teklifte araç + teslim tarihi, araç bilgileri, Taşımacı sıralama/eşleşme ───
+
+    private static string Day(int days) => DateTime.UtcNow.AddDays(days).ToString("yyyy-MM-dd");
+
+    [Fact]
+    public async Task An_offer_carries_the_chosen_vehicle_and_delivery_date_to_the_shipper()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); // kayıttan bir Tır (Mercedes-Benz Actros 2019)
+        var listing = await NewListing(c, shipper);                                    // yükleme +30 gün
+
+        // Tarih yok → 400 | yüklemeden önce → 400 | 90 günden sonra → 400
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 1000 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 1000, estimatedDeliveryDate = Day(10) })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 1000, estimatedDeliveryDate = Day(130) })).StatusCode);
+
+        // İkinci araç (Otomobil) eklenince seçim zorunlu olur; seçilen araç teklife kopyalanır
+        var car = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Car", plateNumber = "34 YK 2026", brand = "Renault", model = "Clio", year = 2022 });
+        var carId = (await Json(car)).GetProperty("id").GetString();
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 1000, estimatedDeliveryDate = Day(32) })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 1000, estimatedDeliveryDate = Day(32), vehicleId = carId })).StatusCode);
+
+        var offer = (await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers")))[0];
+        Assert.Equal("Car", offer.GetProperty("vehicleType").GetString());
+        Assert.Equal("Renault", offer.GetProperty("vehicleBrand").GetString());
+        Assert.Equal(2022, offer.GetProperty("vehicleYear").GetInt32());
+        Assert.Equal(Day(32), offer.GetProperty("estimatedDeliveryDate").GetString());
+    }
+
+    [Fact]
+    public async Task Vehicle_brand_model_and_year_are_required_and_the_carrier_profile_lists_vehicles_without_plates()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var missing = await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Pickup", plateNumber = "06 AB 123" });
+        Assert.Equal(HttpStatusCode.BadRequest, missing.StatusCode);
+        var errors = (await Json(missing)).GetProperty("errors");
+        var keys = errors.EnumerateObject().Select(p => p.Name.ToLowerInvariant()).ToList(); // anahtar yazımı (camelCase) API kuralına bırakılır
+        Assert.Contains("brand", keys); Assert.Contains("model", keys); Assert.Contains("year", keys);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Post, "/api/v1/vehicles", new { type = "Pickup", plateNumber = "06 AB 123", brand = "Ford", model = "Transit", year = 1900 })).StatusCode);
+
+        var listing = await NewListing(c, shipper);
+        await NewOffer(c, carrier, listing);
+        var cid = (await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers")))[0].GetProperty("carrierId").GetString();
+        var raw = await (await Call(c, shipper, HttpMethod.Get, $"/api/v1/carriers/{cid}")).Content.ReadAsStringAsync();
+        var vehicles = JsonDocument.Parse(raw).RootElement.GetProperty("vehicles");
+        Assert.Equal("Mercedes-Benz", vehicles[0].GetProperty("brand").GetString());
+        Assert.Equal(2019, vehicles[0].GetProperty("year").GetInt32());
+        Assert.DoesNotContain("33 ABC 123", raw); // plaka profilde yok
+    }
+
+    [Fact]
+    public async Task Carrier_can_sort_by_pickup_date_and_see_only_listings_matching_own_vehicles()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false); // yalnız Tır
+        var late = await NewListingWith(c, shipper, "Geç", 33, 34, 1000, "Truck", 40);
+        var soon = await NewListingWith(c, shipper, "Yakın", 33, 34, 1000, "Truck", 5);
+        var cold = await NewListingWith(c, shipper, "Soğuk", 33, 34, 1000, "Refrigerated", 10);
+        var any = await NewListingWith(c, shipper, "Farketmez", 33, 34, 1000, "Any", 20);
+
+        var sorted = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?sort=PickupSoonest&page=1&pageSize=50")))
+            .GetProperty("items").EnumerateArray().Select(l => l.GetProperty("id").GetString()).ToList();
+        Assert.Equal([soon, cold, any, late], sorted);
+
+        var mine = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?matchMyVehicles=true&page=1&pageSize=50")))
+            .GetProperty("items").EnumerateArray().Select(l => l.GetProperty("id").GetString()).ToList();
+        Assert.Contains(soon, mine); Assert.Contains(late, mine); Assert.Contains(any, mine);
+        Assert.DoesNotContain(cold, mine); // frigorifik aracı yok
+    }
+
+    [Fact]
+    public async Task Distance_weight_and_price_filters_work_together()
+    {
+        // 15 Kasım (sahibinden tarzı): "Mersin'e 100 km içinde + 1.000–10.000 ₺ + en çok 5 ton" aynı anda
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var mersinCheap = await NewListingWith(c, shipper, "Mersin ucuz", 33, 34, 3000, "Truck", 10);   // 1000 kg (yardımcı)
+        var mersinExpensive = await NewListingWith(c, shipper, "Mersin pahalı", 33, 34, 50000, "Truck", 10);
+        var istanbul = await NewListingWith(c, shipper, "İstanbul", 34, 33, 3000, "Truck", 10);
+
+        const string me = "lat=36.8&lon=34.6"; // Mersin
+        var ids = async (string q) => (await Json(await Call(c, carrier, HttpMethod.Get, $"/api/v1/listings?{q}&page=1&pageSize=50")))
+            .GetProperty("items").EnumerateArray().Select(l => l.GetProperty("id").GetString()).ToList();
+
+        var near = await ids($"{me}&maxDistanceKm=100&sort=Newest");
+        Assert.Contains(mersinCheap, near); Assert.Contains(mersinExpensive, near); Assert.DoesNotContain(istanbul, near);
+
+        var combined = await ids($"{me}&maxDistanceKm=100&minBudget=1000&maxBudget=10000&maxWeightKg=5000");
+        Assert.Equal([mersinCheap], combined);
+
+        Assert.Empty(await ids("minWeightKg=2000")); // hepsi 1000 kg
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, carrier, HttpMethod.Get, "/api/v1/listings?maxDistanceKm=50")).StatusCode); // konumsuz uzaklık
+    }
+
+    [Fact]
+    public async Task A_pending_offer_with_messages_is_marked_as_being_discussed()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var quiet = await NewOffer(c, carrier, await NewListing(c, shipper));
+        var talked = await NewOffer(c, carrier, await NewListing(c, shipper));
+        await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{talked}/messages", new { text = "Yarın yükleyebilir misin?" });
+
+        var mine = (await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"))).EnumerateArray().ToList();
+        Assert.True(mine.Single(o => o.GetProperty("id").GetString() == talked).GetProperty("hasMessages").GetBoolean());
+        Assert.False(mine.Single(o => o.GetProperty("id").GetString() == quiet).GetProperty("hasMessages").GetBoolean());
     }
 
     [Fact]
@@ -945,7 +1168,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
 
         var chat = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "merhaba" });
         var again = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/withdraw");
-        var renewed = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { amount = 900, note = "yeniden" });
+        var renewed = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{listing}/offers", new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 900, note = "yeniden" });
         var shipperOffers = await Json(await Call(c, shipper, HttpMethod.Get, $"/api/v1/listings/{listing}/offers"));
 
         Assert.Equal(HttpStatusCode.Conflict, chat.StatusCode);          // sohbet kapalı

@@ -35,8 +35,8 @@ struct OpenListingsFilterTests {
     }
 
     @Test func sortOptions_haveApiValuesAndTurkishTitles() {
-        #expect(ListingSort.allCases.map(\.rawValue) == ["Newest", "PriceAsc", "PriceDesc"])
-        #expect(ListingSort.allCases.map(\.title) == ["En yeni", "Fiyat (artan)", "Fiyat (azalan)"])
+        #expect(ListingSort.allCases.map(\.rawValue) == ["Newest", "PriceAsc", "PriceDesc", "PickupSoonest"])
+        #expect(ListingSort.allCases.map(\.title) == ["En yeni", "Fiyat (artan)", "Fiyat (azalan)", "Yükleme tarihi (en yakın)"])
     }
 
     @Test func pageEnvelope_decodesFromTheApiJson() throws {
@@ -57,7 +57,7 @@ struct OpenListingsFilterTests {
         #expect(OpenListingsFilter(fromCityId: 33, fromDistrictId: 7).extraCount == 0) // kalkış ana ekranda, sayılmaz
         var f = OpenListingsFilter()
         f.toCityId = 34; f.minBudget = 1000; f.vehicleType = "Truck"; f.sort = .priceAsc
-        #expect(f.extraCount == 4)
+        #expect(f.extraCount == 3) // 15 Kasım: sıralama sayılmaz (ana ekranda ayrı "Sırala" menüsü)
     }
 
     @MainActor

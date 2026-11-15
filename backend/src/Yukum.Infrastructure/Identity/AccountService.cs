@@ -63,6 +63,92 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
             .ExecuteUpdateAsync(s => s.SetProperty(t => t.RevokedAt, now), cancellationToken);
     }
 
+    // ─── Hesap Bilgilerim (15 Kasım) ────────────────────────────────────────────
+    // DB BAĞLANTISI: AppDbContext (EF Core) → SQL Server tabloları
+    //   AspNetUsers      : FullName, Email (salt okunur), PhoneNumber, AvatarUrl, UserType   [Identity tablosu, AppUser sınıfı]
+    //   ShipperProfiles  : CompanyName, TaxNumber, TaxOffice, CityId, About                    [UserId = AspNetUsers.Id, 1-1]
+    //   CarrierProfiles  : HomeCityId, About, AverageRating, RatingCount, CompletedJobCount    [UserId = AspNetUsers.Id, 1-1]
+
+    /// <inheritdoc />
+    public async Task<AccountProfileDto> GetProfileAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        // AsNoTracking: yalnız okuma, EF değişiklik izlemez (daha hafif). Silinmiş (IsActive=false) hesap görünmez.
+        var user = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken)
+                   ?? throw new NotFoundException("Hesap bulunamadı.");
+
+        if (user.UserType == UserType.Shipper)
+        {
+            var p = await context.ShipperProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+            return new AccountProfileDto(user.Id, RoleNames.Shipper, user.FullName, user.Email!, user.PhoneNumber ?? "", user.AvatarUrl,
+                p?.CityId, p?.About, p?.CompanyName, p?.TaxNumber, p?.TaxOffice, null, null, null);
+        }
+        var c = await context.CarrierProfiles.AsNoTracking().FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken);
+        return new AccountProfileDto(user.Id, RoleNames.Carrier, user.FullName, user.Email!, user.PhoneNumber ?? "", user.AvatarUrl,
+            c?.HomeCityId, c?.About, null, null, null, c?.AverageRating, c?.RatingCount, c?.CompletedJobCount);
+    }
+
+    /// <inheritdoc />
+    public async Task UpdateProfileAsync(Guid userId, UpdateAccountProfileRequest values, CancellationToken cancellationToken = default)
+    {
+        // İzlenen (tracked) okuma: alanları değiştirip SaveChanges deyince EF yalnız değişen sütunlar için UPDATE yazar.
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken)
+                   ?? throw new NotFoundException("Hesap bulunamadı.");
+
+        // Ön kontrol: numara aynı rolde başka hesapta mı? (K-022: başka roldeki hesap engel değil.) Kullanıcıya net 409 mesajı için.
+        if (values.Phone != user.PhoneNumber &&
+            await context.Users.AnyAsync(u => u.Id != userId && u.PhoneNumber == values.Phone && u.UserType == user.UserType, cancellationToken))
+            throw new ConflictException(PhoneTakenMessage);
+
+        user.FullName = values.FullName!;
+        user.PhoneNumber = values.Phone;
+        // Profil satırı kayıtta oluşur; yine de yoksa (eski veri) burada oluşturulur → güncelleme hiç boşa düşmez.
+        if (user.UserType == UserType.Shipper)
+        {
+            var p = await context.ShipperProfiles.FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
+                    ?? context.ShipperProfiles.Add(new ShipperProfile { UserId = userId }).Entity;
+            p.CompanyName = values.CompanyName; p.TaxNumber = values.TaxNumber; p.TaxOffice = values.TaxOffice;
+            p.CityId = values.CityId; p.About = values.About;
+        }
+        else
+        {
+            var p = await context.CarrierProfiles.FirstOrDefaultAsync(x => x.UserId == userId, cancellationToken)
+                    ?? context.CarrierProfiles.Add(new CarrierProfile { UserId = userId }).Entity;
+            p.HomeCityId = values.CityId; p.About = values.About;
+        }
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken); // AspNetUsers + profil satırı TEK SaveChanges = tek işlem (ya ikisi ya hiçbiri)
+        }
+        catch (DbUpdateException exception) when (exception.GetBaseException() is SqlException { Number: UniqueIndexViolation or UniqueConstraintViolation })
+        {
+            // Aynı anda iki hesap aynı numaraya geçerse ön kontrolü ikisi de geçer; (PhoneNumber, UserType) benzersiz indeksi ikincisini durdurur.
+            throw new ConflictException(PhoneTakenMessage);
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<string?> SetAvatarAsync(Guid userId, string? avatarUrl, CancellationToken cancellationToken = default)
+    {
+        var user = await context.Users.FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, cancellationToken)
+                   ?? throw new NotFoundException("Hesap bulunamadı.");
+        var old = user.AvatarUrl;
+        user.AvatarUrl = avatarUrl;
+        await context.SaveChangesAsync(cancellationToken);
+        return old;
+    }
+
+    /// <inheritdoc />
+    public async Task<ShipperPublicInfo?> GetShipperPublicAsync(Guid shipperId, CancellationToken cancellationToken = default) =>
+        // LEFT JOIN: AspNetUsers + ShipperProfiles (profil satırı yoksa firma/il/hakkında null) | yalnız gösterilecek sütunlar seçilir (SELECT'te telefon/e-posta yok)
+        await (from u in context.Users.AsNoTracking()
+               where u.Id == shipperId && u.UserType == UserType.Shipper && u.IsActive
+               join p in context.ShipperProfiles.AsNoTracking() on u.Id equals p.UserId into profiles
+               from p in profiles.DefaultIfEmpty()
+               select new ShipperPublicInfo(u.Id, u.FullName, u.AvatarUrl, p != null ? p.CompanyName : null, p != null ? p.CityId : null,
+                   p != null ? p.About : null, u.CreatedAt))
+            .FirstOrDefaultAsync(cancellationToken);
+
     /// <inheritdoc />
     public Task<RegisteredUserDto> RegisterShipperAsync(RegisterShipperCommand command, CancellationToken cancellationToken = default) =>
         // Ortak akışı (CreateAsync) çağırır; yalnız 'profil nasıl eklenir' kısmı farklıdır (sondaki lambda: user => ...).
@@ -87,13 +173,14 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
                 context.CarrierProfiles.Add(new CarrierProfile { UserId = user.Id, HomeCityId = command.HomeCityId });
 
                 // Her araç için bir satır.
-                context.Vehicles.AddRange(command.Vehicles!.Select(v => new Vehicle
+                context.Vehicles.AddRange((command.Vehicles ?? []).Select(v => new Vehicle
                 {
                     CarrierId = user.Id,
                     Type = v.Type!.Value,
                     PlateNumber = v.PlateNumber,
-                    CapacityKg = v.CapacityKg!.Value,
-                    CapacityVolume = v.CapacityVolume
+                    CapacityKg = v.CapacityKg,
+                    CapacityVolume = v.CapacityVolume,
+                    Brand = v.Brand?.Trim(), Model = v.Model?.Trim(), Year = v.Year
                 }));
 
                 // Çalıştığı iller (opsiyonel; null ise boş liste).

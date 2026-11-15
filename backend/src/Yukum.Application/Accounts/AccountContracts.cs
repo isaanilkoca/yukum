@@ -7,7 +7,7 @@ namespace Yukum.Application.Accounts;
 /// <param name="PlateNumber">Plaka (opsiyonel).</param>
 /// <param name="CapacityKg">Taşıma kapasitesi, kilogram.</param>
 /// <param name="CapacityVolume">Hacim kapasitesi, metreküp (opsiyonel).</param>
-public sealed record VehicleInput(VehicleType? Type, string? PlateNumber, int? CapacityKg, decimal? CapacityVolume);
+public sealed record VehicleInput(VehicleType? Type, string? PlateNumber, int? CapacityKg, decimal? CapacityVolume, string? Brand = null, string? Model = null, int? Year = null); // marka/model/yıl: 15 Kasım (kayıtta araç artık istenmiyor; eski sürüm gönderirse saklanır)
 
 /// <summary>
 /// Yük Veren kayıt isteği. Alanlar "boş olabilir" (<c>?</c>) tanımlıdır ki eksik alan .NET'in İngilizce hatası yerine

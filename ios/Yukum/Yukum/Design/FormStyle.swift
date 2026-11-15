@@ -9,7 +9,7 @@ import SwiftUI    // [SWIFT] ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: FormStyle.swift ─────────────────────────────────────────
 // │ GELEN     : Views/LoginView.swift → FormCard { LabeledInput(...) { TextField(...) } ... } | Views/RoleSelectionView (tek kayıt ekranı), RegisterView, CarrierRegisterView
-// │ GİDEN     : Design/DesignPalette.swift (kart ve kutu renkleri)
+// │ GİDEN     : Design/Des ignPalette.swift (kart ve kutu renkleri)
 // │ TEKNİK    : yalnız SwiftUI. İçerik dışarıdan verilir (@ViewBuilder) → alanın NE olduğu (TextField, Picker) ekranda kalır, NASIL göründüğü burada.
 // │ REHBER    : Design/00_Rehber_Design.swift
 // └──────────────────────────────────────────────────────────────────────

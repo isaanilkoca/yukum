@@ -21,7 +21,12 @@ public class OfferConfiguration : IEntityTypeConfiguration<Offer>
         builder.HasOne<Listing>().WithMany().HasForeignKey(o => o.ListingId).OnDelete(DeleteBehavior.Restrict);
 
         // Aynı taşımacı aynı ilana ikinci teklif satırı açamaz (tekrar teklif = tutarı güncelleme).
-        builder.HasIndex(o => new { o.ListingId, o.CarrierId }).IsUnique();
+        // Bir Taşımacı bir ilana TEK aktif teklif verir. Filtre (15 Kasım): karşılıklı iptal edilmiş eski teklif sayılmaz →
+        //   ilan yeniden yayınlanınca aynı Taşımacı yeni teklif kaydı açabilir, eskisi geçmişte kalır. SQL: filtreli benzersiz indeks (WHERE ...).
+        builder.HasIndex(o => new { o.ListingId, o.CarrierId }).IsUnique().HasFilter("[MutuallyCancelled] = 0");
+        // 15 Kasım: teklifteki araç kopyası
+        builder.Property(o => o.VehicleBrand).HasMaxLength(50);
+        builder.Property(o => o.VehicleModel).HasMaxLength(50);
 
         // İNDEKS KURALI: bileşik indeks yalnız SOL SÜTUNDAN başlayan aramalara yarar. Yukarıdaki (ListingId, CarrierId) indeksi
         // "ListingId'ye göre" aramaya yarar ama "yalnız CarrierId'ye göre" aramaya yaramaz; bu yüzden aşağıdakiler ayrıca gerekli.

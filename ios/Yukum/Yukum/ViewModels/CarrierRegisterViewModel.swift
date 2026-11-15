@@ -10,7 +10,7 @@ import Observation // Observation [SWIFT]: @Observable özelliğini veren kütü
 // │ EKRAN     : Views/CarrierRegisterView (@State private var viewModel) — Taşımacı kayıt formu; Views/RoleSelectionView açar
 // │ SERVİS    : Models/Services/Protocols/AuthServicing → AuthService.registerCarrier → POST /api/v1/auth/register/carrier
 // │ MODEL     : RegisterCarrierRequest (içinde [VehicleRequest]) (giden), RegisterResponse (gelen), VehicleType (araç Picker'ı)
-// │ AKIŞ      : Alanlar $viewModel ile doldurulur → "Kayıt Ol" → register(): doğrula → VehicleRequest → RegisterCarrierRequest → AuthService
+// │ AKIŞ      : Alanlar $viewModel ile doldurulur → "Kayıt Ol" → register(): doğrula → RegisterCarrierRequest (araçsız, 15 Kasım) → AuthService
 // └──────────────────────────────────────────────────────────────────────
 
 // BU SINIF: Taşımacı kayıt formunun durumu ve mantığı (kişi alanları + tek araç, doğrulama, paket hazırlama, gönderme, sonuç)
@@ -31,12 +31,6 @@ final class CarrierRegisterViewModel {
     var phone = ""
     // ⮕ KULLANIM [password]: okur: CarrierRegisterViewModel › register() | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
     var password = ""
-    // ⮕ KULLANIM [vehicleType]: okur: CarrierRegisterViewModel › register() | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
-    var vehicleType = "" // seçili araç türü; API'ye bu metin gider (VehicleType.rawValue) | "" = henüz seçilmedi
-    // ⮕ KULLANIM [capacityKg]: okur: CarrierRegisterViewModel › register(), CarrierRegisterViewModelTests (test) | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
-    var capacityKg = "" // TextField yazı tuttuğu için String; göndermeden önce sayıya çevrilir
-    // ⮕ KULLANIM [plateNumber]: okur: CarrierRegisterViewModel › register(), CarrierRegisterViewModelTests (test) | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
-    var plateNumber = "" // plaka, isteğe bağlı
     // ⮕ KULLANIM [kvkkAccepted]: okur: CarrierRegisterViewModel › register() | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
     var kvkkAccepted = false
     // ⮕ ZİNCİR: Views/CarrierRegisterView: kırmızı hata yazısı
@@ -60,30 +54,16 @@ final class CarrierRegisterViewModel {
             errorMessage = "Lütfen zorunlu alanları doldurun !"
             return
         }
-        guard !vehicleType.isEmpty else { // Picker'da hâlâ "Araç Türünü Seçiniz" duruyor
-            errorMessage = "Araç türünü seçiniz !"
-            return
-        }
-        guard let capacity = Int(capacityKg) else { // Int("24000") → 24000, Int("abc") → nil
-            errorMessage = "Kapasite sayı olmalı."
-            return
-        }
-        guard capacity > 0 else {
-            errorMessage = "Kapasite sıfırdan büyük olmalı."
-            return
-        }
         guard kvkkAccepted else {
             errorMessage = "KVKK metnini onaylamanız gerekir."
             return
         }
 
         // ---- 2) PAKETİ HAZIRLA ----
-        // API'ye "ekranı" göndermeyiz, yalnız bilgileri: önce araç paketi (VehicleRequest), sonra tüm kayıt paketi (içine araç listesi konur)
-        let vehicle = VehicleRequest(type: vehicleType,
-                                     plateNumber: plateNumber.isEmpty ? nil : plateNumber, // boşsa nil: JSON'a hiç yazılmaz
-                                     capacityKg: capacity)
+        // 15 Kasım (yönetici kararı): kayıtta araç SORULMUYOR (ilk amaç kullanıcıyı kaydetmek) → vehicles nil.
+        //   Araçlar giriş yaptıktan sonra Araçlarım'dan eklenir (Views/VehiclesView); teklif vermek için en az bir araç gerekir (sunucu kuralı).
         let body = RegisterCarrierRequest(fullName: name, email: mail, password: password, phone: tel,
-                                          vehicles: [vehicle], kvkkAccepted: kvkkAccepted)
+                                          vehicles: nil, kvkkAccepted: kvkkAccepted)
 
         // ---- 3) GÖNDER ----
         isLoading = true

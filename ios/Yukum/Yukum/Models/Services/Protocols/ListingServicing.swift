@@ -22,6 +22,7 @@ protocol ListingServicing {
     func create(_ body: CreateListingRequest) async throws -> ListingResponse // async [SWIFT]: bu fonksiyon beklemeli iş yapar (ekranı dondurmaz) | throws [SWIFT]: bu fonksiyon hata fırlatabilir
     // ⮕ KULLANIM [myListings]: çağırır: HomeViewModel › load()
     func myListings() async throws -> [Listing]
+    func allMyListings() async throws -> [Listing] // 15 Kasım: profil > İlanlarım (?all=true)
     
     // ⮕ KULLANIM [openListings]: çağırır: HomeViewModel › load()
     func openListings(filter: OpenListingsFilter, page: Int, lat: Double?, lon: Double?) async throws -> Page<Listing>    // ⮕ KULLANIM [cancel]: çağırır: ListingOffersViewModel › cancelListing(), ChatViewModelTests (test)

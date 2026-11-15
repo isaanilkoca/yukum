@@ -36,7 +36,7 @@ public class OffersController(
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create(Guid listingId, CreateOfferRequest request, CancellationToken cancellationToken)
     {
-        var command = new CreateOfferCommand(listingId, CurrentUserId, request.Amount, request.Note);
+        var command = new CreateOfferCommand(listingId, CurrentUserId, request.Amount, request.Note, request.VehicleId, request.EstimatedDeliveryDate);
         return Ok(await createOffer.HandleAsync(command, cancellationToken));
     }
 

@@ -52,6 +52,21 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
 
                 RouteCard(listing: listing, showsChevron: false, favorite: viewModel.isFavorite) // ⮕ Views/ListingRow.swift › RouteCard: başlık, rota, kg/tarih, bütçe, mevcut teklif
 
+                // İLAN SAHİBİ (15 Kasım, 8. adım): Taşımacı teklif vermeden önce Yük Veren'i tanıyabilsin → Views/ShipperProfileView
+                //   listing.shipperId: sunucu ilan cevabına ekledi (ListingDto.ShipperId) | eski cevapta yoksa satır çizilmez
+                if let shipperId = listing.shipperId {
+                    NavigationLink { ShipperProfileView(shipperId: shipperId) } label: {
+                        HStack {
+                            Label("İlan sahibinin profili", systemImage: "person.text.rectangle.fill").font(.subheadline.weight(.semibold)).foregroundStyle(palette.title)
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.footnote.bold()).foregroundStyle(palette.accent)
+                        }
+                        .padding(12)
+                        .background(palette.cardSurface.opacity(0.88), in: .rect(cornerRadius: 12))
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 if let text = viewModel.referenceText { // emsal fiyat (en az 3 tamamlanmış iş yoksa çizilmez) | ⮕ ListingDetailViewModel.referenceText ← loadReference()
                     Label(text, systemImage: "chart.bar.fill")
                         .font(.subheadline).foregroundStyle(palette.title)
@@ -68,9 +83,31 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
                     LabeledInput(label: "Not (isteğe bağlı)", systemImage: "text.bubble.fill") {
                         TextField("Yük Veren'e kısa not", text: $viewModel.note) // ⮕ ListingDetailViewModel.note
                     }
+                    // ARAÇ (15 Kasım): hangi araçla gideceğin Yük Veren'e görünür (tür, marka, model, yıl) | tek araç varsa seçili gelir
+                    if !viewModel.vehicles.isEmpty {
+                        LabeledInput(label: "Araç", systemImage: "truck.box.fill") {
+                            Picker("Araç", selection: $viewModel.selectedVehicleId) {
+                                ForEach(viewModel.vehicles) { v in
+                                    Text([v.typeTitle, v.detailsText ?? "bilgi eksik", v.plateNumber].joined(separator: " · ")).tag(Optional(v.id))
+                                }
+                            }
+                            .pickerStyle(.menu).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    // TESLİM TARİHİ (15 Kasım, zorunlu): Yük Veren "en erken teslim"e göre sıralar | aralık: yükleme ... +90 gün (sunucuyla aynı)
+                    LabeledInput(label: "Tahmini teslim tarihi", systemImage: "calendar.badge.clock") {
+                        DatePicker("Teslim", selection: $viewModel.deliveryDate, in: viewModel.deliveryRange, displayedComponents: .date)
+                            .labelsHidden().environment(\.locale, Locale(identifier: "tr_TR"))
+                        Spacer()
+                    }
                 }
 
                 if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true) } // ⮕ Design/FormStyle.swift
+                // ARAÇ ŞARTI (15 Kasım): sunucu "önce Araçlarım'dan araç ekle" derse aynı yerde Araçlarım'a giden düğme çıkar
+                if viewModel.errorMessage?.contains("Araçlarım") == true {
+                    NavigationLink { VehiclesView(startAdding: viewModel.vehicles.isEmpty) } label: { Label(viewModel.vehicles.isEmpty ? "Araç ekle" : "Araçlarım'a git", systemImage: "truck.box.fill") } // ⮕ Views/VehiclesView.swift
+                        .buttonStyle(ChipButtonStyle(.accent))
+                }
 
                 // Düğme yalnız TETİKLEYİCİ: kontrol, paket, gönderme ViewModel.submit()'te | buttonTitle: "Teklifi Gönder" / "Teklifi Güncelle" (kural ViewModel'de)
                 // BAŞARIDA: lastik izi geçer → bitince dismiss() (ana sayfaya dön) | hatada errorMessage dolar, iz çıkmaz
@@ -106,7 +143,8 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
                 }
             }
         }
-        .task { await viewModel.recordView(); await viewModel.loadReference() } // .task [SWIFT]: ekran göründüğünde çalışır | görüntülenme + emsal fiyat (hata olursa sessiz)
+        .task { await viewModel.recordView(); await viewModel.loadReference() }
+        .onAppear { Task { await viewModel.loadVehicles() } } // 15 Kasım: araç seçici | .onAppear: Araçlarım'dan geri dönünce de yenilenir (yeni/tamamlanan araç görünür) // .task [SWIFT]: ekran göründüğünde çalışır | görüntülenme + emsal fiyat (hata olursa sessiz)
         .navigationTitle("İlan Detayı") // [SWIFT] üst çubuk başlığı
         .navigationBarTitleDisplayMode(.inline) // [SWIFT] başlık küçük, ortada
         .actionFeedback($feedback) // ⮕ Design/ActionFeedback.swift: feedback dolunca animasyon oynar, bitince then (dismiss) çalışır

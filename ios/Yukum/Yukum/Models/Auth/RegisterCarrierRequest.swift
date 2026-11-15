@@ -25,7 +25,7 @@ struct RegisterCarrierRequest: Encodable { // Encodable [SWIFT]: bu türdeki de�
     // ⮕ KULLANIM [phone]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let phone: String
     // ⮕ KULLANIM [vehicles]: okur: CarrierRegisterViewModelTests (test)
-    let vehicles: [VehicleRequest]   // [ ] = liste; en az 1 araç zorunlu
+    let vehicles: [VehicleRequest]?  // 15 Kasım: kayıtta araç sorulmuyor → nil (JSON'a yazılmaz); araçlar sonra Araçlarım'dan (VehicleService)
     // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let kvkkAccepted: Bool
 }

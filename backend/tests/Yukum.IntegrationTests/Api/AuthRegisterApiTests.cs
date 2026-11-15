@@ -223,18 +223,18 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     }
 
     [Fact]
-    public async Task A_carrier_without_a_vehicle_returns_400()
+    public async Task A_carrier_can_register_without_a_vehicle()
     {
+        // 15 Kasım (yönetici kararı): kayıtta araç sorulmaz; araçlar sonra "Araçlarım"dan eklenir (teklif için en az bir araç gerekir).
         var (client, db) = await StartAsync();
-        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, vehicles = Array.Empty<object>(), kvkkAccepted = true };
+        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", body);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var errors = (await ReadJson(response)).GetProperty("errors");
-        Assert.Equal("En az bir araç eklemelisiniz.", errors.GetProperty("vehicles")[0].GetString());
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         await using var context = db.NewContext();
-        Assert.Equal(0, await context.Users.CountAsync());
+        Assert.Equal(1, await context.Users.CountAsync());
+        Assert.Equal(0, await context.Vehicles.CountAsync());
     }
 
     [Fact]

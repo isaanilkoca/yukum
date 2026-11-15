@@ -29,8 +29,14 @@ struct NotificationsView: View {
             ForEach(viewModel.items) { item in
                 Button { Task { await viewModel.markRead(item) } } label: { row(item, palette) } // dokununca okundu
                     .buttonStyle(.plain)
-                    .themedRow()
-                    .overlay { if !item.isRead { RoundedRectangle(cornerRadius: 16).strokeBorder(palette.accent.opacity(0.55)).padding(.horizontal, 16).padding(.vertical, 5) } }
+                    // 15 Kasım düzeltmesi (kullanıcı: "iki tane çerçeve var"): okunmamış çerçevesi eskiden themedRow'dan SONRA, tahmini
+                    //   padding'le ayrı çiziliyordu → kartın kendi kenarıyla çakışmayıp iç içe iki çerçeve oluşuyordu.
+                    //   Şimdi kart (themedCard) → turuncu çerçeve AYNI şekle, AYNI yere → liste ayarları sırası: tek çerçeve.
+                    .themedCard() // ⮕ Design/FormStyle.swift (zemin + ince kenar, köşe 16)
+                    .overlay { if !item.isRead { RoundedRectangle(cornerRadius: 16).strokeBorder(palette.accent.opacity(0.8), lineWidth: 1.5) } } // okunmamış: kenar turuncu
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16)) // themedRow ile aynı aralık
                     .swipeActions {
                         Button(role: .destructive) { Task { await viewModel.delete(item) } } label: { Label("Sil", systemImage: "trash") }
                     }

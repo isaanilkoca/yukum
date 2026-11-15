@@ -35,7 +35,7 @@ final class CreateListingViewModel {
     var weightKg = "" // TextField yazı tuttuğu için String; göndermeden önce Int'e çevrilir
     // ⮕ ZİNCİR: Views/CreateListingView: Picker("İstenen Araç", selection: $viewModel.vehicleType) | CreateListingRequest.vehicleType
     // ⮕ KULLANIM [vehicleType]: okur: CreateListingViewModel › submit() | bağlar(okur+yazar): CreateListingView › body | YAZAR: CreateListingViewModelTests (test)
-    var vehicleType = "" // seçili araç türü; API'ye bu metin gider | "" = henüz seçilmedi
+    var vehicleType = VehicleType.any.rawValue // seçili araç türü; API'ye bu metin gider | 15 Kasım: varsayılan "Farketmez" (Yük Veren seçmek zorunda değil)
     // ⮕ ZİNCİR: Views/CreateListingView: DatePicker | submit() formatDate ile "yyyy-MM-dd" yazısına çevirir → CreateListingRequest.pickupDate
     // ⮕ KULLANIM [pickupDate]: okur: CreateListingViewModel › submit(), CreateListingViewModelTests (test) | bağlar(okur+yazar): CreateListingView › body | YAZAR: CreateListingViewModelTests (test)
     var pickupDate = Date() // Date() [SWIFT]: şu anki tarih | DatePicker'ın seçtiği tarih

@@ -89,4 +89,57 @@ final class ListingOffersViewModel {
     // ⮕ ZİNCİR: Views/ListingOffersView: Button("Sohbet") { viewModel.openChat(offer) } | chat = ChatContext.forShipperPending(offer)
     // ⮕ KULLANIM [openChat]: çağırır: ListingOffersView › body
     func openChat(_ offer: ListingOffer) { chat = ChatContext.forShipperPending(offer) }
+
+    // ─── SIRALAMA (15 Kasım, kullanıcı: "her şeye göre sıralasın") ───
+    // Bir ilanın teklifleri az ve hepsi tek cevapta gelir (GET /listings/{id}/offers) → sıralama TELEFONDA yapılır, sunucuya yeniden gidilmez.
+    // Bilgisi olmayan (eski) teklif, tarih/araç sıralamalarında SONA düşer. Eşitlikte fiyat (ucuz önce) → sıra her seferinde aynı.
+    var sort: OfferSort = .priceAsc
+    var sortedOffers: [ListingOffer] { Self.sorted(offers, by: sort) }
+
+    nonisolated static func sorted(_ offers: [ListingOffer], by sort: OfferSort) -> [ListingOffer] {
+        func tie(_ a: ListingOffer, _ b: ListingOffer) -> Bool { a.amount != b.amount ? a.amount < b.amount : a.id < b.id }
+        return offers.sorted { a, b in
+            switch sort {
+            case .priceAsc: return tie(a, b)
+            case .priceDesc: return a.amount != b.amount ? a.amount > b.amount : a.id < b.id
+            case .deliverySoonest: // "yyyy-MM-dd" yazısı sözlük sırasıyla da tarih sırasıdır | nil → "~" (en sona)
+                let x = a.estimatedDeliveryDate ?? "~", y = b.estimatedDeliveryDate ?? "~"
+                return x != y ? x < y : tie(a, b)
+            case .vehicleNewest: // aracın yaşı: yeni model önce
+                let x = a.vehicleYear ?? 0, y = b.vehicleYear ?? 0
+                return x != y ? x > y : tie(a, b)
+            case .rating: // puan; puanı olmayan (yeni) sona
+                let x = a.carrierRatingCount > 0 ? a.carrierRating : -1, y = b.carrierRatingCount > 0 ? b.carrierRating : -1
+                return x != y ? x > y : tie(a, b)
+            case .experience: // tamamlanan iş sayısı
+                let x = a.carrierCompletedJobCount ?? 0, y = b.carrierCompletedJobCount ?? 0
+                return x != y ? x > y : tie(a, b)
+            case .vehicleType: // türe göre gruplar (Tır, Kamyon, ... alfabetik), grup içinde ucuz önce
+                let x = a.vehicleType.flatMap { VehicleType(rawValue: $0)?.title }, y = b.vehicleType.flatMap { VehicleType(rawValue: $0)?.title }
+                switch (x, y) {
+                case let (x?, y?) where x != y: return x.compare(y, locale: Locale(identifier: "tr_TR")) == .orderedAscending
+                case (nil, _?): return false // bilgisi olmayan sona
+                case (_?, nil): return true
+                default: return tie(a, b)
+                }
+            }
+        }
+    }
+}
+
+// Teklif sıralama seçenekleri | ⮕ KULLANIM [OfferSort]: ListingOffersViewModel.sort, ListingOffersView (Sırala menüsü)
+enum OfferSort: String, CaseIterable, Identifiable {
+    case priceAsc, priceDesc, deliverySoonest, vehicleNewest, rating, experience, vehicleType
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .priceAsc: "Fiyat (ucuzdan pahalıya)"
+        case .priceDesc: "Fiyat (pahalıdan ucuza)"
+        case .deliverySoonest: "En erken teslim"
+        case .vehicleNewest: "Araç yaşı (en yeni)"
+        case .rating: "Puan (en yüksek)"
+        case .experience: "Tecrübe (en çok iş)"
+        case .vehicleType: "Araç türü"
+        }
+    }
 }

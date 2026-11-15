@@ -50,7 +50,7 @@ public sealed class RegisterCarrierHandler(IValidator<RegisterCarrierCommand> va
             Email = AccountNormalization.Email(command.Email!),
             Phone = AccountNormalization.Phone(command.Phone!),
             // Her aracın plakası kırpılır; boşsa null olur.
-            Vehicles = command.Vehicles!.Select(v => v with { PlateNumber = AccountNormalization.OptionalText(v.PlateNumber) }).ToList()
+            Vehicles = (command.Vehicles ?? []).Select(v => v with { PlateNumber = AccountNormalization.OptionalText(v.PlateNumber) }).ToList() // araçsız kayıt: boş liste
         };
         // 3) Hesabı oluştur: kullanıcı + rol + profil + araçlar + çalışma illeri TEK işlemde (biri düşerse hiçbiri kaydedilmez).
         return await accounts.RegisterCarrierAsync(normalized, cancellationToken);

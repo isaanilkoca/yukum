@@ -124,8 +124,8 @@ struct CreateListingView: View { // CreateListingView [BİZİM] ad | View [SWIFT
                     section("Araç ve tarih", palette) {
                         LabeledInput(label: "İstenen araç", systemImage: "truck.box.fill") {
                             menuPicker("İstenen araç", selection: $viewModel.vehicleType) {
-                                Text("Seçiniz").tag("") // tag(""): hiçbir şey seçilmemişken bu yazı görünür
-                                ForEach(VehicleType.allCases) { type in Text(type.title).tag(type.rawValue) } // ⮕ Models/Vehicles/VehicleType.swift
+                                // "Seçiniz" satırı KALDIRILDI (15 Kasım): varsayılan "Farketmez" → Yük Veren hiçbir şey seçmeden ilan verebilir
+                                ForEach(VehicleType.listingOptions) { type in Text(type.title).tag(type.rawValue) } // 15 Kasım: "Farketmez" dahil // ⮕ Models/Vehicles/VehicleType.swift
                             }
                         }
                         LabeledInput(label: "Yükleme tarihi", systemImage: "calendar") {

@@ -8,7 +8,10 @@ namespace Yukum.Application.Abstractions.Persistence;
 /// <summary>Açık ilan listesinin filtreleri (hepsi isteğe bağlı; null = koşul yok). CarrierId: bu taşımacının teklif verdiği ilanlar listeden çıkarılır.</summary>
 public sealed record OpenListingFilter(
     Guid CarrierId, int? FromCityId, int? FromDistrictId, int? ToCityId,
-    decimal? MinBudget, decimal? MaxBudget, VehicleType? VehicleType, DateOnly? PickupFrom, DateOnly? PickupTo);
+    decimal? MinBudget, decimal? MaxBudget, VehicleType? VehicleType, DateOnly? PickupFrom, DateOnly? PickupTo,
+    IReadOnlyCollection<VehicleType>? AllowedVehicleTypes = null, // 15 Kasım: "Yalnız araçlarıma uygun" → uygun ilan türleri (VehicleCompatibility hesaplar)
+    int? MinWeightKg = null, int? MaxWeightKg = null, // 15 Kasım: ağırlık aralığı
+    IReadOnlyCollection<Guid>? OnlyIds = null); // 15 Kasım: uzaklık filtresi bellekte hesaplanır, kalan ilanların numaraları buradan SQL'e verilir
 
 /// <summary>Mesafe sıralaması için hafif özet: ilan numarası, kalkış yeri, oluşturulma zamanı (ilanın tamamı değil).</summary>
 public sealed record ListingPoint(Guid Id, int FromCityId, int FromDistrictId, DateTime CreatedAt);

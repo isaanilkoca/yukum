@@ -23,9 +23,12 @@ public sealed class GetListingOffersHandler(IRepository<Listing> listings, IRepo
         var names = await users.GetFullNamesAsync(list.Select(o => o.CarrierId), cancellationToken);
         var summaries = await carriers.GetSummariesAsync(list.Select(o => o.CarrierId), cancellationToken); // puan ortalaması + sayı
 
+        // Varsayılan sıra fiyat (artan); diğer sıralamaları iOS yapar (ListingOffersViewModel.sorted) — bir ilanın teklifleri az, hepsi tek cevapta gelir.
         return list.OrderBy(o => o.Amount)
             .Select(o => new ListingOfferDto(o.Id, names.GetValueOrDefault(o.CarrierId, "Taşımacı"), o.Amount, o.Note, o.Status, o.CreatedAt,
-                o.CarrierId, summaries.GetValueOrDefault(o.CarrierId)?.AverageRating ?? 0, summaries.GetValueOrDefault(o.CarrierId)?.RatingCount ?? 0))
+                o.CarrierId, summaries.GetValueOrDefault(o.CarrierId)?.AverageRating ?? 0, summaries.GetValueOrDefault(o.CarrierId)?.RatingCount ?? 0,
+                o.VehicleType, o.VehicleBrand, o.VehicleModel, o.VehicleYear, o.EstimatedDeliveryDate,
+                summaries.GetValueOrDefault(o.CarrierId)?.CompletedJobCount ?? 0))
             .ToList();
     }
 }

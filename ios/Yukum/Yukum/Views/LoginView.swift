@@ -112,7 +112,12 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     .padding(.top, 4)
 
                     NavigationLink { // NavigationLink [SWIFT]: kendisi düğme, basınca ilk süslü parantezdeki ekrana geçer (Button içine konmaz) | label: görünümü
-                        RoleSelectionView(initialRole: viewModel.role) // Views/RoleSelectionView.swift → TEK kayıt ekranı | girişte seçili hesap türüyle açılır (14 Kasım)
+                        // 15 Kasım: kayıt bitince giriş ekranına dönülür; e-posta ve hesap türü dolu gelir, şifre alanı temiz (yalnız şifre yazılır)
+                        RoleSelectionView(initialRole: viewModel.role) { email, role in // Views/RoleSelectionView.swift → TEK kayıt ekranı
+                            viewModel.emailOrPhone = email
+                            viewModel.role = role
+                            viewModel.password = ""
+                        }
                     } label: {
                         Text("Hesabın yok mu? **Kayıt ol**") // ** ** [SWIFT]: Markdown kalın yazı
                             .font(.subheadline)

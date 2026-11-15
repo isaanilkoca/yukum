@@ -20,6 +20,8 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BAĞLANTI: Views/HomeView.swift → Yük Veren'in sol üst saat ikonu bu ekranı açar | kalıp: Models/Offers/ → ShipperHistoryOffer
 // ⮕ KULLANIM [OldOffersView]: kullanır: HomeView › body
 struct OldOffersView: View {
+    // 15 Kasım: .active "Devam Eden İşler" (kabul edilmiş, bitmemiş) | .history "Eski Teklifler" (sonuçlananlar) | nil: hepsi (eski görünüm)
+    var scope: OfferScope? = nil
     @State private var viewModel = OldOffersViewModel()
     @State private var feedback: ActionFeedback? // Yük Veren işlemi → koli bantlanır ⮕ Design/ActionFeedback.swift
     @State private var cancelOffer: ShipperHistoryOffer?  // dolunca iptal talebi sayfası (karşılıklı iptal, 15 Kasım)
@@ -44,7 +46,13 @@ struct OldOffersView: View {
                 EmptyStateCard(icon: "clock.arrow.circlepath", title: "Henüz karar verdiğin teklif yok", detail: "Kabul ettiğin ya da reddettiğin teklifler burada durur.")
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
-            ForEach(viewModel.offers) { offer in
+            if loaded, !viewModel.offers.isEmpty, let scope, !viewModel.offers.contains(where: { scope.contains(status: $0.status) }) {
+                EmptyStateCard(icon: scope == .active ? "shippingbox" : "clock.arrow.circlepath",
+                               title: scope == .active ? "Devam eden işin yok" : "Sonuçlanmış teklif yok",
+                               detail: scope == .active ? "Bir teklifi kabul edince iş burada takip edilir." : nil)
+                    .listRowBackground(Color.clear).listRowSeparator(.hidden)
+            }
+            ForEach(viewModel.offers.filter { scope?.contains(status: $0.status) ?? true }) { offer in // ⮕ OfferScope (MyOffersViewModel.swift)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(offer.listingTitle).font(.headline).foregroundStyle(palette.title).lineLimit(1)
@@ -99,7 +107,7 @@ struct OldOffersView: View {
         .themedScreen()
         .busyIndicator(busy)
         .refreshable { await viewModel.load() }
-        .navigationTitle("Eski Teklifler")
+        .navigationTitle(scope == .active ? "Devam Eden İşler" : "Eski Teklifler")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.load(); loaded = true }
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }

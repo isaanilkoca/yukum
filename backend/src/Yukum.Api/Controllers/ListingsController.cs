@@ -36,12 +36,13 @@ public class ListingsController(
     }
 
     /// <summary>Giriş yapan Yük Veren'in kendi ilanları (yeniden eskiye).</summary>
-    // GET /api/v1/listings/mine
+    // GET /api/v1/listings/mine          → yalnız açık ilanlar (ana ekran)
+    // GET /api/v1/listings/mine?all=true → tüm ilanlar, durum alanıyla (15 Kasım: profil > İlanlarım)
     [HttpGet("mine")]
     [Authorize(Roles = RoleNames.Shipper)]
     [ProducesResponseType<IReadOnlyList<ListingDto>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> Mine(CancellationToken cancellationToken) =>
-        Ok(await getMyListings.HandleAsync(new GetMyListingsQuery(CurrentUserId), cancellationToken));
+    public async Task<IActionResult> Mine([FromQuery] bool all, CancellationToken cancellationToken) =>
+        Ok(await getMyListings.HandleAsync(new GetMyListingsQuery(CurrentUserId, all), cancellationToken));
 
     /// <summary>
     /// Taşımacı'nın açık ilan listesi: sayfalı, filtreli, sıralı. Yalnız Taşımacı görür; teklif verdiği ilanlar listede çıkmaz.
@@ -58,7 +59,8 @@ public class ListingsController(
     public async Task<IActionResult> Open(
         int? fromCityId, int? fromDistrictId, int? toCityId, decimal? minBudget, decimal? maxBudget, VehicleType? vehicleType,
         DateOnly? pickupFrom, DateOnly? pickupTo, ListingSort? sort, double? lat, double? lon,
-        CancellationToken cancellationToken, int page = 1, int pageSize = 20)
+        CancellationToken cancellationToken, int page = 1, int pageSize = 20, bool matchMyVehicles = false, // matchMyVehicles: 15 Kasım
+        int? maxDistanceKm = null, int? minWeightKg = null, int? maxWeightKg = null) // 15 Kasım: uzaklık (lat+lon ister) + ağırlık aralığı
     {
         // Sorgu parametrelerinin sınırları (hatalar tek 400 cevabında toplanır, alan adı camelCase).
         if ((lat is null) != (lon is null) || lat is < -90 or > 90 || lon is < -180 or > 180)
@@ -71,12 +73,16 @@ public class ListingsController(
             ModelState.AddModelError("minBudget", "En düşük fiyat, en yüksek fiyattan büyük olamaz.");
         if (pickupFrom is not null && pickupTo is not null && pickupFrom > pickupTo)
             ModelState.AddModelError("pickupFrom", "Başlangıç tarihi bitiş tarihinden sonra olamaz.");
+        if (maxDistanceKm is not null && (lat is null || lon is null)) ModelState.AddModelError("maxDistanceKm", "Uzaklık filtresi için konum gerekir.");
+        if (maxDistanceKm is < 1 or > 2000) ModelState.AddModelError("maxDistanceKm", "Uzaklık 1 ile 2000 km arasında olmalı.");
+        if (minWeightKg is < 0 || maxWeightKg is < 0) ModelState.AddModelError("minWeightKg", "Ağırlık negatif olamaz.");
+        if (minWeightKg is not null && maxWeightKg is not null && minWeightKg > maxWeightKg) ModelState.AddModelError("minWeightKg", "En düşük ağırlık en yüksekten büyük olamaz.");
         if (sort == ListingSort.Nearest && (lat is null || lon is null))
             ModelState.AddModelError("sort", "En yakın sıralaması için lat ve lon gerekir.");
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
         var query = new GetOpenListingsQuery(CurrentUserId, fromCityId, fromDistrictId, lat, lon, toCityId, minBudget, maxBudget,
-            vehicleType, pickupFrom, pickupTo, sort, page, pageSize);
+            vehicleType, pickupFrom, pickupTo, sort, page, pageSize, matchMyVehicles, maxDistanceKm, minWeightKg, maxWeightKg);
         return Ok(await getOpenListings.HandleAsync(query, cancellationToken));
     }
 

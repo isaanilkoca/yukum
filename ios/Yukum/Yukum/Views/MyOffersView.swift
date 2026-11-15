@@ -21,6 +21,8 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 // BAĞLANTI: Views/HomeView.swift → Taşımacı'nın sağ üst kutu ikonu (rozetli) bu ekranı açar | kalıp: Models/Offers/ → CarrierOffer
 // ⮕ KULLANIM [MyOffersView]: kullanır: HomeView › body
 struct MyOffersView: View {
+    // 15 Kasım: aynı ekran üç kapsamla açılır (ProfileView): .pending "Tekliflerim", .active "Devam Eden İşler", .history "Geçmiş" | nil: eski görünüm (hepsi)
+    var scope: OfferScope? = nil
     @State private var viewModel = MyOffersViewModel()
     @State private var feedback: ActionFeedback? // Taşımacı işlemi → lastik izi ⮕ Design/ActionFeedback.swift
     @State private var cancelOffer: CarrierOffer? // dolunca iptal talebi sayfası açılır (karşılıklı iptal, 15 Kasım)
@@ -39,14 +41,24 @@ struct MyOffersView: View {
             }
             if viewModel.offers.isEmpty && !loaded {
                 LoadingCard().listRowBackground(Color.clear).listRowSeparator(.hidden)
+            } else if let scope {
+                // KAPSAMLI GÖRÜNÜM (15 Kasım): yalnız o gruptaki teklifler, tek liste
+                let items = viewModel.offers(in: scope)
+                if items.isEmpty {
+                    EmptyStateCard(icon: scope == .active ? "shippingbox" : scope == .pending ? "tray" : "clock.arrow.circlepath",
+                                   title: scope == .active ? "Devam eden işin yok" : scope == .pending ? "Bekleyen teklifin yok" : "Geçmiş boş",
+                                   detail: scope == .active ? "Teklifin kabul edilince iş burada takip edilir." : nil)
+                        .listRowBackground(Color.clear).listRowSeparator(.hidden)
+                }
+                ForEach(items) { offer in offerRow(offer) }
             } else if viewModel.offers.isEmpty {
                 EmptyStateCard(icon: "tray", title: "Henüz teklif vermedin.", detail: "Bir ilana teklif verince burada takip edersin.")
                     .listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
-            if !viewModel.pendingOffers.isEmpty {
+            if scope == nil && !viewModel.pendingOffers.isEmpty {
                 Section { ForEach(viewModel.pendingOffers) { offer in offerRow(offer) } } header: { sectionTitle("Bekleyenler") }
             }
-            if !viewModel.historyOffers.isEmpty {
+            if scope == nil && !viewModel.historyOffers.isEmpty {
                 Section { ForEach(viewModel.historyOffers) { offer in offerRow(offer) } } header: { sectionTitle("Geçmiş") }
             }
         }
@@ -54,7 +66,7 @@ struct MyOffersView: View {
         .themedScreen()
         .busyIndicator(busy)
         .refreshable { await viewModel.load() }
-        .navigationTitle("Tekliflerim")
+        .navigationTitle(scope == .active ? "Devam Eden İşler" : scope == .history ? "Geçmiş" : "Tekliflerim")
         .navigationBarTitleDisplayMode(.inline)
         .task { await viewModel.loadAndMarkSeen(); loaded = true } // açılınca "görüldü" işaretlenir → ana ekrandaki rozet söner
         .navigationDestination(item: $viewModel.chat) { context in ChatView(context: context) }
@@ -102,6 +114,11 @@ struct MyOffersView: View {
                 if offer.isNew { // karar yeni geldi, henüz görülmedi
                     Text("Yeni").font(.caption2.bold()).foregroundStyle(palette.buttonText)
                         .padding(.horizontal, 6).padding(.vertical, 2).background(palette.accent, in: .capsule)
+                }
+                // GÖRÜŞÜLÜYOR (15 Kasım): bekleyen teklifte Yük Veren ile yazışma başladı (sunucu: HasMessages) → iş kabul edilince Devam Eden İşler'e geçer
+                if offer.status == "Pending" && offer.hasMessages == true {
+                    Label("Görüşülüyor", systemImage: "bubble.left.and.bubble.right.fill").font(.caption2.bold()).foregroundStyle(palette.success)
+                        .padding(.horizontal, 6).padding(.vertical, 2).background(palette.success.opacity(0.15), in: .capsule)
                 }
                 Spacer()
                 Text("\(Int(offer.amount)) ₺").font(.headline).foregroundStyle(palette.accent)

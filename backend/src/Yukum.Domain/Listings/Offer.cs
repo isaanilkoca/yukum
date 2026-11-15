@@ -56,4 +56,21 @@ public class Offer : BaseEntity
 
     /// <summary>İş karşılıklı anlaşmayla iptal edildi (Status = Cancelled ile birlikte).</summary>
     public bool MutuallyCancelled { get; set; }
+
+    // ─── TEKLİFTEKİ ARAÇ + TESLİM TARİHİ (15 Kasım, kullanıcı: "Yük Veren teklifleri araca, fiyata, bitirme vaktine göre sıralayabilsin") ───
+    // ARAÇ ANLIK GÖRÜNTÜ (snapshot) olarak kopyalanır, araç tablosuna bağlanmaz: Taşımacı aracı sonra silse/düzenlese de
+    //   teklif "hangi araçla verildi" bilgisini korur (geçmiş bozulmaz). Eski tekliflerde boş.
+
+    /// <summary>Teklif verilirken seçilen aracın numarası (bilgi amaçlı; araç silinmiş olabilir).</summary>
+    public Guid? VehicleId { get; set; }
+    /// <summary>Aracın türü (teklif anında).</summary>
+    public Yukum.Domain.Accounts.VehicleType? VehicleType { get; set; }
+    /// <summary>Aracın markası (teklif anında).</summary>
+    public string? VehicleBrand { get; set; }
+    /// <summary>Aracın modeli (teklif anında).</summary>
+    public string? VehicleModel { get; set; }
+    /// <summary>Aracın model yılı (teklif anında).</summary>
+    public int? VehicleYear { get; set; }
+    /// <summary>Taşımacı'nın söz verdiği tahmini teslim tarihi (işin bitirme vakti).</summary>
+    public DateOnly? EstimatedDeliveryDate { get; set; }
 }

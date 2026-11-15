@@ -22,7 +22,7 @@ struct CancelRequestSheet: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-    @State private var reason = CancelReasons.all[0] // ⮕ Models/Offers/CancelRequestInfo.swift
+    @State private var reason = "" // ilk açılışta rolün ilk nedeni seçilir (.onAppear) | ⮕ Models/Offers/CancelRequestInfo.swift
     @State private var note = ""
     @State private var reopen = true // Yük Veren: onaylanınca ilan yeniden yayınlansın (varsayılan: evet, yük havada kalmasın)
     @State private var sending = false
@@ -39,9 +39,9 @@ struct CancelRequestSheet: View {
                     FormCard { // ⮕ Design/FormStyle.swift
                         Text("Neden").font(.footnote.weight(.semibold)).foregroundStyle(palette.label)
                         // Neden kapsülleri: dokununca seçilir (seçili olan turuncu)
-                        FlowChips(items: CancelReasons.all, selected: $reason)
+                        FlowChips(items: CancelReasons.list(isShipper: isShipper), selected: $reason) // rolün kendi nedenleri
                         LabeledInput(label: "Açıklama (isteğe bağlı)", systemImage: "text.bubble.fill") {
-                            TextField(reason == "Diğer" ? "Kısaca nedenini yaz" : "ör. motor arıza verdi", text: $note)
+                            TextField(CancelReasons.placeholder(for: reason), text: $note)
                         }
                         if isShipper {
                             Toggle(isOn: $reopen) {
@@ -72,6 +72,7 @@ struct CancelRequestSheet: View {
             .toolbar { ToolbarItem(placement: .topBarLeading) { Button("Vazgeç") { dismiss() } } }
         }
         .presentationDetents([.medium, .large]) // [SWIFT] yarım ekran açılır, istenirse büyütülür
+        .onAppear { if reason.isEmpty { reason = CancelReasons.list(isShipper: isShipper)[0] } } // rolün ilk nedeni seçili gelir
     }
 }
 

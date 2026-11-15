@@ -119,11 +119,9 @@ public sealed class RegisterCarrierValidator : AbstractValidator<RegisterCarrier
         RuleFor(c => c.ServiceCityIds).Must(ids => ids!.Distinct().Count() == ids!.Count)
             .When(c => c.ServiceCityIds is not null).WithMessage("Aynı il birden fazla seçilmiş.");
 
-        // En az bir araç zorunlu (rapor 6.1); her aracın kendi kuralları vardır.
-        // En az 1, en çok 20 araç.
-        RuleFor(c => c.Vehicles).Cascade(CascadeMode.Stop)
-            .NotEmpty().WithMessage("En az bir araç eklemelisiniz.")
-            .Must(v => v!.Count <= 20).WithMessage("En fazla 20 araç eklenebilir.");
+        // 15 Kasım (yönetici kararı): kayıtta araç ZORUNLU DEĞİL — ilk amaç kullanıcıyı kaydetmek; araçlar sonra "Araçlarım"dan eklenir
+        //   (VehiclesController). Eski uygulama sürümleri araç gönderirse yine kabul edilir; gönderilmişse en çok 20 ve her biri geçerli olmalı.
+        RuleFor(c => c.Vehicles).Must(v => v!.Count <= 20).When(c => c.Vehicles is not null).WithMessage("En fazla 20 araç eklenebilir.");
         // Her araç için ayrı doğrulayıcı çalışır (aşağıda): hata 'Vehicles[1].CapacityKg' gibi, hangi araçta olduğu belli olur.
         RuleForEach(c => c.Vehicles).SetValidator(new VehicleInputValidator());
     }
@@ -138,7 +136,7 @@ public sealed class VehicleInputValidator : AbstractValidator<VehicleInput>
         RuleFor(v => v.Type).Cascade(CascadeMode.Stop)
             .NotNull().WithMessage("Araç tipi seçin.")
             // Tanımlı bir araç tipi mi? (Truck, Lorry, Pickup, Refrigerated, Other)
-            .Must(t => Enum.IsDefined(t!.Value)).WithMessage("Geçerli bir araç tipi seçin.");
+            .Must(t => Enum.IsDefined(t!.Value) && t != VehicleType.Any).WithMessage("Geçerli bir araç tipi seçin."); // Any ("Farketmez") yalnız ilanda
 
         RuleFor(v => v.CapacityKg).Cascade(CascadeMode.Stop)
             .NotNull().WithMessage("Taşıma kapasitesi girin.")

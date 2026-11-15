@@ -49,6 +49,12 @@ struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | Lis
         try await api.send(.get, "/api/v1/listings/mine", fallback: "İlanlar yüklenemedi.") // GET: veri iste, gövde yok
     }
 
+    // allMyListings (15 Kasım, 8. adım): açık + atanmış + tamamlanmış + kaldırılmış, her biri status alanıyla
+    // ÇAĞIRAN: MyListingsViewModel (profil > İlanlarım) | API: GET /api/v1/listings/mine?all=true → GetMyListingsHandler (IncludeClosed)
+    func allMyListings() async throws -> [Listing] {
+        try await api.send(.get, "/api/v1/listings/mine", query: [URLQueryItem(name: "all", value: "true")], fallback: "İlanlar yüklenemedi.")
+    }
+
     // openListings: Taşımacı anasayfasının açık ilan listesinin BİR SAYFASI | süzme, sıralama, sayfalamayı SUNUCU yapar, telefon hepsini çekmez
     // ÇAĞIRAN: HomeViewModel.load() | API: GET /api/v1/listings?page=1&pageSize=20&... | DÖNEN: Page<Listing>
     // lat / lon: Taşımacı'nın konumu (Double? = nil ise gönderilmez) | konum sunucuda SAKLANMAZ

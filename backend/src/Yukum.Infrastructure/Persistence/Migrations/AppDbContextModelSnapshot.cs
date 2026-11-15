@@ -313,7 +313,11 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CapacityKg")
+                    b.Property<string>("Brand")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CapacityKg")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("CapacityVolume")
@@ -328,6 +332,10 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("PlateNumber")
                         .HasMaxLength(20)
@@ -345,6 +353,9 @@ namespace Yukum.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -8998,6 +9009,9 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("DecidedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateOnly?>("EstimatedDeliveryDate")
+                        .HasColumnType("date");
+
                     b.Property<bool>("HiddenByCarrier")
                         .HasColumnType("bit");
 
@@ -9032,12 +9046,30 @@ namespace Yukum.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("VehicleBrand")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid?>("VehicleId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("VehicleModel")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("VehicleType")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("VehicleYear")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CarrierId", "Status");
 
                     b.HasIndex("ListingId", "CarrierId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[MutuallyCancelled] = 0");
 
                     b.HasIndex("Status", "DecidedAt");
 

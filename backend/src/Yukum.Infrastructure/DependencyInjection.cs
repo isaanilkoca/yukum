@@ -93,6 +93,9 @@ public static class DependencyInjection
     /// </summary>
     public static IServiceCollection AddAccounts(this IServiceCollection services)
     {
+        // Profil fotoğrafı dosyaları (15 Kasım): IAvatarStorage isteyen handler'a disk gerçeği verilir. Bulut depolamaya geçişte yalnız bu satır değişir.
+        services.AddSingleton<IAvatarStorage, LocalAvatarStorage>();
+
         // AddIdentityCore: UserManager (kullanıcı ekle/bul, şifre doğrula, kilitle) gibi çekirdek kimlik servislerini ekler. Çerezli giriş sayfaları yok; yalnız API için gerekenler.
         services.AddIdentityCore<AppUser>(options =>
             {

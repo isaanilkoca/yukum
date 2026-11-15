@@ -7,7 +7,8 @@ using Yukum.Domain.Listings;
 namespace Yukum.Application.Offers;
 
 /// <summary>Taşımacı'nın tüm teklifleri (bekleyen, kabul, red), yeniden eskiye. Karar bildirimi "IsNew" ile işaretlenir.</summary>
-public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Listing> listings, IGeographyRepository geography, IUserDirectory users)
+public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Listing> listings, IGeographyRepository geography, IUserDirectory users,
+    IRepository<Message> messages)
     : IQueryHandler<GetMyOffersQuery, IReadOnlyList<CarrierOfferDto>>
 {
     /// <summary>Yalnız jetondaki taşımacının, kendi geçmişinden silmediği teklifler döner.</summary>
@@ -20,6 +21,10 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
         // İlçe adları ve ilanı açan Yük Veren'in adı (ilan sahibi = ilanı veren firma/kişi).
         var districts = await Listings.CreateListingHandler.DistrictNamesAsync(geography, listingMap.Values, cancellationToken);
         var shippers = await users.GetFullNamesAsync(listingMap.Values.Select(l => l.ShipperId), cancellationToken);
+        // GÖRÜŞÜLÜYOR (15 Kasım): yalnız BEKLEYEN tekliflerde mesaj var mı? (kabul edilmiş iş zaten Devam Eden İşler'de) | SQL: SELECT ... WHERE OfferId IN (...)
+        var pendingIds = mine.Where(o => o.Status == OfferStatus.Pending).Select(o => o.Id).ToList();
+        var talking = pendingIds.Count == 0 ? [] : (await messages.ListAsync(m => pendingIds.Contains(m.OfferId), asNoTracking: true, cancellationToken))
+            .Select(m => m.OfferId).ToHashSet();
 
         return mine.OrderByDescending(o => o.DecidedAt ?? o.CreatedAt)
             .Where(o => listingMap.ContainsKey(o.ListingId))
@@ -30,7 +35,7 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
                     cities[l.ToCityId], districts[l.ToDistrictId], shippers.GetValueOrDefault(l.ShipperId, "Yük Veren"),
                     l.WeightKg, l.PickupDate, o.Amount, o.Note,
                     o.Status, IsNew: o.Status != OfferStatus.Pending && !o.CarrierSeen, o.CreatedAt, o.DecidedAt, o.Stage,
-                    CancelRequestHandlers.ToDto(o, query.CarrierId), o.MutuallyCancelled);
+                    CancelRequestHandlers.ToDto(o, query.CarrierId), o.MutuallyCancelled, talking.Contains(o.Id));
             }).ToList();
     }
 }

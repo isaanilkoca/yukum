@@ -12,5 +12,7 @@ public sealed class CreateOfferValidator : AbstractValidator<CreateOfferCommand>
             // Üst sınır: DB sütunu decimal(12,2); aşan sayı 500 verirdi, 400 ile reddedilir.
             .LessThanOrEqualTo(100_000_000m).WithMessage("Teklif tutarı en fazla 100.000.000 ₺ olabilir.");
         RuleFor(c => c.Note).MaximumLength(500).WithMessage("Not en fazla 500 karakter olabilir.");
+        // 15 Kasım: işin bitirme vakti zorunlu (Yük Veren "en erken teslim"e göre sıralar). İlana göre üst/alt sınır handler'da (yükleme tarihi gerekir).
+        RuleFor(c => c.EstimatedDeliveryDate).NotNull().WithMessage("Tahmini teslim tarihini seç.");
     }
 }

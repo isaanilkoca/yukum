@@ -28,7 +28,10 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
 
     // ⮕ ZİNCİR: Views/HomeView: "Hoş Geldin \(viewModel.user.displayName)" | rol kararı isShipper | MODEL: Models/Auth/LoginUser | GELDİĞİ YER: LoginViewModel.loggedInUser → Views/LoginView.fullScreenCover → HomeView(user:)
     // ⮕ KULLANIM [user]: okur: HomeViewModel › isShipper, HomeView › body
-    let user: LoginUser // giriş yapan kişi (ad, rol)
+    private(set) var user: LoginUser // giriş yapan kişi (ad, rol) | var (15 Kasım): Hesap Bilgilerim'de ad değişince güncellenir
+
+    // renameUser: AccountInfoView kaydedince çağrılır → selamlama ("Merhaba, …") yeni adı gösterir | @Observable: user değişince ekran kendiliğinden yeniden çizilir
+    func renameUser(_ name: String) { user = LoginUser(id: user.id, displayName: name, role: user.role) }
 
     // Bağımlılıklar: gerçek uygulamada varsayılan gerçek servisler, testte sahteleri verilir
     // ⮕ KULLANIM [listingService]: YAZAR: HomeViewModel › init() | okur: HomeViewModel › load()
@@ -79,6 +82,53 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // ⮕ KULLANIM [nearMe]: okur: HomeViewModel › isLocationDenied, HomeViewModel › locationError, HomeViewModel › load(), HomeViewModel › reloadKey, HomeView › body | bağlar(okur+yazar): HomeView › body | YAZAR: HomeViewModelTests (test)
     var nearMe = false // "Yakınımdakiler" anahtarı: true iken liste telefonun konumuna göre yakından uzağa sıralanır
 
+    // ─── SAHİBİNDEN TARZI FİLTRE (15 Kasım) ───
+    // usesLocation: konum gerekiyor mu? Yakınımdakiler (en yakın sıralama) YA DA uzaklık filtresi ("50 km içinde") | konum sunucuda saklanmaz
+    var usesLocation: Bool { nearMe || filter.maxDistanceKm != nil }
+
+    // applyFilter: filtre sayfası "Uygula" → filtre yazılır; uzaklık seçildiyse konum istenir (izin penceresi / konum bulma)
+    //   ZİNCİR: OpenListingsFilterView.apply → applyFilter → filter değişir → reloadKey → .task(id:) → load() → GET /api/v1/listings?...&maxDistanceKm=50&lat=..
+    func applyFilter(_ new: OpenListingsFilter) {
+        filter = new
+        if new.maxDistanceKm != nil { location.request() }
+    }
+
+    // ETKİN FİLTRE KAPSÜLLERİ: listenin üstünde "50 km ✕", "Tır ✕"... | dokununca o filtre kalkar (removeChip)
+    struct FilterChip: Identifiable, Equatable { let id: String; let title: String }
+    var filterChips: [FilterChip] {
+        var chips: [FilterChip] = []
+        let f = filter
+        func city(_ id: Int) -> String { cities.first { $0.id == id }?.name ?? "İl \(id)" }
+        if let km = f.maxDistanceKm { chips.append(.init(id: "distance", title: "\(km) km içinde")) }
+        if f.toCityId != 0 { chips.append(.init(id: "to", title: "Varış: \(city(f.toCityId))")) }
+        if f.minBudget != nil || f.maxBudget != nil {
+            chips.append(.init(id: "price", title: "\(f.minBudget.map { "\($0.formatted()) ₺" } ?? "0") – \(f.maxBudget.map { "\($0.formatted()) ₺" } ?? "∞")"))
+        }
+        if f.minWeightKg != nil || f.maxWeightKg != nil {
+            chips.append(.init(id: "weight", title: "\(f.minWeightKg.map { "\($0.formatted())" } ?? "0") – \(f.maxWeightKg.map { "\($0.formatted())" } ?? "∞") kg"))
+        }
+        if let type = VehicleType(rawValue: f.vehicleType) { chips.append(.init(id: "vehicle", title: type.title)) }
+        if f.matchMyVehicles { chips.append(.init(id: "mine", title: "Araçlarıma uygun")) }
+        if f.pickupFrom != nil || f.pickupTo != nil {
+            chips.append(.init(id: "date", title: "Yükleme: \(f.pickupFrom.map(RouteCard.trDate) ?? "…") – \(f.pickupTo.map(RouteCard.trDate) ?? "…")"))
+        }
+        return chips
+    }
+    func removeChip(_ id: String) {
+        switch id {
+        case "distance": filter.maxDistanceKm = nil
+        case "to": filter.toCityId = 0
+        case "price": filter.minBudget = nil; filter.maxBudget = nil
+        case "weight": filter.minWeightKg = nil; filter.maxWeightKg = nil
+        case "vehicle": filter.vehicleType = ""
+        case "mine": filter.matchMyVehicles = false
+        case "date": filter.pickupFrom = nil; filter.pickupTo = nil
+        default: break
+        }
+    }
+    // Tümünü temizle: kalkış il/ilçe ve sıralama KALIR (onlar panelde/menüde ayrı seçilir), sayfadaki filtreler sıfırlanır
+    func clearFilters() { filter = OpenListingsFilter(fromCityId: filter.fromCityId, fromDistrictId: filter.fromDistrictId, sort: filter.sort) }
+
     // ⮕ ZİNCİR: Views/HomeView: if viewModel.isShipper { Yük Veren ekranı } else { Taşımacı ekranı } ve toolbar düğmeleri | kaynak: user.role
     // ⮕ KULLANIM [isShipper]: okur: HomeViewModel › load(), HomeView › body
     var isShipper: Bool { user.role == "Shipper" } // türetilmiş değer: rol kararı tek yerde (ekran ve mantık aynı tanımı kullanır)
@@ -90,7 +140,8 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
          push: PushRegistering = PushManager.shared,
          cityService: CityServicing = CityService(),
          session: SessionSigningOut = AuthSession.shared,
-         location: LocationProviding = LocationManager()) {
+         location: LocationProviding = LocationManager(),
+         accountService: AccountServicing = AccountService()) {
         self.user = user
         self.listingService = listingService
         self.offerService = offerService
@@ -99,14 +150,36 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
         self.cityService = cityService
         self.session = session
         self.location = location
+        self.accountService = accountService
+    }
+
+    // ─── Profil (15 Kasım, 8. adım) ───
+    private let accountService: AccountServicing
+    // me: kendi hesap bilgim (fotoğraf adresi, puan) | sol üst profil fotoğrafı + ProfileView başlığı bunu okur | nil: yüklenmedi/ağ yok → baş harfler
+    var me: AccountProfile?
+
+    // loadMe: GET /api/v1/account/me | ÇAĞIRAN: HomeView .onAppear, ProfileView .onAppear (Hesap Bilgilerim'den dönünce)
+    // try? [SWIFT]: hata sessiz (fotoğraf için ekrana hata yazılmaz; eski hâli kalır) | ad da sunucudan gelen hâle eşitlenir
+    // activeJobCount (15 Kasım): Devam Eden İşler rozeti | Taşımacı: kendi teklifleri, Yük Veren: karar verdiği teklifler → durumu "Accepted" olanlar
+    //   (ayrı uç açılmadı: listeler zaten var ve kısa; try? → hata sessiz, eski sayı kalır)
+    var activeJobCount = 0
+    func loadActiveJobCount() async {
+        if isShipper { if let list = try? await offerService.shipperHistory() { activeJobCount = list.filter { OfferScope.active.contains(status: $0.status) }.count } }
+        else if let list = try? await offerService.myOffers() { activeJobCount = list.filter { OfferScope.active.contains(status: $0.status) }.count }
+    }
+
+    func loadMe() async {
+        guard let profile = try? await accountService.profile() else { return }
+        me = profile
+        if profile.fullName != user.displayName { renameUser(profile.fullName) }
     }
 
     // ⮕ ZİNCİR: Views/HomeView: "Konum izni kapalı" + "Ayarları aç" satırı yalnız nearMe açıkken ve izin reddedilmişse görünür | kaynak: Models/Location/LocationManager.isDenied
     // ⮕ KULLANIM [isLocationDenied]: okur: HomeView › body, HomeViewModelTests (test)
-    var isLocationDenied: Bool { nearMe && location.isDenied }
+    var isLocationDenied: Bool { usesLocation && location.isDenied } // 15 Kasım: uzaklık filtresi de konum kullanır
     // ⮕ ZİNCİR: Views/HomeView: konum alınamadı gibi kırmızı küçük yazı (yalnız nearMe açıkken ve izin reddedilmemişse) | kaynak: Models/Location/LocationManager.errorMessage
     // ⮕ KULLANIM [locationError]: okur: HomeView › body, HomeViewModelTests (test)
-    var locationError: String? { nearMe && !location.isDenied ? location.errorMessage : nil }
+    var locationError: String? { usesLocation && !location.isDenied ? location.errorMessage : nil }
 
     // nearMeChanged: "Yakınımdakiler" anahtarı değişince çağrılır | açıldıysa konum motoruna "izin sor ve konumu bul" der
     // izin ya da konum gelene kadar liste eskisi gibi kalır, konum gelince reloadKey değişir ve load() listeyi sıralı yeniler
@@ -183,8 +256,8 @@ final class HomeViewModel { // @Observable [SWIFT]: bu sınıfı "gözlemlenebil
     // fetchOpen: load ve loadMore'un ORTAK kısmı | filtre paketini + (nearMe açıksa) konumu kurup servisi çağırır
     // BAĞLANTI: OpenListingsFilter (Models/Listings) | location (LocationProviding) | ListingServicing.openListings
     private func fetchOpen(page: Int) async throws -> Page<Listing> {
-        let lat = nearMe ? location.latitude : nil // konum yoksa nil: sıralama en yeni
-        let lon = nearMe ? location.longitude : nil
+        let lat = usesLocation ? location.latitude : nil // konum yoksa nil: sıralama en yeni, uzaklık filtresi gönderilmez
+        let lon = usesLocation ? location.longitude : nil
         return try await listingService.openListings(filter: filter, page: page, lat: lat, lon: lon)
     }
 
