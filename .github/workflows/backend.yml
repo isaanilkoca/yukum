@@ -11,7 +11,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest # Docker hazır gelir: entegrasyon testleri Testcontainers ile gerçek SQL Server açar
+    env:
+      # 15 Kasım: her test kendi API örneğini açar; her örnek appsettings dosyalarını izlemek için Linux'ta inotify açar.
+      #   Runner sınırı 128 → ~250 testten sonra "inotify limit reached" ile testler düşüyordu (Mac'te sınır yok, yerelde geçiyordu).
+      #   Testte ayar dosyası değişmez → izleme kapatılır.
+      DOTNET_hostBuilder__reloadConfigOnChange: "false"
     steps:
+      - name: inotify sınırını yükselt (yedek önlem)
+        run: sudo sysctl -w fs.inotify.max_user_instances=1024
       - uses: actions/checkout@v5
       - uses: actions/setup-dotnet@v5
         with:
