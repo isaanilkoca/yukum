@@ -21,7 +21,9 @@ import Foundation // [SWIFT] ağ araçları (URL, JSON) bu kütüphanede
 struct ListingService { // struct [SWIFT]: alan+fonksiyon taşıyan kalıp | ListingService [BİZİM] ad
 
     // ⮕ KULLANIM [api]: okur: ListingService › create(), ListingService › myListings(), ListingService › openListings(), ListingService › cancel()
-    private let api = APIClient.shared // tüm istekler bu kapıdan geçer
+    private let api: APIClient // tüm istekler bu kapıdan geçer
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // create: ilan açar | async: cevabı bekler | throws: hata fırlatabilir | -> ListingResponse: başarıda oluşan ilanı döner
     // _ body: dışarıdan CreateListingRequest alır (Models/Listings/) | ÇAĞIRAN: Views/CreateListingView.swift "İlanı Yayınla" düğmesi

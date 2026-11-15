@@ -50,6 +50,7 @@ enum CancelReasons {
         case "Sevkiyat iptal oldu": return "ör. alıcı siparişi iptal etti"
         case "Tarih değişti", "Tarih uymadı": return "ör. yükleme gelecek haftaya kaldı"
         case "Fiyat anlaşmazlığı": return "ör. ek masraf çıktı"
+        case "Taşımacıya ulaşılamıyor", "Yük Veren'e ulaşılamıyor": return "ör. 2 gündür aramalara dönmüyor" // 15 Kasım: testte eksik çıktı (genel ipucu görünüyordu)
         case "Diğer": return "Kısaca nedenini yaz"
         default: return "Kısaca açıkla"
         }

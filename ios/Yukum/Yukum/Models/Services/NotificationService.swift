@@ -11,7 +11,9 @@ import Foundation
 // ÇAĞIRAN: ViewModels/NotificationsViewModel, HomeViewModel (zil sayısı) — NotificationServicing sözleşmesi üzerinden | API: backend NotificationsController
 
 struct NotificationService {
-    private let api = APIClient.shared // tüm istekleri bu kapıdan geçer
+    private let api: APIClient // tüm istekleri bu kapıdan geçer
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
     
     // list: bildirimlerin BİR SAYFASI (en yeni üstte) | URLQueryItem [SWIFT]: adresin ?'ten sonraki "ad=değer" çifti | String(Int): sayıdan yazı
     

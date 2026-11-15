@@ -24,7 +24,9 @@ import Foundation // [SWIFT] ağ araçları
 struct OfferService { // OfferService [BİZİM] ad
 
     // ⮕ KULLANIM [api]: okur: OfferService › create(), OfferService › listingOffers(), OfferService › decide(), OfferService › myOffers(), OfferService › unseenCount(), OfferService › markSeen() … +2
-    private let api = APIClient.shared
+    private let api: APIClient
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // create: teklif verir (aynı ilana tekrar verilirse eski teklifin tutarı güncellenir)
     // listingId: hangi ilan | _ body: tutar+not paketi | -> OfferResponse: kaydedilen teklif

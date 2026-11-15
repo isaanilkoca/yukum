@@ -8,7 +8,9 @@ import Foundation
 // Puan ve Taşımacı profili uçlarıyla konuşur | jeton, 401'de yenileme, hata çevirme APIClient'ta; burada yalnız "hangi adres, ne gider, ne döner"
 // ÇAĞIRAN: CarrierProfileViewModel (carrierProfile), RatingViewModel (create) | API: backend ReviewsController
 struct ReviewService {
-    private let api = APIClient.shared // tüm istekler bu kapıdan geçer
+    private let api: APIClient // tüm istekler bu kapıdan geçer
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // create: 201 cevabın gövdesini kullanmayız (sendNoContent) | 409 "zaten puan verdin" gibi hatalar APIError olur, mesaj Türkçe gelir
     func create(offerId: String, _ body: CreateReviewRequest) async throws {

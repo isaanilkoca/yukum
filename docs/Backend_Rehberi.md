@@ -23,7 +23,7 @@ iOS uygulaması (SwiftUI)
 │  Yukum.Application    iş kuralları (handler'lar)      │
 │     │                                                 │
 │     ▼                                                 │
-│  Yukum.Domain         tablo varlıkları (hiçbir şeye bağlı değil)
+│  Yukum.Domain         tablo varlıkları (hiçbir şeye bağlı değil)   │
 │                                                       │
 │  Yukum.Infrastructure veritabanı işleri (EF Core)  ──────► SQL Server (Docker)
 └─────────────────────────────────────────────────────┘
@@ -37,67 +37,128 @@ iOS uygulaması (SwiftUI)
 
 ## 2. Klasörler ve projeler
 
-| Yer | Ne işe yarar | Swift/iOS benzetmesi |
-|---|---|---|
-| `backend/Yukum.slnx` | Çözüm dosyası: tüm projeleri bir arada tutar | `.xcworkspace` |
-| `backend/src/Yukum.Domain` | Tabloların C# karşılığı (`BaseEntity`, ileride `Load`, `Offer`...). Hiçbir pakete bağlı değil | Saf model `struct`'ları |
-| `backend/src/Yukum.Application` | İş kuralları: handler'lar, `IRepository`, `IUnitOfWork` arayüzleri | ViewModel/Service katmanı + `protocol`'ler |
-| `backend/src/Yukum.Infrastructure` | Veritabanı: `AppDbContext`, `Repository`, migration'lar | `APIClient`/kalıcılık katmanı |
-| `backend/src/Yukum.Api` | HTTP kapısı: `Program.cs`, controller'lar, hata/JSON ayarları | Uygulamanın `@main` giriş noktası |
-| `backend/tests/Yukum.UnitTests` | Veritabansız hızlı testler (sahte repo ile) | Swift Testing birim testleri |
-| `backend/tests/Yukum.IntegrationTests` | Gerçek API + gerçek SQL Server'a karşı testler | XCUITest'e yakın uçtan uca |
-| `docs/` | Raporlar, günlük, kararlar, bu rehber, veri kaynakları | — |
-| `docs/veri/il-ilce.json` | Doğrulanmış 81 il / 973 ilçe verisi (seed kaynağı) | — |
+```
+backend/
+├── Yukum.slnx                      çözüm dosyası (Xcode'daki .xcworkspace)
+├── Dockerfile · dotnet-tools.json  API imajı · yerel araç (dotnet-ef)
+├── src/
+│   ├── Yukum.Domain/               tablo varlıkları — hiçbir pakete bağlı değil
+│   │   ├── Common/                 BaseEntity, ITimestamped
+│   │   ├── Accounts/               kullanıcıya bağlı tablolar (profil, araç, jeton, engel, şikâyet, doğrulama kodu)
+│   │   ├── Geography/              City, District
+│   │   ├── Listings/               ilan, teklif, mesaj, puan, favori, görüntülenme + durum enum'ları
+│   │   └── Notifications/          Notification, DeviceToken, NotificationType
+│   ├── Yukum.Application/          iş kuralları — yalnız Domain'i bilir
+│   │   ├── Abstractions/           sözleşmeler (interface): Persistence/ Identity/ Messaging/ Notifications/
+│   │   ├── Common/                 ortak hatalar (404/409/401/403/423), PagedResult, GeoMath
+│   │   └── <Özellik>/              Accounts · Geography · Listings · Offers · Messages · Reviews · Engagement
+│   │                               · Notifications · PriceReference · Vehicles   (her biri: Contracts + Handlers + Validator)
+│   ├── Yukum.Infrastructure/       sözleşmelerin gerçeği — veritabanı, kimlik, e-posta, push
+│   │   ├── Persistence/            AppDbContext, Repository, UnitOfWork, özel repolar
+│   │   │   ├── Configurations/     tablo kuralları (sütun, indeks, ilişki)
+│   │   │   ├── Migrations/         şema sürümleri (dotnet ef üretir, elle düzenlenmez) — 24 migration
+│   │   │   └── Seed/               roller + 81 il / 973 ilçe
+│   │   ├── Identity/               ASP.NET Identity, JWT, yenileme jetonu, hesap, doğrulama kodu, e-posta, profil fotoğrafı
+│   │   └── Push/                   APNs (Apple push)
+│   └── Yukum.Api/                  HTTP kapısı — her şeyi birbirine bağlar
+│       ├── Program.cs              açılış planı (servisler, ara katmanlar, hız sınırı, Scalar)
+│       ├── Controllers/            uçlar (aşağıda 3. bölüm)
+│       ├── Background/             PushWorker (arka planda push gönderir)
+│       ├── Middleware/             GlobalExceptionHandler (hata → Türkçe ProblemDetails)
+│       ├── Json/ · Validation/ · Health/
+│       └── appsettings*.json       ayarlar (GİZLİ BİLGİ YOK; gizliler user-secrets'ta)
+└── tests/
+    ├── Yukum.UnitTests/            veritabansız hızlı testler (NSubstitute ile sahte bağımlılık)
+    └── Yukum.IntegrationTests/     gerçek API + gerçek SQL Server (Testcontainers: her test kendi veritabanını açar)
+        ├── Api/                    uç uca HTTP testleri (yetki matrisi dahil)
+        ├── Data/                   servis/repository testleri + dışa istek atan göndericiler (Resend, APNs)
+        └── Support/                YukumApiFactory, SqlServerFixture, CapturingEmailSender…
+```
+
+**Yazım kuralları (backend)**
+
+| Kural | Örnek |
+|---|---|
+| Komut (durumu değiştirir) `…Command` → `ICommandHandler<TCommand, TResult>` | `CreateOfferCommand` → `CreateOfferHandler` |
+| Sorgu (yalnız okur) `…Query` → `IQueryHandler<TQuery, TResult>` | `GetOpenListingsQuery` → `GetOpenListingsHandler` |
+| İstemciye giden `…Dto` (record), gelen gövde `…Request` | `ListingDto`, `ReportUserRequest` |
+| Doğrulama `…Validator` (FluentValidation, Türkçe mesaj) | `CreateOfferValidator` |
+| Sözleşme `I…` Application'da, gerçeği Infrastructure'da | `IBlockRepository` → `BlockRepository` |
+| Handler'lar elle kaydedilmez: `AddHandlersFromAssembly` bulur | yeni handler = yeni sınıf, başka yere dokunma |
+| Her sınıf/metotta Türkçe `/// <summary>`; karmaşık akışta `BAĞLANTI HARİTASI` / `ZİNCİR` yorumu | `SafetyContracts.cs` başı |
+| DTO record'da `Guid/DateTime X = default` YAZMA → OpenAPI belgesi 500'e düşer | varsayılansız parametre |
 
 ---
 
-## 3. Dosya haritası (şu an var olanlar)
+## 3. Dosya haritası ve API uçları
 
-### Yukum.Domain
-- `Common/BaseEntity.cs` — Tüm tabloların ortak alanları: `Id`, `CreatedAt`, `UpdatedAt`, `IsDeleted`, `RowVersion`.
-- `Common/ITimestamped.cs` — "Ne zaman oluştu / değişti" sözleşmesi. `BaseEntity` ve kullanıcı (`AppUser`) uygular; `AppDbContext` bu alanları otomatik doldurur.
-- `Accounts/` — Kimlik tabloları: `UserType`, `RoleNames`, `VehicleType`, `ShipperProfile`, `CarrierProfile`, `CarrierServiceCity`, `Vehicle`, `RefreshToken` (yalnız hash'i saklanır, rotasyon zinciri için).
-- `Geography/City.cs`, `Geography/District.cs` — 81 il ve 973 ilçe. Sabit referans verisi olduğu için `BaseEntity`'den **türemez**: Id'leri GUID değil, plaka kodu (il) ve sıra numarasıdır (K-013).
+### Yukum.Domain (tablolar)
+- `Common/` — `BaseEntity` (Id, CreatedAt, UpdatedAt, IsDeleted = yumuşak silme, RowVersion = eşzamanlılık), `ITimestamped`.
+- `Accounts/` — `ShipperProfile`, `CarrierProfile` (puan ortalaması, iş sayısı), `CarrierServiceCity`, `Vehicle` (plaka, marka, model, yıl), `VehicleType`,
+  `RefreshToken` (yalnız hash), `UserType`, `RoleNames` (Admin/Shipper/Carrier), `UserBlock` + `UserReport` + `ReportReason` (engelle/şikâyet),
+  `VerificationCode` + `VerificationPurpose` (e-posta doğrulama / şifre sıfırlama; kodun yalnız SHA-256 özeti).
+- `Geography/` — `City` (Id = plaka), `District` (merkez koordinatı). `BaseEntity`'den türemez (K-013).
+- `Listings/` — `Listing` + `ListingStatus` (Open → Assigned → Completed / Cancelled), `Offer` + `OfferStatus` + `JobStage` (iş aşaması, iptal talebi alanları),
+  `Message`, `Review`, `FavoriteListing`, `ListingView` (kişi+gün tekil görüntülenme).
+- `Notifications/` — `Notification` (uygulama içi + push kuyruğu), `DeviceToken` (telefonun APNs adresi), `NotificationType` (1–10).
 
-### Yukum.Application
-- `Abstractions/Persistence/IRepository.cs` — "Kayıt getir / ekle / sil" sözleşmesi. İş kuralı kodu yalnız bunu bilir.
-- `Abstractions/Persistence/IGeographyRepository.cs` — İl/ilçe okuma sözleşmesi (il listesi, il var mı, ilin ilçeleri). İl/ilçe GUID'li `BaseEntity` olmadığı için genel `IRepository` yerine bu özel depo kullanılır.
-- `Common/NotFoundException.cs` — "İstenen kayıt yok" hatası. API bunu 404'e çevirir.
-- `Common/ConflictException.cs` — "Çakışma" hatası (örn. e-posta kayıtlı). API bunu 409'a çevirir.
-- `Common/AuthExceptions.cs` — `InvalidCredentialsException` (401, tek genel mesaj), `AccountLockedException` (423), `ForbiddenException` (403).
-- `Abstractions/Identity/IAccountService.cs` — Hesap oluşturma sözleşmesi. İş kuralı kodu ASP.NET Identity'yi bilmez.
-- `Abstractions/Identity/IAuthService.cs` + `ITokenService.cs` — "Şifre doğru mu, hesap kilitli mi?" ve "erişim jetonu üret" sözleşmeleri.
-- `Accounts/` — Kayıt akışı: komutlar (`RegisterShipperCommand`, `RegisterCarrierCommand`), Türkçe doğrulama kuralları (`RegisterValidators`, FluentValidation), `PasswordPolicy` (şifre kuralının tek kaynağı), `PhoneNumberNormalizer` (her telefon yazılışı → `+905…`), handler'lar. Giriş: `LoginCommand`, `LoginValidator`, `LoginHandler`, kullanıcı özeti (`AuthUserDto`) ve cevap (`LoginResponse`).
-- `Geography/` — İl/ilçe sorguları: `GetCitiesHandler`, `GetDistrictsHandler` ve istemciye giden `CityDto` / `DistrictDto` (yalnız `id` ve `name`).
-- `Abstractions/Persistence/IUnitOfWork.cs` — "Yaptığım değişiklikleri tek seferde kaydet" sözleşmesi.
-- `Abstractions/Messaging/IHandlers.cs` — `ICommandHandler` (durumu değiştirir) ve `IQueryHandler` (sadece okur) sözleşmeleri.
-- `DependencyInjection.cs` — Handler sınıflarını kendisi bulup kaydeder; aynı komut için iki handler varsa açılışta hata verir.
+### Yukum.Application (iş kuralları) — klasör → ne yapar
+| Klasör | İçerik | Önemli kurallar |
+|---|---|---|
+| `Abstractions/Persistence` | `IRepository<T>`, `IUnitOfWork`, `IListingSearchRepository`, `IGeographyRepository`, `IEngagementRepository`, `IBlockRepository`, `INotificationRepository`, `IDeviceTokenRepository`, `IPriceReferenceRepository` | iş kodu EF Core'u bilmez |
+| `Abstractions/Identity` | `IAuthService`, `IAccountService`, `ITokenService`, `IRefreshTokenService`, `IUserDirectory`, `ICarrierDirectory`, `IAvatarStorage`, `IVerificationService`, `IEmailSender` | iş kodu Identity'yi bilmez |
+| `Abstractions/Messaging` | `ICommandHandler`, `IQueryHandler` | CQRS-lite (MediatR yok: ticari lisans) |
+| `Abstractions/Notifications` | `IPushSender` (+ `PushMessage`, `PushResult`) | |
+| `Accounts` | kayıt, giriş, yenileme/çıkış, hesap bilgileri + fotoğraf, hesap silme, **engelle/şikâyet** (`Safety*`), **doğrulama/şifre sıfırlama** (`Verification*`), `PasswordPolicy`, `PhoneNumberNormalizer` | KVKK + Kullanım Koşulları ayrı zorunlu; e-posta/telefon ROL başına benzersiz (K-022); silme = anonimleştirme (K-021) |
+| `Geography` | il/ilçe sorguları | 24 saat önbellek |
+| `Listings` | ilan oluştur/güncelle/kaldır, Taşımacı listesi (filtre, sıralama, sayfa, uzaklık), İlanlarım | kabul edilmiş ilan düzenlenemez/kaldırılamaz; engelli ilan sahibinin ilanı görünmez |
+| `Offers` | teklif ver, kabul/ret, geri çek, aşama ilerlet, işi bitir, karşılıklı iptal, geçmişler | araçsız teklif yok; teklif bir araçla + tahmini teslim tarihiyle; engelde 409 |
+| `Messages` | sohbet oku/yaz/temizle | yalnız teklifin iki tarafı; kapalı teklifte ve engelde yazma 409 |
+| `Reviews` | puan ver, Taşımacı / Yük Veren profili | iş başına tek puan, yalnız Yük Veren |
+| `Engagement` | favori, görüntülenme, ilan sayaçları | idempotent; sahibin bakışı sayılmaz |
+| `Notifications` | bildirim listesi, okundu, sil, cihaz jetonu, `NotificationFactory` (metinler tek yerde), `PushDispatcher` | bildirim olayla AYNI işlemde yazılır (outbox, K-023/K-024) |
+| `PriceReference` | emsal fiyat (aynı rota + araç, tamamlanmış işlerin medyanı) | yeterli veri yoksa boş |
+| `Vehicles` | Araçlarım CRUD, `VehicleCompatibility` | büyük araç küçüğün işini yapar, frigorifik ayrı |
+| `Common` | `NotFoundException` 404, `ConflictException` 409, `AuthExceptions` (401/403/423, `EmailNotVerifiedException` 403+code), `PagedResult`, `GeoMath` (kuş uçuşu km) | |
 
-### Yukum.Infrastructure
-- `Identity/AppUser.cs` — Giriş yapabilen kullanıcı (ASP.NET Core Identity'den türer): ad, tür, aktif/engelli, KVKK onay zamanı. Şifre hash'i, kilit sayacı Identity'den gelir.
-- `Persistence/AppDbContext.cs` — Veritabanıyla konuşan merkez (Identity'li). Tarih damgası, yumuşak silme, RowVersion kurallarını **tek yerde** uygular.
-- `Persistence/Seed/RoleSeed.cs` — Admin/Shipper/Carrier rollerinin sabit numaraları ve seed'i.
-- `Persistence/Configurations/` — Her tablonun kuralları (sütun uzunluğu, benzersizlik, ilişki, seed) ayrı bir sınıfta: il/ilçe, `AppUser`, `Role`, iki profil, araç, çalışma bölgesi, `RefreshToken`. `AppDbContext` bunları tek satırla toplar.
-- `Persistence/Seed/GeographySeed.cs` — `docs/veri/il-ilce.json`'dan il ve ilçeleri okur. JSON, derleme sırasında dll'in içine gömülür (`Yukum.Infrastructure.csproj`); çalışırken ayrı dosya aranmaz.
-- `Persistence/GeographyRepository.cs` — `IGeographyRepository`'nin gerçeği; sonuçları `IMemoryCache`'te 24 saat saklar (boş sonuç saklanmaz).
-- `Identity/AccountService.cs` — Hesabı tek işlemde kurar: kullanıcı + rol + profil + araçlar + çalışma illeri; çift e-posta/telefon → `ConflictException`.
-- `Identity/AuthService.cs` — Şifre denetimi, hatalı deneme sayacı ve 10 hatada 5 dk kilit (K-020); kullanıcı yoksa da sahte hash doğrulaması (süre farkı olmasın).
-- `Identity/JwtTokenService.cs` + `JwtOptions.cs` — Erişim jetonu (HS256 JWT) üretimi ve ayarları. İçine yalnız `sub`, `role`, `jti` yazılır.
-- `Identity/PasswordPolicyValidator.cs` — Şifre kuralını Identity'ye bağlar (Identity'nin ASCII-yalnız harf kontrolü yerine).
-- `Persistence/Repository.cs` — `IRepository`'nin EF Core ile gerçeği.
-- `Persistence/UnitOfWork.cs` — `IUnitOfWork`'in gerçeği.
-- `Persistence/Migrations/` — Veritabanı şemasının sürüm kaydı (aşağıda). Elle düzenlenmez, `dotnet ef` üretir.
-- `DependencyInjection.cs` — Bağlantıyı, saat servisini ve repository'leri uygulamaya tanıtır.
+### Yukum.Infrastructure (gerçek uygulamalar)
+- `Persistence/` — `AppDbContext` (tarih damgası, yumuşak silme, RowVersion tek yerde), `Repository<T>`, `UnitOfWork`, özel repolar:
+  `ListingSearchRepository` (filtreler tek SQL'e; teklif verilmiş ve engelli ilanlar düşer), `EngagementRepository`, `BlockRepository` (kalıcı silme),
+  `GeographyRepository` (IMemoryCache), `NotificationRepository`, `DeviceTokenRepository`, `PriceReferenceRepository`.
+- `Persistence/Configurations/` — her tablonun kuralları (benzersiz indeksler: favori, görüntülenme, engel, teklif; filtreli indeksler).
+- `Persistence/Seed/` — `RoleSeed`, `GeographySeed` (`docs/veri/il-ilce.json` dll'e gömülü).
+- `Identity/` — `AppUser` (+ KvkkAcceptedAt, TermsAcceptedAt, EmailConfirmed), `AuthService` (şifre, 10 hatada 5 dk kilit, doğrulanmamış e-posta 403),
+  `AccountService`, `JwtTokenService` + `JwtOptions` (HS256, 15 dk), `RefreshTokenService` (rotasyon; çalıntı jeton → aile iptal),
+  `PasswordPolicyValidator`, `UserDirectory`, `CarrierDirectory`, `LocalAvatarStorage` (App_Data/avatars),
+  `VerificationService` + `VerificationOptions` (kod: 6 hane, 15 dk, 5 deneme, 60 sn), `ResendEmailSender` + `EmailOptions`, `LogEmailSender` (geliştirme).
+  Ayrıntı: `docs/Eposta_Sistemi.md`.
+- `Push/` — `ApnsPushSender` (HTTP/2, sandbox/production), `ApnsJwtFactory` (ES256, 50 dk önbellek), `ApnsOptions`.
+- `DependencyInjection.cs` — hepsini kaydeder; e-posta göndericisini ayara göre seçer (anahtar varsa Resend).
 
-### Yukum.Api
-- `Program.cs` — Uygulamanın açılış planı: hangi servisler var, isteğin hangi sırayla işleneceği.
-- `Controllers/AuthController.cs` — `POST /api/v1/auth/register/shipper`, `/register/carrier` ve `/login` (anonim). İstemci sözleşmesi: `docs/api/Auth.md`.
-- `Controllers/CitiesController.cs` — `GET /api/v1/cities` ve `GET /api/v1/cities/{cityId}/districts` (anonim, istemci tarafında 1 gün önbellek). İlk gerçek uçlar. İstemci sözleşmesi: `docs/api/Cities.md`.
-- `Middleware/GlobalExceptionHandler.cs` — Yakalanmamış hatayı çevirir: FluentValidation → 400, `InvalidCredentialsException` → 401, `ForbiddenException` → 403, `NotFoundException` → 404, `ConflictException` → 409, `AccountLockedException` → 423 (+`Retry-After`) (mesajlar gösterilir), diğer her şey → sade 500 (iç detay sızmaz).
-- `Health/DatabaseHealthCheck.cs` — `GET /health`: veritabanı ayakta mı? (200 / 503)
-- `Json/JsonSetup.cs` + `Json/UtcDateTimeConverters.cs` — JSON kuralları: camelCase, enum string, tarih UTC `…T10:15:00Z`.
-- `Validation/ValidationProblemResponse.cs` — Geçersiz veri (400) cevabını hata formatına ve camelCase alan adlarına çevirir.
-- `appsettings.json` — Ayarlar (loglama). **Gizli bilgi buraya yazılmaz.**
+### Yukum.Api — controller → uçlar (hepsi `/api/v1` altında)
+**Yetki:** (A) anonim · (G) giriş yapmış herkes · (Y) yalnız Yük Veren · (T) yalnız Taşımacı · (Y/T) iki rol
+
+| Controller | Uçlar |
+|---|---|
+| `AuthController` (A, "auth" hız sınırı) | `POST auth/register/shipper` · `POST auth/register/carrier` · `POST auth/login` · `POST auth/refresh` · `POST auth/logout` · `POST auth/verify-email/send` · `POST auth/verify-email` · `POST auth/password/forgot` · `POST auth/password/reset` |
+| `CitiesController` (A) | `GET cities` · `GET cities/{cityId}/districts` |
+| `AccountController` (G) | `GET account/me` · `PUT account/me` · `POST account/avatar` · `DELETE account/avatar` · `POST account/delete` · `GET avatars/{id}` |
+| `ListingsController` | `POST listings` (Y) · `GET listings/mine[?all=true]` (Y) · `PUT listings/{id}` (Y) · `POST listings/{id}/cancel` (Y) · `GET listings?filtre…` (T) |
+| `EngagementController` | `PUT/DELETE listings/{id}/favorite` (T) · `GET listings/favorites` (T) · `POST listings/{id}/view` (T) · `GET listings/{id}/stats` (Y) |
+| `OffersController` | `POST listings/{id}/offers` (T) · `GET listings/{id}/offers` (Y) · `POST offers/{id}/accept\|reject` (Y) · `GET offers/mine` (T) · `GET offers/mine/unseen-count` (T) · `POST offers/mine/seen` (T) · `GET offers/history` (Y) · `POST offers/{id}/withdraw` (T) · `POST offers/{id}/advance` (T) · `POST offers/{id}/complete` (Y/T) · `DELETE offers/{id}` (Y/T) · `POST offers/{id}/cancel-request` · `…/approve` · `…/reject` · `DELETE offers/{id}/cancel-request` (Y/T) |
+| `MessagesController` (Y/T) | `GET` · `POST` · `DELETE offers/{offerId}/messages` |
+| `ReviewsController` | `POST offers/{id}/review` (Y) · `GET carriers/{id}` (G) · `GET shippers/{id}` (G) |
+| `VehiclesController` (T) | `GET vehicles` · `POST vehicles` · `PUT vehicles/{id}` · `DELETE vehicles/{id}` |
+| `SafetyController` (G) | `PUT/DELETE users/{id}/block` · `GET account/blocks` · `POST users/{id}/report` |
+| `NotificationsController` (G) | `GET notifications?page` · `GET notifications/unread-count` · `POST notifications/{id}/read` · `POST notifications/read-all` · `DELETE notifications/{id}` · `PUT notifications/device-token` · `DELETE notifications/device-token?deviceId=` |
+| `PriceReferenceController` (G) | `GET price-reference?fromCityId&toCityId&vehicleType` |
+| (Health) | `GET /health` — veritabanı ayakta mı (200/503) |
+
+Canlı belge: API çalışırken `http://localhost:5054/scalar`. Yetki matrisi testi (`AuthorizationMatrixTests`) anonim olmaması gereken her ucu denetler.
+
+**Diğer Api dosyaları:** `Background/PushWorker.cs` (bildirim kuyruğunu okur → APNs; geçersiz jetonu siler) · `Middleware/GlobalExceptionHandler.cs`
+(400/401/403/404/409/423/500 → Türkçe ProblemDetails; `email_not_verified` için `code` alanı) · `Json/` (camelCase, enum yazı, UTC `…Z`) ·
+`Validation/ValidationProblemResponse.cs` · `Health/DatabaseHealthCheck.cs`.
 
 ---
 

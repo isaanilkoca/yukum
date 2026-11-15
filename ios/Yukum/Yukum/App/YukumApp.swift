@@ -59,6 +59,18 @@ struct YukumApp: App { // YukumApp [BİZİM] ad | App [SWIFT]: "bu struct bir uy
     // GÖRÜNÜM SEÇİMİ (Sistem / Açık / Koyu): giriş ve ana ekrandaki düğmeyle değişir, telefonda saklanır ⮕ Design/ThemeToggle.swift
     @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system // [SWIFT] UserDefaults'a bağlı değişken
 
+    // 15 Kasım: ARAYÜZ TESTLERİ (YukumUITests) için açılış bayrağı | yalnız Debug derlemesinde var, App Store derlemesine girmez
+    //   "-uiTestReset": kayıtlı oturum (Keychain'deki yenileme jetonu) ve son seçilen hesap türü silinir → her test temiz giriş ekranından başlar
+    //   ZİNCİR: YukumUITests › launchClean() → app.launchArguments → burası → LoginView otomatik giriş bulamaz
+    init() {
+        #if DEBUG
+        if CommandLine.arguments.contains("-uiTestReset") {
+            KeychainStore.remove(key: "refreshToken")                          // ⮕ Models/Networking/AuthSession.refreshKey ile aynı ad
+            UserDefaults.standard.removeObject(forKey: "lastLoginRole")        // ⮕ LoginViewModel.lastRoleKey
+        }
+        #endif
+    }
+
     // ⮕ KULLANIM [body]: SwiftUI çağırır (ekran çizilirken)
     var body: some Scene { // body [SWIFT] zorunlu özellik | Scene: uygulamanın pencere kısmı | some: tür Swift'e bırakıldı
         WindowGroup { // [SWIFT] ana pencere kutusu | iPhone'da tek pencere gösterir | WindowGroup [SWIFT]: ana pencereyi tanımlar

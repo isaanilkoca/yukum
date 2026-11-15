@@ -1,62 +1,31 @@
 //
-//  00_Rehber_Design.swift — DESIGN (TASARIM / ANİMASYON)
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu ve HANGİ TEKNİKLE yapıldığını anlatır.)
+//  00_Rehber_Design.swift — Design/ — GÖRÜNÜM PARÇALARI (tasarım sistemi)
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// Bu klasör: uygulamanın görsel kimliği ve animasyonları. Veri, kural, API isteği YOK; ViewModel YOK.
-// Views/ klasöründeki ekranlar buradaki parçaları arka plan / süs olarak kullanır.
+// NE: Uygulamanın görsel dili. Veri/iş mantığı YOK; ekranlar (Views/) bu parçaları birleştirir.
+// KURAL: Renk ekranda elle yazılmaz → Palette(isDark:). Yeni ortak bileşen önce buraya, sonra ekrana.
 //
-// HİÇBİR ŞEY DIŞARIDAN ALINMADI: hazır model, resim dosyası, animasyon dosyası ya da ek kütüphane yok.
-//   (15 Kasım: ana ekranlardaki 3B dorse sahneleri ve hazır tır modeli Truck.usdz kaldırıldı → dışarıdan alınan hiçbir şey kalmadı.)
-// Hepsi Apple'ın iOS içinde gelen üç aracıyla, kodla üretiliyor:
+// DOSYALAR
+//  DesignPalette.swift    Palette: açık/koyu tema renkleri (title, label, accent = koli bandı turuncusu, danger, cardSurface…). Tek renk kaynağı.
+//  ThemeToggle.swift      AppTheme (Sistem/Açık/Koyu, UserDefaults'ta) + ThemeToggle düğmesi (giriş ekranı sağ üst).
+//  FormStyle.swift        Ortak form/liste parçaları:
+//                           FormCard · LabeledInput (etiketli + simgeli kutu) · FormMessage (kırmızı hata / yeşil bilgi)
+//                           FormConsent (onay kutusu; document: .kvkk → PrivacyView, .terms → TermsView)
+//                           AccentButtonLabel (turuncu ana düğme + yükleniyor çarkı) · ChipButtonStyle · StatusBadge
+//                           EmptyStateCard · LoadingCard · RouteLine
+//                           .themedCard() .themedRow() .themedScreen() .busyIndicator(Bool)  ("İşleniyor…" katmanı)
+//  ActionFeedback.swift   İşlem sonrası 2B animasyonlar (hep aynı oynar, bitince "then" çalışır):
+//                           Yük Veren: .seal (koli bantlanır = olumlu) · .unseal (bant kesilir + İPTAL damgası = olumsuz)
+//                           Taşımacı:  .track (lastik izi = olumlu)    · .unload (kamyondan koli iner = olumsuz)
+//                           Kullanım: @State var feedback: ActionFeedback? → .actionFeedback($feedback) → feedback = ActionFeedback(.seal, "Mesaj") { sonra }
+//                         + ScreenBackground (ekran zemini) · SoftGlow (bulanıklıksız hafif hale)
+//  AvatarView.swift       Profil fotoğrafı (GET /api/v1/avatars/{id}, jetonlu), yoksa baş harfler. AvatarCache: aynı foto tekrar inmez.
+//  YukumLogo.swift        YukumLogo (konum işareti + koli) · BrandTitle (logolu başlık) · PinShape.
+//  LoginBoxDrop.swift     Giriş ekranındaki tek 3B koli: fizik BİR KEZ kaydedildi (LoginFall.json), her açılış kaydı oynatır (piksel piksel aynı).
+//  StillScene.swift       3B sahneyi (RealityKit) bir kez oynatır, bitince RESME çevirip 3B'yi kapatır (pil/ısı).
+//  CardboardArt.swift     Koli yüzey dokuları (karton, YÜKÜM bandı), önbellekli.
+//  CardboardBoxKit.swift  3B koli modeli üretimi.
+//  SeededRandom.swift     Sabit tohumlu rastgele (her açılış aynı) + TemplateCache. GENERİC YAPMA: Swift 6.3 Release derlemesi çöküyor.
 //
-//   ARAÇ            NE İÇİN                                   BU PROJEDE NEREDE
-//   SwiftUI         2B arayüz: yazı, düğme, renk geçişi,       ScreenTape (bantlar), TapedBoxBackground (sıra),
-//                   maske, animasyon                           arka plandaki renk geçişi ve bulanık ışık haleleri
-//   RealityKit      3B motor: şekil, malzeme, ışık, kamera,    BoxSceneBackground (sahne), BoxSceneRig (düşme/yığılma)
-//                   FİZİK (yerçekimi, çarpışma)
-//   Core Graphics   kodla resim çizme                          CardboardArt (karton dokusu, oklar, barkodlu etiket)
-//
-// DOSYA                   NE YAPAR
-//
-//  DesignPalette           tüm renkler (gece / gündüz). Tema değişecekse yalnız burası.
-//  CardboardArt            koli yüzeyindeki resimleri çizer (doku + baskı + etiket).
-//  FormStyle               form görünümü: opak kart (FormCard) + etiketli giriş kutusu (LabeledInput). Hareketli arka planda formu net ayırır.
-//  ActionFeedback          işlem sonrası tek seferlik animasyon: Yük Veren → koli kapanır + bantlanır | Taşımacı → lastik izi. + ScreenBackground (ikincil ekran zemini).
-//  LoginBoxDrop           giriş ekranı: formun altındaki alana tek Yüküm kolisi düşer (bantlarda YÜKÜM, ön yüzde logolu etiket), sonra resme döner.
-//  YukumLogo              Yüküm logosu (konum işareti + koli), uygulama simgesiyle aynı çizim; BrandTitle: üst çubuk başlığı.
-//  StillScene              PERFORMANS: 3B sahne bir kez oynar, bitince RESME döner ve 3B motor kapanır (ARView + snapshot). Giriş ekranındaki koli kullanır.
-//  SeededRandom            sabit tohumlu "rastgele": yığın, yükler ve dokular her açılışta birebir aynı (kullanıcı kararı 15 Kasım).
-//  FormStyle (alt kısım)   ikincil ekran parçaları: themedCard / themedRow / themedScreen, ChipButtonStyle, StatusBadge, EmptyStateCard, RouteLine.
-//
-// (15 Kasım) GİRİŞ EKRANI SADELEŞTİ: düşen koliler, ekran bantları ve ışıklı spot kaldırıldı (yönetici notu). Aşağıdaki koli tarifi
-//   dorselerdeki kolilerde (CardboardBoxKit) geçerli; "düşüş/fizik/yansıma" maddeleri tarihçe olarak duruyor.
-// ── KOLİ NASIL YAPILDI (RealityKit) ─────────────────────────────────────────────
-//   1. ŞEKİL    : MeshResource.generateBox(size:cornerRadius:) → köşesi yuvarlatılmış kutu. Hazır fonksiyon; ölçüyü biz veririz.
-//   2. MALZEME  : PhysicallyBasedMaterial → renk (tint) × doku (CardboardArt'ın çizdiği resim), pürüz (roughness), vernik (clearcoat).
-//                 (15 Kasım: parlak vernik/clearcoat katmanı performans için kaldırıldı.)
-//                 "Kaliteli" görüntü buradan gelir: yüzey ışığa gerçek karton gibi tepki verir.
-//   3. AYRINTI  : bant, bandın sarkan uçları, kapak yarığı, kargo etiketi = koliye ÇOCUK olarak eklenmiş ince kutular.
-//                 Çocuk oldukları için koliyle birlikte döner/düşer.
-//   4. FİZİK    : CollisionComponent + PhysicsBodyComponent(mode: .dynamic): düşme, çarpma, yığılma motor tarafından (dağınık görünüm).
-//                 15 Kasım: bırakma noktaları sabit tohumlu ve hep yığının EN ALÇAK yerinin üstünden (BoxSceneRig.lowestSpot) → kule olmaz.
-//                 KAYIT: fizik bir kez çalıştırılıp kaydedildi (Design/BoxFall.json, 30 kare/sn). Uygulama her açılışta bu kaydı OYNATIR,
-//                 fizik çalışmaz → düşüş her seferinde birebir aynı. Yeniden kayıt: simülatörde "-recordFall" argümanı (BoxSceneRig başındaki not).
-//   5. YANSIMA  : (15 Kasım'da kaldırıldı, performans) zemin artık opak, ters kopya yok.
-//   6. IŞIK     : önden sıcak beyaz ana ışık (gölge de bundan), arkadan/yandan renkli spotlar (kenarlarda parlak çizgi).
-//
-// ── BANT NASIL YAPILDI (yalnız SwiftUI) ─────────────────────────────────────────
-//   1. Bant = düz renk + üstten alta parlaklık gradyanı + tekrar eden "YÜKÜM" yazısı, hafif döndürülmüş (rotationEffect).
-//   2. "Çekilme" = bant baştan beri tam boyda çizili; üstünde bir MASKE var. Maskenin genişliği 0 → tam boy animasyonla büyür.
-//      (Ölçekleseydik yazı da ezilirdi; maske yazıyı bozmaz.)
-//   3. Sıra = tapesPulled sayacı 0'dan 7'ye birer birer artar; her artışta bir şerit uzar ve telefon hafifçe titrer (sensoryFeedback).
-//   4. Başlama anı = koliler yerleşince BoxSceneRig "durdu" der (onSettled) → TapedBoxBackground.wrapScreen sayacı başlatır.
-//
-// ── OKUMA SIRASI (ilk kez okuyacaksan) ──────────────────────────────────────────
-//   DesignPalette → ScreenTape (en kolayı, yalnız SwiftUI) → TapedBoxBackground (parçalar nasıl üst üste biniyor) → Views/LoginView (ekran bunu nasıl kullanıyor)
-//   → BoxSceneBackground.buildScene (sahne kurulumu, 1→5 numaralı adımlar) → BoxSceneRig.spawnBox (tek koli nasıl doğuyor)
-//   → CardboardArt (doku çizimi; en ayrıntılısı, en sona bırak).
-//
-// ── DENEMEK İÇİN ────────────────────────────────────────────────────────────────
-//   Uygulamayı çalıştır: giriş ekranı (Views/LoginView) bu arka planla açılır. Ya da TapedBoxBackground.swift'in sonundaki #Preview.
-//   Oynanacak sayılar: BoxSceneRig'in başındaki sabitler (koli sayısı, bırakma aralığı), TapedBoxBackground.tapes (bant yeri/açısı), DesignPalette.
+// ZİNCİR: Views/* → FormStyle · ActionFeedback · Palette | LoginView → LoginBoxDrop → StillScene

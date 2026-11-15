@@ -59,13 +59,14 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
             FormConsent(isOn: $viewModel.termsAccepted, document: .terms) // 15 Kasım: Kullanım Koşulları (ayrı kutu) ⮕ Views/TermsView
 
             // Hata / başarı yazısı ⮕ Design/FormStyle.swift › FormMessage | errorMessage nil ise çizilmez
-            if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true) }
+            if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true).accessibilityIdentifier("register.error") }
             if viewModel.isSuccess { FormMessage(text: "Kayıt başarılı! Giriş yapabilirsiniz.", isError: false) }
 
             // Düğme yalnız TETİKLEYİCİ: kontroller, paket hazırlama ve gönderme ViewModel.register()'da | Task [SWIFT]: düğmede await kullanmamızı sağlar
             Button { Task { await viewModel.register() } } label: { AccentButtonLabel(title: "Kayıt ol", isLoading: viewModel.isLoading, loadingTitle: "Kaydediliyor…") } // ⮕ RegisterViewModel.register() → AuthService.register → POST /api/v1/auth/register/shipper
                 .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]
                 .padding(.top, 4)
+                .accessibilityIdentifier("register.submit")
         }
         .onChange(of: viewModel.isSuccess) { _, ok in if ok { onRegistered(viewModel.email.trimmingCharacters(in: .whitespaces)) } } // 15 Kasım: başarı → RoleSelectionView giriş ekranına döndürür
     }

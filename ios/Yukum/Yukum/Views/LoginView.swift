@@ -91,24 +91,26 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
                     // $ = iki yönlü bağ: yazılan yazı doğrudan ViewModel'deki değişkene gider | .never: baş harf büyümesin | .emailAddress: @ kolay çıkan klavye
                     LabeledInput(label: "E-posta veya telefon", systemImage: "envelope.fill") {
-                        TextField("E-posta ya da telefon numaranız", text: $viewModel.emailOrPhone).textInputAutocapitalization(.never).keyboardType(.emailAddress) // ⮕ LoginViewModel.emailOrPhone | .keyboardType [SWIFT]: klavye türü | .textInputAutocapitalization [SWIFT]: otomatik büyük harf ayarı
+                        TextField("E-posta ya da telefon numaranız", text: $viewModel.emailOrPhone).textInputAutocapitalization(.never).keyboardType(.emailAddress).accessibilityIdentifier("login.email") // ⮕ LoginViewModel.emailOrPhone | accessibilityIdentifier [SWIFT]: arayüz testinin alanı bulduğu sabit kimlik (YukumUITests) | .keyboardType [SWIFT]: klavye türü | .textInputAutocapitalization [SWIFT]: otomatik büyük harf ayarı
                     }
 
                     LabeledInput(label: "Şifre", systemImage: "lock.fill") {
-                        SecureField("Şifreniz", text: $viewModel.password) // SecureField [SWIFT]: yazılan nokta nokta görünür | ⮕ LoginViewModel.password
+                        SecureField("Şifreniz", text: $viewModel.password).accessibilityIdentifier("login.password") // SecureField [SWIFT]: yazılan nokta nokta görünür | ⮕ LoginViewModel.password
                     }
                     // 15 Kasım: Şifremi unuttum → Views/ForgotPasswordView (e-posta/telefon + hesap türü dolu gider)
                     Button("Şifremi unuttum") { showForgot = true }
+                        .accessibilityIdentifier("login.forgot")
                         .font(.footnote.weight(.semibold)).tint(palette.accent)
                         .frame(maxWidth: .infinity, alignment: .trailing)
 
                     // 15 Kasım: yeşil bilgi (e-posta doğrulandı / şifre değişti)
-                    if let info = viewModel.infoMessage { FormMessage(text: info, isError: false) }
+                    if let info = viewModel.infoMessage { FormMessage(text: info, isError: false).accessibilityIdentifier("login.info") }
 
                     // if let: doluysa göster, nil ise çizilmez | simge + kırmızı yazı: hata olduğu renk görmeyen kullanıcıya da belli olsun
                     if let errorMessage = viewModel.errorMessage {
                         Label(errorMessage, systemImage: "exclamationmark.triangle.fill") // Label [SWIFT]: simge + yazı
                             .font(.footnote.weight(.semibold)).foregroundStyle(.red) // .foregroundStyle [SWIFT]: yazı rengi
+                            .accessibilityIdentifier("login.error")
                     }
 
                     // Button [SWIFT]: tıklanınca ilk süslü parantezdeki kod çalışır; label: düğmenin görünümü | Task [SWIFT]: düğmede await (bekleme) kullanmamızı sağlar; ekran donmaz
@@ -116,6 +118,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                     Button { Task { await viewModel.login() } } label: { // ⮕ LoginViewModel.login() → AuthService.login → POST /api/v1/auth/login
                         AccentButtonLabel(title: "Giriş yap", isLoading: viewModel.isLoading, loadingTitle: "Giriş yapılıyor…") // ⮕ Design/FormStyle.swift (istek sürerken çark)
                     }
+                    .accessibilityIdentifier("login.submit")
                     .disabled(viewModel.isLoading) // isLoading true iken basılamaz (çift tıklama olmasın) | .disabled [SWIFT]: koşul doğruysa basılamaz/kilitli
                     .padding(.top, 4)
 
@@ -130,6 +133,7 @@ struct LoginView: View { // LoginView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             .foregroundStyle(palette.label)
                             .frame(maxWidth: .infinity) // kartın ortasına hizala
                     }
+                    .accessibilityIdentifier("login.register")
                 }
 
                 // Formun altındaki boş alan: düşen Yüküm kolisi buraya oturur (koli ZStack'in arkasındaki tam ekran sahnede: LoginBoxDrop)

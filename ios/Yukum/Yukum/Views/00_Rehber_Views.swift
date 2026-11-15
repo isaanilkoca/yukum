@@ -1,31 +1,64 @@
 //
-//  00_Rehber_Views.swift — VIEWS (GÖRÜNÜM)
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_Views.swift — Views/ — EKRANLAR (MVVM'in V'si)
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// Ekranın SADECE çizimi. Veri, kural ya da API isteği yoktur: her View bir ViewModel'e bağlanır
-// (viewModel.x okur, düğmede viewModel.f() çağırır). Sağdaki 'ViewModel' = ViewModels/ klasöründeki karşılığı.
-// 
-// DOSYA                ViewModel                    NE YAPAR / KİM AÇAR
+// NE: SwiftUI ekranları. Yalnız çizer ve düğmeyi ViewModel'e bağlar. Ağ/servis/oturum çağrısı YOK (denetlendi).
 //
-//  LoginView            LoginViewModel            giriş ekranı + açılışta otomatik giriş. ContentView açar; giriş olunca HomeView'ı tam ekran açar
-//  RoleSelectionView    (ViewModel yok)             Yük Veren / Taşımacı seçimi. LoginView'dan açılır; RegisterView veya CarrierRegisterView'a götürür
-//  RegisterView         RegisterViewModel         Yük Veren kayıt formu. RoleSelectionView açar
-//  CarrierRegisterView  CarrierRegisterViewModel  Taşımacı kayıt formu (araç bilgisiyle). RoleSelectionView açar
-//  HomeView             HomeViewModel             ana sayfa: Yük Veren kendi ilanlarını, Taşımacı açık ilanları görür (filtre, Yakınımdakiler, rozet, çıkış). Aşağıdaki 5 ekranı açar
-//  ListingRow           (ViewModel yok)             listedeki tek ilan satırı; Listing modelini çizer. HomeView listeye dizer
-//  ListingDetailView    ListingDetailViewModel    ilan detayı + Teklif Gönder. HomeView'dan (Taşımacı) açılır
-//  CreateListingView    CreateListingViewModel    yeni ilan formu. HomeView'dan (Yük Veren) açılır
-//  ListingOffersView    ListingOffersViewModel    ilana gelen teklifler: kabul/red, ilanı kaldır, sohbet. HomeView'dan (Yük Veren) açılır
-//  MyOffersView         MyOffersViewModel         Taşımacının verdiği teklifler. HomeView'dan açılır; sohbet için ChatView'ı açar
-//  OldOffersView        OldOffersViewModel        Yük Verenin karara bağlanmış (geçmiş) teklifleri. HomeView'dan açılır; ChatView'ı açar
-//  OpenListingsFilterView (ViewModel yok)    Taşımacı Filtre sayfası (varış, fiyat, araç, tarih, sıralama). HomeView .sheet açar; kopya üzerinde çalışır, Uygula → HomeViewModel.filter
-//  FavoritesView        FavoritesViewModel        Taşımacının favori ilanları. HomeView sol üst kalp ikonu açar; satır → ListingDetailView
-//  CarrierProfileView   CarrierProfileViewModel   Taşımacı profili: ★ ortalama, tamamlanan iş, yorumlar. ListingOffersView / OldOffersView "Profil" ile açar
-//  RatingView           RatingViewModel           Puan ver sayfası (alttan açılır). OldOffersView "Puan ver" ve ChatView (işi bitirince) açar
-//  DeleteAccountView    AccountViewModel          Hesabı sil sayfası (şifre onayı). HomeView 'Hesabı Sil' düğmesi .sheet ile açar; başarıda onDeleted → HomeView kapanır → giriş ekranı
-//  PrivacyView          (ViewModel yok)           Gizlilik ve KVKK sabit metin sayfası. HomeView 'Gizlilik ve KVKK' ve iki kayıt ekranındaki 'KVKK metnini oku' .sheet ile açar
-//  NotificationsView   NotificationsViewModel     Bildirim listesi (okunmamış kalın + mavi nokta, sonsuz kaydırma, 'Tümünü oku'). HomeView sağ üst zil NavigationLink ile açar (Adım 4)
-//  ChatView             ChatViewModel            teklif sohbeti. MyOffersView / ListingOffersView / OldOffersView açar
+// YAZIM KURALLARI
+//  struct XView: View { @State private var viewModel = XViewModel() }  → ekran yenilense de aynı ViewModel yaşar
+//  Görünüm parçaları Design/'dan (FormCard, LabeledInput, AccentButtonLabel, .themedScreen…); renk Palette'ten
+//  Sayfa (sheet) adları …Sheet (CancelRequestSheet, ReportSheet, VehicleFormSheet)
+//  İşlem sonrası animasyon: .actionFeedback($feedback) — Yük Veren koli (.seal/.unseal), Taşımacı kamyon (.track/.unload)
+//  Arayüz testi kimlikleri: .accessibilityIdentifier("login.email" …) — metin değişse de testler (YukumUITests) kırılmaz
 //
-// API'ye giden kod BURADA YOK. Yolu: View → ViewModels/ → Models/Services/ → Models/Networking/APIClient → sunucu.
+// AKIŞ HARİTASI (ekran → açtığı ekranlar)
+//  LoginView ─┬─ RoleSelectionView (TEK kayıt ekranı, rol seçici) ─┬─ RegisterView (Yük Veren alanları)
+//             │                                                    └─ CarrierRegisterView (Taşımacı alanları)
+//             ├─ VerifyEmailView (kayıttan sonra / doğrulanmamış girişte, sheet)
+//             ├─ ForgotPasswordView (sheet)
+//             └─ HomeView (tam ekran; rol göre iki görünüm)
+//  HomeView ─┬─ YÜK VEREN: "Yeni ilan ver" → CreateListingView · ilan kartı → ListingOffersView
+//            ├─ TAŞIMACI: ilan kartı → ListingDetailView · filtre → OpenListingsFilterView · Sırala menüsü · filtre kapsülleri
+//            ├─ zil → NotificationsView
+//            └─ sol üst fotoğraf → ProfileView
+//  ProfileView ─┬─ YÜK VEREN: Devam Eden İşler / Eski Teklifler → OldOffersView(scope) · İlanlarım → MyListingsView
+//               ├─ TAŞIMACI: Devam Eden İşler / Tekliflerim / Geçmiş → MyOffersView(scope) · Araçlarım → VehiclesView
+//               │            Beğendiklerim → FavoritesView
+//               ├─ ORTAK: Hesap Bilgilerim → AccountInfoView · Engellediklerim → BlockedUsersView
+//               └─ ALT: Gizlilik → PrivacyView · Kullanım Koşulları → TermsView · Hesabı Sil → DeleteAccountView · Çıkış
+//  ListingOffersView → CarrierProfileView, ChatView, CreateListingView (düzenle)
+//  ListingDetailView → ShipperProfileView, VehiclesView (araç yoksa "Araç ekle")
+//  MyOffersView → ChatView, CancelRequestSheet          OldOffersView → ChatView, CarrierProfileView, RatingView, CancelRequestSheet
+//  ChatView → RatingView (Yük Veren işi bitirince)
+//
+// DOSYA → VIEWMODEL → NOT
+//  LoginView               LoginViewModel            3B tek koli (Design/LoginBoxDrop), tema düğmesi, Şifremi unuttum, Kayıt ol
+//  RoleSelectionView       Register / CarrierRegister kayıt bitince rolün animasyonu → giriş ekranı + kod ekranı
+//  RegisterView            RegisterViewModel         FormConsent ×2 (KVKK + Kullanım Koşulları)
+//  CarrierRegisterView     CarrierRegisterViewModel  aynı, Taşımacı
+//  VerifyEmailView         VerifyEmailViewModel      .oneTimeCode (Mail'den otomatik kod), 60 sn geri sayım (TimelineView)
+//  ForgotPasswordView      ForgotPasswordViewModel   2 adım
+//  HomeView                HomeViewModel             selamlama, liste, sonsuz kaydırma, rozetler, push izni
+//  OpenListingsFilterView  HomeViewModel             il/ilçe, varış, bütçe, araç, tarih, "araçlarıma uygun", uzaklık, ağırlık
+//  CreateListingView       CreateListingViewModel    3 kart: rota · yük · tarih/bütçe
+//  ListingRow              —                         RouteCard / RouteDash: ilan kartı (iki rol ortak)
+//  ListingDetailView       ListingDetail + Safety    teklif formu (tutar, araç, teslim tarihi), kalp, ⋯ (şikâyet/engelle)
+//  ListingOffersView       ListingOffersViewModel    gelen teklifler + sıralama, kabul/ret, sayaç kartları, ilanı kaldır
+//  MyListingsView          MyListingsViewModel       tüm ilanlar, durum rozetiyle
+//  MyOffersView            MyOffersViewModel         scope: .pending / .active / .history; aşama düğmesi, iptal talebi kartı
+//  OldOffersView           OldOffers + MyOffers      Yük Veren tarafı; puanla
+//  CancelRequestSheet      —                         neden kapsülleri (FlowChips) + not + ilanı yeniden yayınla; CancelRequestCard
+//  ChatView                Chat + Safety             balonlar, ⋯ (temizle, işi bitir, şikâyet/engelle)
+//  RatingView              RatingViewModel           1–5 yıldız + yorum
+//  CarrierProfileView      CarrierProfile + Safety   puan, yorumlar, araçlar (plakasız), ⋯
+//  ShipperProfileView      ShipperProfile + Safety   firma, il, üyelik, sayılar (iletişim gizli), ⋯
+//  ProfileView             (HomeViewModel verisi)    profil sayfası (üç çizgi menü YOK, kullanıcı kararı)
+//  AccountInfoView         AccountInfoViewModel      ad, telefon, il, hakkında, foto (PhotosPicker)
+//  VehiclesView            VehiclesViewModel         PlateBadge, VehicleFormSheet
+//  FavoritesView           FavoritesViewModel        beğenilen açık ilanlar
+//  NotificationsView       NotificationsViewModel    sola kaydır → sil, tümünü okundu yap
+//  SafetyViews             SafetyViewModel           SafetyMenuItems (⋯ içi) + .safetyFlow(…) (onaylar) + ReportSheet
+//  BlockedUsersView        BlockedUsersViewModel     engeli kaldır
+//  DeleteAccountView       AccountViewModel          şifre onayı
+//  PrivacyView / TermsView —                         sabit metinler (KVKK / Kullanım Koşulları: sıfır tolerans, 24 saatte inceleme)

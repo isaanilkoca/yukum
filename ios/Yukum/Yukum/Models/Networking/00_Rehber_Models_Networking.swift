@@ -1,16 +1,27 @@
 //
-//  00_Rehber_Models_Networking.swift — Models/Networking — ağın tek kapısı
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_Models_Networking.swift — Models/Networking/ — SUNUCUYA TEK KAPI
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// Servislerin hepsi isteği buradan gönderir. Sunucuya giden TEK yol APIClient'tır (AuthSession yenileme/çıkış için kendi isteğini atar).
-// 
+// NE: Bütün istekler buradan geçer. Servisler (Services/) yalnız "hangi uç, hangi paket" der; gerisi burada.
 //
-//  APIClient                    isteği kurar, jeton ekler, URLSession ile gönderir, 401'de yenileyip tekrarlar, JSON'u Model'e çevirir  ← 5 servis
-//  AuthSession                  jetonlar: erişim jetonu bellekte, yenileme jetonu Keychain'de; POST /auth/refresh ve /auth/logout'u KENDİSİ atar  ← APIClient, LoginViewModel, HomeViewModel
-//  APIConfig                    sunucu adresi (tek yer)
-//  HTTPMethod                   GET / POST / DELETE…
-//  APIError                     API'den dönen hata (Türkçe mesajla)
-//  APIErrorResponse             sunucunun hata JSON'u; APIError buradan doldurulur
-//  Error+UserMessage            herhangi bir hatayı ekranda gösterilecek Türkçe yazıya çevirir (error.userMessage)  ← bütün ViewModel'ler
-//  Notification+SessionExpired  'oturum bitti' duyurusunun adı. AuthSession yayınlar, HomeView dinleyip girişe döner
+// DOSYALAR
+//  APIClient.swift          GENEL İSTEK METODU (yöneticinin istediği "her yerden dinamik kullanılan get/post/put"):
+//                             send<Response>(.get/.post/.put/.delete, "/api/v1/…", query:, body:, authorized:, fallback:) → çözülmüş cevap
+//                             sendNoContent(…) → cevapsız uçlar (204) · upload(…) → çok parçalı dosya (profil fotoğrafı) · data(path) → ham bayt (foto)
+//                           İÇERİDE: jeton ekler (Bearer) → 401 gelirse AuthSession ile BİR KEZ yeniler → isteği tekrarlar
+//                                    → hata ise sunucunun Türkçe mesajını (ProblemDetails) APIError'a koyar
+//                           init(baseURL:session:auth:) — testte sahte ağ (URLProtocol) takılır
+//  AuthSession.swift        actor: erişim jetonu (bellekte, 15 dk) + yenileme jetonu (Keychain, 30 gün)
+//                             signIn · signOut (POST /auth/logout) · restore (açılışta otomatik giriş) · refreshAccessToken
+//                             AYNI ANDA 5 istek 401 alsa bile TEK yenileme yapılır (actor + bekleyen görev paylaşımı)
+//  APIConfig.swift          baseURL: simülatör → http://localhost:5054 · telefon → http://{Mac IP}:5054 (devMachineHost: ev Wi-Fi 192.168.1.18,
+//                           hotspot 172.20.10.11). Canlıda https alan adı olacak.
+//  APIError.swift           APIError {message, isSessionExpired, code?} — code: makine kodu (ör. "email_not_verified" → kod ekranı açılır)
+//  APIErrorResponse.swift   sunucunun hata JSON'u: {detail, errors{alan:[mesaj]}, code?} — ilk alan hatası ekrana yazılır
+//  Error+UserMessage.swift  error.userMessage: her hatayı Türkçe metne çevirir (iptal edilen istek → nil, ekrana yazılmaz)
+//  HTTPMethod.swift         .get .post .put .delete
+//  Notification+SessionExpired.swift  oturum bitti yayını → ekranlar giriş ekranına döner
+//
+// KULLANAN: Services/* (hepsi) · LoginViewModel (AuthSession.restore)
+// KURAL: Ekran/ViewModel ASLA URLSession'a doğrudan gitmez; her istek bir Service fonksiyonu üzerinden.

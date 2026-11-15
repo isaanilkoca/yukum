@@ -1,19 +1,25 @@
 //
-//  00_Rehber_Models_Services_Protocols.swift — Protocols — servis sözleşmeleri
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_Models_Services_Protocols.swift — Models/Services/Protocols/ — SERVİS SÖZLEŞMELERİ
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// Sözleşme = 'şu fonksiyonlar olmalı' listesi, içi boş. ViewModel somut servise değil bunlara bağlanır;
-// gerçek uygulamada gerçek servis, testte (YukumTests/Support/Fake…) sahte servis takılır.
-// 
+// NE: "Bu fonksiyonlara sahip olan her şey bu servis yerine geçebilir" sözleşmeleri.
+// NEDEN: ViewModel somut servise değil protokole bağlı → testte sunucusuz sahte servis verilir (YukumTests/Support/Fake…).
+//        Sektördeki adı: protokol tabanlı bağımlılık enjeksiyonu (DI).
 //
-//  AuthServicing     ← AuthService   (kullanan: Login/Register/CarrierRegister ViewModel)
-//  ListingServicing  ← ListingService
-//  ReviewServicing   ← ReviewService
-//  AccountServicing  ← AccountService
-//  NotificationServicing  ← NotificationService
-//  PushRegistering   ← Models/Notifications/PushManager   (kullanan: HomeViewModel; sahtesi FakePush)
-//  OfferServicing    ← OfferService
-//  ChatServicing     ← ChatService
-//  CityServicing     ← CityService
-//  SessionRestoring  ← AuthSession (Networking). İçinde 2 sözleşme: SessionRestoring (otomatik giriş: LoginViewModel) ve SessionSigningOut (çıkış: HomeViewModel)
+// SÖZLEŞME → GERÇEK UYGULAMA → TESTTEKİ SAHTESİ
+//  AuthServicing          → AuthService          → FakeAuthService
+//  AccountServicing       → AccountService       → FakeAccountService
+//  CityServicing          → CityService          → FakeCityService
+//  ListingServicing       → ListingService       → FakeListingService
+//  OfferServicing         → OfferService         → FakeOfferService
+//  ChatServicing          → ChatService          → FakeChatService
+//  ReviewServicing        → ReviewService        → FakeReviewService
+//  NotificationServicing  → NotificationService  → FakeNotificationService
+//  VehicleServicing       → VehicleService       → FakeVehicleService / TrackingVehicleService
+//  SafetyServicing        → SafetyService        → FakeSafetyService
+//  PushRegistering        → PushManager          → FakePush            (enable, unregister, setBadge)
+//  SessionRestoring / SessionSigningOut → AuthSession → FakeSession   (restore, signOut)
+//
+// YAZIM KURALI: ad = …Servicing (servis) / …ing (yetenek). Yeni uç eklenince: önce protokole, sonra servise, sonra sahteye.
+// KULLANIM: init(service: XServicing = XService()) — uygulama varsayılanı kullanır, test kendi sahtesini verir.

@@ -1,16 +1,24 @@
 //
-//  00_Rehber_Models_Listings.swift — Models/Listings — ilan paketleri
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_Models_Listings.swift — Models/Listings/ — İLAN
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// Kod yok, sadece alanlar.
-// 
+// NE: İlan verme, listeleme, filtreleme ve sayaç kalıpları.
 //
-//  Listing               gelen: tek ilan (başlık, yük, şehirler, bütçe, durum). ListingService döner; HomeViewModel listeler, ListingRow çizer
-//  PriceReference        gelen: emsal fiyat (medyan tutar + örnek sayısı). ListingService.priceReference döner → ListingDetailViewModel → ilan detayında "Bu rotada emsal fiyat"
-//  ListingStats          gelen: ilan sahibinin sayıları (görüntülenme, favori, teklif). ListingService.stats döner → ListingOffersViewModel → ListingOffersView üst kartları
-//  CreateListingRequest  giden: yeni ilan. CreateListingViewModel hazırlar → ListingService.create
-//  ListingResponse       gelen: ilan açılınca dönen cevap
-//  Page<Item>            gelen: API'nin sayfa zarfı (items, page, pageSize, totalCount). APIClient çözer → ListingService.openListings döner → HomeViewModel .items'ı okur
-//  OpenListingsFilter    giden: Taşımacı liste filtresi tek pakette (il, ilçe, varış, fiyat, araç, tarih, sıralama). HomeViewModel doldurur → queryItems() adresin ?...kısmını kurar
-//  ListingSort           seçenek: sıralama (En yeni / Fiyat artan / azalan). rawValue API'deki sort değeri; OpenListingsFilter.sort tutar
+// DOSYA → TÜR → API UCU
+//  Listing.swift               Listing — liste/detay satırı (rota, ağırlık, bütçe, tarih, isFavorite, distanceKm?, myOfferStatus?, shipperId?, status?)
+//                                ← GET /listings (Taşımacı) · /listings/mine (Yük Veren) · /listings/favorites
+//  CreateListingRequest.swift  CreateListingRequest {title, description?, weightKg, vehicleType, from/to il-ilçe, pickupDate, budget?}
+//                                → POST /listings (yeni) · PUT /listings/{id} (düzenle; teklif kabul edilmeden)
+//  ListingResponse.swift       ListingResponse ← oluştur/güncelle cevabı
+//  OpenListingsFilter.swift    Taşımacının filtresi: il/ilçe, varış ili, bütçe aralığı, araç türü, tarih aralığı, sıralama,
+//                              "araçlarıma uygun", maxDistanceKm (bana yakın), ağırlık aralığı
+//                              fn queryItems(page:pageSize:lat:lon:) → ?fromCityId=…&maxDistanceKm=… (yalnız DOLU alanlar gider)
+//  ListingSort.swift           newest · priceAsc · priceDesc · pickupSoonest (sunucuda) ; "en yakın" konum varsa varsayılan
+//  Page.swift                  Page<T> {items, page, pageSize, totalCount} — sayfalı cevap zarfı (sonsuz kaydırma)
+//  ListingStats.swift          ListingStats {viewCount, favoriteCount, offerCount} ← GET /listings/{id}/stats (yalnız ilan sahibi)
+//  PriceReference.swift        PriceReference (emsal fiyat: aynı rotadaki tamamlanmış işlerin medyanı) ← GET /price-reference?fromCityId&toCityId&vehicleType
+//
+// KULLANAN: Services/ListingService → HomeViewModel, CreateListingViewModel, ListingDetailViewModel, ListingOffersViewModel,
+//           MyListingsViewModel, FavoritesViewModel
+// KURAL: Bütçesi boş ilan fiyat filtresine girmez. Araç türü "Farketmez" (Any) her araç filtresinde görünür.

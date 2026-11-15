@@ -11,7 +11,9 @@ import  Foundation
 // │ AĞ      : Models/Networking/APIClient (jeton ekleme, 401'de yenileme, hata çevirme orada; burada yalnız "hangi adres, ne gider")
 // └──────────────────────────────────────────────────────────────────────
 struct AccountService { // struct [SWIFT]: alan + fonksiyon taşıyan kalıp | AccountService [BİZİM] ad
-    private let api = APIClient.shared // tüm istekler bu kapıdan geçer (singleton: uygulamada tek örnek)
+    private let api: APIClient // tüm istekler bu kapıdan geçer (singleton: uygulamada tek örnek)
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // deleteAccount: sendNoContent [BİZİM, APIClient]: 2xx cevabın gövdesini okumaz, hata varsa APIError fırlatır
     // body: DeleteAccountRequest → JSON'a çevrilip isteğin gövdesine konur | .post: POST yöntemi

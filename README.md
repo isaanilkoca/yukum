@@ -6,12 +6,13 @@ Yük Veren'in ilan açtığı, Taşımacı'nın ilana fiyat teklifi verdiği aç
 |---|---|
 | Backend | .NET 10, ASP.NET Core Web API, EF Core 10, Clean Architecture + CQRS-lite |
 | Veritabanı | Microsoft SQL Server 2025 (Docker) |
-| iOS | Swift, SwiftUI, MVVM + Router |
+| iOS | Swift 6, SwiftUI, MVVM (@Observable) + protokol tabanlı DI, async/await + actor, Keychain, APNs |
+| Test | xUnit + Testcontainers (backend), Swift Testing + XCUITest (iOS), GitHub Actions CI |
 
 ## Klasörler
-- `backend/` — Web API ve testleri
-- `ios/` — iOS uygulaması
-- `docs/` — Teknik rapor, uygulama planı, karar kayıtları
+- `backend/` — Web API ve testleri (klasör haritası + bütün API uçları: `docs/Backend_Rehberi.md`)
+- `ios/` — iOS uygulaması (her klasörün ilk dosyası `00_Rehber_….swift`: o klasörde ne var, ne işe yarar, hangi uca gider)
+- `docs/` — Teknik rapor, uygulama planı, karar kayıtları, rehberler
 
 Yapım sırası: `docs/Yukum_Adim_Adim_Uygulama_Plani.pdf`
 
@@ -65,8 +66,9 @@ Gerekenler: .NET 10 SDK, Docker Desktop, VS Code (C# Dev Kit).
 - `docs/Kod_Anlatimi.md` — **kodu nasıl okursun**: üç gerçek isteğin (il/ilçe, kayıt, giriş) dosya ve satır numaralı yolculuğu
 - `docs/SQL_Rehberi.md` + `docs/veri/Sema.sql` — veritabanı: tablolar, ilişkiler, örnek sorgular, açıklamalı şema
 - `docs/Backend_Rehberi.md` — hangi araç/paket/dosya ne işe yarar, komutlar, Swift karşılıkları
-- `docs/iOS_Yol_Haritasi.md` — iOS tarafı için adım adım yol haritası
-- `docs/api/` — iOS için API sözleşme kartları (`Cities.md`, `Auth.md`)
-- `docs/Karar_Kayitlari.md` — neden öyle karar verdik (K-001 … K-018)
+- `docs/Eposta_Sistemi.md` — e-posta doğrulama + şifremi unuttum: kod nereye gider, Resend anahtarı nerede
+- `docs/sql/` — hazır sorgular (teklifler, şikâyet/engelleme incelemesi)
+- `docs/api/` — API sözleşme kartları (Auth, Account, Cities, Listings, Favorites, Reviews, Notifications, PriceReference); canlı belge: `/scalar`
+- `docs/Karar_Kayitlari.md` — neden öyle karar verdik (K-001 … K-024)
 - `docs/veri/Veri_Kaynaklari.md` — il/ilçe verisinin kaynakları ve doğrulama yöntemi
 - Kod içinde: her sınıf, metot ve önemli satırda Türkçe açıklama (`///` ve `//`)

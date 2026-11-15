@@ -1,10 +1,13 @@
 //
-//  00_Rehber_Models_Location.swift — Models/Location — telefonun konumu
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_Models_Location.swift — Models/Location/ — TELEFONUN KONUMU
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// API'ye gitmez; iOS konum servisiyle (CoreLocation) konuşur.
-// 
+// NE: "Bana yakın" ve "en yakın" sıralaması için anlık konum. Konum SUNUCUDA SAKLANMAZ; yalnız o sorguda gönderilir.
 //
-//  LocationManager    izin ister, tek seferlik konum alır; sonuçlar iOS'tan 'delegate' fonksiyonlarıyla gelir  ← HomeViewModel'e LocationProviding üzerinden verilir
-//  LocationProviding  ViewModel'in gördüğü sözleşme: latitude, longitude, isDenied, errorMessage, request(). CoreLocation'ı ViewModel bilmesin diye
+//  LocationProviding.swift  protokol: latitude?, longitude?, isDenied, errorMessage, request() — ViewModel buna bağlı (testte FakeLocation)
+//  LocationManager.swift    gerçek uygulama: CoreLocation; izin yalnız ihtiyaç anında istenir (kullanıcı "bana yakın"ı açınca)
+//                           fn request(), locationManager(didUpdateLocations:), locationManagerDidChangeAuthorization
+//
+// KULLANAN: HomeViewModel (nearMeChanged, applyFilter) → ListingService.openListings(lat:lon:)
+// İzin reddedilirse: HomeView "Konum izni kapalı · Ayarları aç" satırı gösterir.

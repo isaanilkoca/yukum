@@ -23,7 +23,9 @@ import Foundation // Swift'in hazır ağ araçları bu kütüphanede
 struct AuthService {
 
     // ⮕ KULLANIM [api]: okur: AuthService › register(), AuthService › registerCarrier(), AuthService › login()
-    private let api = APIClient.shared // tüm istekler bu kapıdan geçer
+    private let api: APIClient // tüm istekler bu kapıdan geçer
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // register: Yük Veren kaydı | _ body: dolu form kağıdı | async: cevabı bekler | throws: hata fırlatabilir | -> RegisterResponse: başarılıysa bu döner
     // ÇAĞIRAN: Views/RegisterView.swift → AuthService().register(body) | body'nin kalıbı: Models/Auth/ → struct RegisterRequest

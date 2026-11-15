@@ -72,6 +72,7 @@ struct ProfileView: View {
                 Button {
                     Task { signingOut = true; await onSignOut() } // ⮕ HomeView: HomeViewModel.signOut → POST /api/v1/auth/logout, sonra dismiss
                 } label: { rowLabel("Çıkış Yap", "rectangle.portrait.and.arrow.right", palette.accent, palette) }
+                    .accessibilityIdentifier("profile.signout")
                     .themedRow()
                     .disabled(signingOut)
             }

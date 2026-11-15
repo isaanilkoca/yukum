@@ -1,11 +1,17 @@
 //
-//  00_Rehber_App.swift — App — uygulamanın girişi
-//  (Bu dosyada kod yok; klasörün ilk dosyası olarak ne nerede olduğunu anlatır.)
+//  00_Rehber_App.swift — App/ — UYGULAMANIN GİRİŞ KAPISI
+//  Kodu yok: klasörün ilk dosyası, ne nerede olduğunu anlatır. Son güncelleme: 15 Kasım 2026.
 //
 
-// MVVM dışı; sadece başlatır.
-// 
+// NE: Uygulama açılınca ilk çalışan dosyalar. İş mantığı yok; yalnız başlatma ve sistemle (bildirim) konuşma.
 //
-//  YukumApp     uygulama buradan başlar; ilk ekranı açar. Üstünde tüm projenin haritası var
-//  ContentView  LoginView'ı taşıyan kap
-//  AppDelegate  uygulama olayları (push adresi geldi, bildirime dokunuldu, uygulama açıkken bildirim geldi). Mantık yok: PushManager’a ve anons panosuna (pushTapped, pushReceived) aktarır. YukumApp @UIApplicationDelegateAdaptor ile bağlar
+// DOSYALAR
+//  YukumApp.swift         @main — program buradan başlar. Pencereyi açar, temayı (Sistem/Açık/Koyu) uygular.
+//                         init(): "-uiTestReset" açılış bayrağı (YALNIZ DEBUG) → Keychain oturumu + son rol silinir (arayüz testleri temiz başlasın)
+//  ContentView.swift      İlk ekran = Views/LoginView (otomatik girişi de o dener).
+//  AppDelegate.swift      Push: APNs cihaz jetonu gelince PushManager'a verir; bildirime dokunulunca açılacak ekranı PushManager'a iletir.
+//                         fn: application(didRegisterForRemoteNotificationsWithDeviceToken:), userNotificationCenter(didReceive:)
+//  PrivacyInfo.xcprivacy  Apple gizlilik beyanı (hangi veri, neden). App Store şartı.
+//
+// ZİNCİR: YukumApp → ContentView → LoginView → (giriş başarılı) → HomeView
+//         AppDelegate → Models/Notifications/PushManager → HomeView (bildirime dokununca ilgili liste açılır)

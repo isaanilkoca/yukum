@@ -44,7 +44,7 @@ struct ForgotPasswordView: View {
                             }
                             .pickerStyle(.segmented)
                             LabeledInput(label: "E-posta veya telefon", systemImage: "envelope.fill") {
-                                TextField("E-posta ya da telefon numaran", text: $viewModel.emailOrPhone)
+                                TextField("E-posta ya da telefon numaran", text: $viewModel.emailOrPhone).accessibilityIdentifier("forgot.identity")
                                     .textInputAutocapitalization(.never).keyboardType(.emailAddress)
                             }
                         } else {

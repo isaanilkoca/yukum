@@ -20,7 +20,9 @@ import Foundation // [SWIFT] ağ araçları
 struct CityService {
 
     // ⮕ KULLANIM [api]: okur: CityService › cities(), CityService › districts()
-    private let api = APIClient.shared
+    private let api: APIClient
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // cities: iller (81) | -> [City]: City listesi döner
     // ÇAĞIRAN: Views/CreateListingView.swift, Views/HomeView.swift (filtre), kayıt ekranları | API: GET /api/v1/cities

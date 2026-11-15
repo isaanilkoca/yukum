@@ -14,7 +14,9 @@ import Foundation // [SWIFT] ağ araçları
 // │ ETKİ    : engel iki yönlü — mesaj 409, teklif 409, ilan Taşımacı listesinden düşer (backend Application/Accounts/SafetyContracts.cs)
 // └──────────────────────────────────────────────────────────────────────
 struct SafetyService {
-    private let api = APIClient.shared
+    private let api: APIClient
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     func block(userId: String) async throws {
         try await api.sendNoContent(.put, "/api/v1/users/\(userId)/block", fallback: "Engellenemedi.")

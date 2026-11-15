@@ -13,7 +13,9 @@ import Foundation // [SWIFT] ağ araçları
 // │ HATALAR : 400 (plaka/tür) ve 409 (aynı plaka, 20 araç sınırı) Türkçe mesajla gelir → APIError
 // └──────────────────────────────────────────────────────────────────────
 struct VehicleService {
-    private let api = APIClient.shared
+    private let api: APIClient
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     func mine() async throws -> [Vehicle] {
         try await api.send(.get, "/api/v1/vehicles", fallback: "Araçlar alınamadı.")

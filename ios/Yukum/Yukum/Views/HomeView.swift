@@ -9,7 +9,7 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi | import SwiftUI [SWIFT]: e
 
 // ┌─ BAĞLANTI HARİTASI: HomeView (ana sayfa, iki rol) ─────────────────────────────
 // │ EKRANDAKİ ŞEY  →  VIEWMODEL  →  SERVİS  →  API  →  MODEL   (ok yönü: ekrandan arka plana)
-// │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, sade (3B yok, 15 Kasım), Design/TruckLoadView (3B dorse), "Yeni ilan ver", ilan kartları | renkler: Design/DesignPalette.swift
+// │ Yük Veren tasarımı       →  shipperHome + shipperBackground (bu dosyanın sonunda): selamlama, sade (3B yok, 15 Kasım), "Yeni ilan ver", ilan kartları (3B dorse sahnesi 15 Kasım'da kaldırıldı) | renkler: Design/DesignPalette.swift
 // │ Taşımacı tasarımı        →  carrierHome + carrierBackground (bu dosyanın sonunda): selamlama, "Yük ara" paneli (il/ilçe, Yakınımdakiler, Filtre), tabela başlık, rota kartları (Views/ListingRow › RouteCard) | arkada Design/TruckRoadView (dorse yanaşır, yük yığından alınır, bir kez oynar ve durur)
 // │ Hoş Geldin yazısı        →  viewModel.user                     →  (servis yok)                    →  (LoginView'dan gelir)            →  LoginUser
 // │ Yük Veren ilan listesi   →  viewModel.listings ← load()         →  ListingService.myListings()     →  GET /api/v1/listings/mine        →  [Listing]
@@ -129,6 +129,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
                             }
                             .accessibilityLabel(viewModel.unseenCount > 0 ? "Profil, yeni teklif kararı var" : "Profil")
                     }
+                    .accessibilityIdentifier("home.profile") // arayüz testi: giriş başarılı → ana ekran açıldı mı
                 }
             }
             // .task(id:) [SWIFT]: ekran HER göründüğünde çalışır (ilk açılış + başka ekrandan geri dönünce) + id DEĞİŞİNCE de yeniden çalışır
@@ -159,7 +160,7 @@ struct HomeView: View { // HomeView [BİZİM] ad | View [SWIFT]: bu bir ekran
 
 // ─── YÜK VEREN ANA EKRANI (L tasarım, 13 Kasım) ───────────────────────────────
 // NEDEN extension + ayrı özellik: body zaten uzun; Yük Veren tasarımı tek yerde okunsun. Yeni dosya açılmadı (klasör yapısı sabit).
-// ZİNCİR: body → if isShipper → shipperHome → ScrollView: selamlama → "Yeni ilan ver" → yarı şeffaf ilan kartları | TÜM EKRANIN arkasında: shipperBackground → TruckLoadView(progress: 1)
+// ZİNCİR: body → if isShipper → shipperHome → ScrollView: selamlama → "Yeni ilan ver" → yarı şeffaf ilan kartları | TÜM EKRANIN arkasında: shipperBackground (sade zemin; eski 3B TruckLoadView kaldırıldı)
 // NE DEĞİŞMEDİ: liste verisi (viewModel.listings), ListingRow, satıra basınca ListingOffersView, üst çubuk (+, geçmiş, zil), Taşımacı dalı.
 // NEDEN List yerine ScrollView + LazyVStack: List kendi beyaz zeminini ve ayırıcı çizgilerini çizer, kart görünümü vermez.
 //   LazyVStack [SWIFT]: yalnız ekrana giren satırları kurar → çok ilan olsa da hızlı | .refreshable ScrollView'da da çalışır.

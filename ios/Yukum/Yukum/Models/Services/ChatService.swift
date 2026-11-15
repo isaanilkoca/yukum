@@ -19,7 +19,9 @@ import Foundation // [SWIFT] ağ araçları
 struct ChatService { // ChatService [BİZİM] ad
 
     // ⮕ KULLANIM [api]: okur: ChatService › messages(), ChatService › send(), ChatService › clear(), ChatService › complete()
-    private let api = APIClient.shared
+    private let api: APIClient
+    // init(api:): varsayılan ortak istemci (uygulama değişmez) | testte sahte ağlı istemci verilir → hangi adrese hangi istek gittiği sınanır (YukumTests/Networking/ServiceContractTests)
+    init(api: APIClient = .shared) { self.api = api }
 
     // messages: bir teklifin sohbetindeki tüm mesajları getirir (eskiden yeniye) | yalnız teklifin iki tarafı görür
     // ÇAĞIRAN: Views/ChatView.swift → loadMessages() | ekran açılınca ve 3 saniyede bir çağrılır (yenileme) | API: GET /api/v1/offers/{offerId}/messages
