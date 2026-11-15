@@ -33,6 +33,7 @@ final class CarrierRegisterViewModel {
     var password = ""
     // ⮕ KULLANIM [kvkkAccepted]: okur: CarrierRegisterViewModel › register() | bağlar(okur+yazar): CarrierRegisterView › body | YAZAR: CarrierRegisterViewModelTests (test)
     var kvkkAccepted = false
+    var termsAccepted = false // 15 Kasım: Kullanım Koşulları kutusu (FormConsent document: .terms)
     // ⮕ ZİNCİR: Views/CarrierRegisterView: kırmızı hata yazısı
     // ⮕ KULLANIM [errorMessage]: YAZAR: CarrierRegisterViewModel › register() | okur: CarrierRegisterViewModelTests (test)
     var errorMessage: String?
@@ -58,12 +59,16 @@ final class CarrierRegisterViewModel {
             errorMessage = "KVKK metnini onaylamanız gerekir."
             return
         }
+        guard termsAccepted else { // 15 Kasım: Kullanım Koşulları ayrı ve zorunlu (Apple 1.2)
+            errorMessage = "Kullanım Koşulları'nı kabul etmeniz gerekir."
+            return
+        }
 
         // ---- 2) PAKETİ HAZIRLA ----
         // 15 Kasım (yönetici kararı): kayıtta araç SORULMUYOR (ilk amaç kullanıcıyı kaydetmek) → vehicles nil.
         //   Araçlar giriş yaptıktan sonra Araçlarım'dan eklenir (Views/VehiclesView); teklif vermek için en az bir araç gerekir (sunucu kuralı).
         let body = RegisterCarrierRequest(fullName: name, email: mail, password: password, phone: tel,
-                                          vehicles: nil, kvkkAccepted: kvkkAccepted)
+                                          vehicles: nil, kvkkAccepted: kvkkAccepted, termsAccepted: termsAccepted)
 
         // ---- 3) GÖNDER ----
         isLoading = true

@@ -56,6 +56,7 @@ struct RegisterView: View { // RegisterView [BİZİM] ad | View [SWIFT]: bu bir 
             }
 
             FormConsent(isOn: $viewModel.kvkkAccepted) // KVKK onayı + "metni oku" ⮕ Design/FormStyle.swift
+            FormConsent(isOn: $viewModel.termsAccepted, document: .terms) // 15 Kasım: Kullanım Koşulları (ayrı kutu) ⮕ Views/TermsView
 
             // Hata / başarı yazısı ⮕ Design/FormStyle.swift › FormMessage | errorMessage nil ise çizilmez
             if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true) }

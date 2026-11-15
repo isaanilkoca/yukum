@@ -47,12 +47,12 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var email = $"u{n}@x.com";
         var phone = $"0532{1000000 + n}";
         object body = shipper
-            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, companyName = "Firma", taxNumber = "1234567890", taxOffice = "Mersin", kvkkAccepted = true }
+            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, companyName = "Firma", taxNumber = "1234567890", taxOffice = "Mersin", kvkkAccepted = true, termsAccepted = true }
             : new
             {
                 fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, serviceCityIds = new[] { 33 },
                 vehicles = new object[] { new { type = "Truck", plateNumber = "33 ABC 123", capacityKg = 24000, capacityVolume = 90, brand = "Mercedes-Benz", model = "Actros", year = 2019 } },
-                kvkkAccepted = true
+                kvkkAccepted = true, termsAccepted = true
             };
         var reg = await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body);
         Assert.Equal(HttpStatusCode.Created, reg.StatusCode);
@@ -499,7 +499,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var email = $"nv{n}@x.com";
         var reg = await c.PostAsJsonAsync("/api/v1/auth/register/carrier", new
         {
-            fullName = $"Aracsiz {n}", email, phone = $"0533{1000000 + n}", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true
+            fullName = $"Aracsiz {n}", email, phone = $"0533{1000000 + n}", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true, termsAccepted = true
         });
         Assert.Equal(HttpStatusCode.Created, reg.StatusCode); // kayıtta araç zorunlu değil
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "nv" + n, deviceName = "test" });
@@ -1484,7 +1484,7 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var openForCarrier = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
         var carrierOffers = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/offers/mine"));
         var reRegister = await c.PostAsJsonAsync("/api/v1/auth/register/shipper",
-            new { fullName = "Yeni Hesap", email = shipper.Email, phone = "05329998877", password = "Abcdefg1", kvkkAccepted = true });
+            new { fullName = "Yeni Hesap", email = shipper.Email, phone = "05329998877", password = "Abcdefg1", kvkkAccepted = true, termsAccepted = true });
 
         Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, oldLogin.StatusCode);              // eski bilgilerle giriş yok
@@ -1614,5 +1614,93 @@ public class OffersAndChatApiTests(SqlServerFixture sql)
         var body = await Json(profile);
         Assert.Equal(3m, body.GetProperty("averageRating").GetDecimal());
         Assert.Equal("Orta", body.GetProperty("reviews")[0].GetProperty("comment").GetString());
+    }
+
+
+    // ---------- engelle + şikâyet et (15 Kasım, Apple 1.2) ----------
+    private static async Task<string> MyId(HttpClient c, string token) =>
+        (await Json(await Call(c, token, HttpMethod.Get, "/api/v1/account/me"))).GetProperty("id").GetString()!;
+
+    private static async Task<bool> ListContains(HttpClient c, string carrier, string listingId)
+    {
+        var items = await Items(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings"));
+        return items.EnumerateArray().Any(i => i.GetProperty("id").GetString() == listingId);
+    }
+
+    [Fact]
+    public async Task Blocking_works_both_ways_hides_listings_stops_offers_and_messages_and_unblocking_restores_them()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var carrierId = await MyId(c, carrier);
+        var first = await NewListing(c, shipper);
+        var offer = await NewOffer(c, carrier, first);   // sohbet açık bir teklif
+        var second = await NewListing(c, shipper);
+        Assert.True(await ListContains(c, carrier, second));
+
+        // Yük Veren engeller → Taşımacı tarafında da her şey kapanır (iki yönlü)
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Put, $"/api/v1/users/{carrierId}/block")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Put, $"/api/v1/users/{carrierId}/block")).StatusCode); // idempotent
+        var offerOnSecond = await Call(c, carrier, HttpMethod.Post, $"/api/v1/listings/{second}/offers",
+            new { estimatedDeliveryDate = DateTime.UtcNow.AddDays(45).ToString("yyyy-MM-dd"), amount = 900, note = "x" });
+        var carrierWrites = await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "merhaba" });
+        var shipperWrites = await Call(c, shipper, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "merhaba" });
+        var oldMessages = await Call(c, carrier, HttpMethod.Get, $"/api/v1/offers/{offer}/messages");
+        var blocks = await Json(await Call(c, shipper, HttpMethod.Get, "/api/v1/account/blocks"));
+        var carrierBlocks = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/account/blocks"));
+
+        Assert.False(await ListContains(c, carrier, second));                        // ilan listeden düştü
+        Assert.Equal(HttpStatusCode.Conflict, offerOnSecond.StatusCode);              // doğrudan istekle de teklif yok
+        Assert.Equal(HttpStatusCode.Conflict, carrierWrites.StatusCode);             // engellenen yazamaz
+        Assert.Equal(HttpStatusCode.Conflict, shipperWrites.StatusCode);             // engelleyen de yazamaz
+        Assert.Equal(HttpStatusCode.OK, oldMessages.StatusCode);                      // eski mesajlar okunur (kanıt)
+        Assert.Equal(1, blocks.GetArrayLength());
+        Assert.Equal(carrierId, blocks[0].GetProperty("userId").GetString());
+        Assert.StartsWith("Tasimaci", blocks[0].GetProperty("fullName").GetString());
+        Assert.Equal(0, carrierBlocks.GetArrayLength());                             // engellenen, kimin engellediğini görmez
+
+        // Engel kalkınca her şey geri gelir; yeniden engellenebilir (kalıcı silme benzersiz indeksi tıkamaz)
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Delete, $"/api/v1/users/{carrierId}/block")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Delete, $"/api/v1/users/{carrierId}/block")).StatusCode); // idempotent
+        Assert.True(await ListContains(c, carrier, second));
+        Assert.Equal(HttpStatusCode.Created, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/offers/{offer}/messages", new { text = "tekrar" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Put, $"/api/v1/users/{carrierId}/block")).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_carrier_blocking_a_shipper_also_hides_that_shippers_listings()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var shipperId = await MyId(c, shipper);
+        var listing = await NewListing(c, shipper);
+        await Call(c, carrier, HttpMethod.Put, $"/api/v1/listings/{listing}/favorite");
+
+        await Call(c, carrier, HttpMethod.Put, $"/api/v1/users/{shipperId}/block");
+        var favorites = await Json(await Call(c, carrier, HttpMethod.Get, "/api/v1/listings/favorites"));
+
+        Assert.False(await ListContains(c, carrier, listing));
+        Assert.Equal(0, favorites.GetArrayLength());   // favorilerden de düşer
+    }
+
+    [Fact]
+    public async Task Block_and_report_reject_self_and_unknown_users_and_a_report_needs_a_valid_reason()
+    {
+        var c = await StartAsync();
+        var shipper = await NewUser(c, true); var carrier = await NewUser(c, false);
+        var shipperId = await MyId(c, shipper); var carrierId = await MyId(c, carrier);
+        var unknown = Guid.NewGuid();
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, shipper, HttpMethod.Put, $"/api/v1/users/{shipperId}/block")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(c, shipper, HttpMethod.Put, $"/api/v1/users/{unknown}/block")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Call(c, null, HttpMethod.Put, $"/api/v1/users/{carrierId}/block")).StatusCode);
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{carrierId}/report", new { note = "nedensiz" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{carrierId}/report", new { reason = "Spam", note = new string('a', 501) })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{shipperId}/report", new { reason = "Spam" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{unknown}/report", new { reason = "Spam" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{carrierId}/report", new { reason = "Fraud", note = "ön ödeme istedi" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, carrier, HttpMethod.Post, $"/api/v1/users/{shipperId}/report", new { reason = "Harassment" })).StatusCode); // iki rol de şikâyet eder
+        Assert.Equal(HttpStatusCode.NoContent, (await Call(c, shipper, HttpMethod.Post, $"/api/v1/users/{carrierId}/report", new { reason = "Spam" })).StatusCode); // 24 saat içinde tekrar: sessizce başarılı
     }
 }

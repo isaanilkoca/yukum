@@ -9,7 +9,7 @@ import SwiftUI    // [SWIFT] ekran çizim kütüphanesi
 
 // ┌─ BAĞLANTI HARİTASI: FormStyle.swift ─────────────────────────────────────────
 // │ GELEN     : Views/LoginView.swift → FormCard { LabeledInput(...) { TextField(...) } ... } | Views/RoleSelectionView (tek kayıt ekranı), RegisterView, CarrierRegisterView
-// │ GİDEN     : Design/Des ignPalette.swift (kart ve kutu renkleri)
+// │ GİDEN     : Design/Des  ignPalette.swift (kart ve kutu renkleri)
 // │ TEKNİK    : yalnız SwiftUI. İçerik dışarıdan verilir (@ViewBuilder) → alanın NE olduğu (TextField, Picker) ekranda kalır, NASIL göründüğü burada.
 // │ REHBER    : Design/00_Rehber_Design.swift
 // └──────────────────────────────────────────────────────────────────────
@@ -96,10 +96,14 @@ struct AccentButtonLabel: View {
 
 // BU GÖRÜNÜM: KVKK onayı. Solda onay kutusu (basınca işaretlenir), yanında metin; altında "KVKK metnini oku" bağlantısı (alttan sayfa açar).
 // NEDEN Toggle değil kutu: anahtar (Toggle) bir ayar gibi duruyor; sözleşme onayı için alışılmış görünüm işaret kutusudur.
+// 15 Kasım: aynı kutu iki belge için — document: .kvkk (varsayılan) ya da .terms (Kullanım Koşulları, Apple 1.2). Her belge AYRI kutu (KVKK başka sözleşmeyle birleştirilmez).
 // ⮕ KULLANIM [FormConsent]: kullanır: RegisterView, CarrierRegisterView
 struct FormConsent: View {
+    enum Document { case kvkk, terms } // hangi metin: yazı, bağlantı ve açılan sayfa buna göre
+
     @Environment(\.colorScheme) private var colorScheme
-    @Binding var isOn: Bool // @Binding [SWIFT]: değer çağıranın (ViewModel.kvkkAccepted); burada değişince orada da değişir
+    @Binding var isOn: Bool // @Binding [SWIFT]: değer çağıranın (ViewModel.kvkkAccepted / termsAccepted); burada değişince orada da değişir
+    var document: Document = .kvkk // varsayılan: eski çağrılar (FormConsent(isOn:)) KVKK olarak kalır
     @State private var showPrivacy = false
 
     var body: some View {
@@ -110,18 +114,20 @@ struct FormConsent: View {
                     Image(systemName: isOn ? "checkmark.square.fill" : "square")
                         .font(.title3)
                         .foregroundStyle(isOn ? palette.accent : palette.label.opacity(0.6))
-                    Text("KVKK aydınlatma metnini okudum, onaylıyorum.")
+                    Text(document == .kvkk ? "KVKK aydınlatma metnini okudum, onaylıyorum." : "Kullanım Koşulları'nı okudum, kabul ediyorum.")
                         .font(.footnote)
                         .foregroundStyle(palette.label)
                         .multilineTextAlignment(.leading)
                 }
             }
             .buttonStyle(.plain) // [SWIFT] düğme yazıyı maviye boyamasın
-            Button("KVKK metnini oku") { showPrivacy = true }
+            Button(document == .kvkk ? "KVKK metnini oku" : "Kullanım Koşulları'nı oku") { showPrivacy = true }
                 .font(.footnote.weight(.semibold))
                 .tint(palette.accent)
                 .padding(.leading, 32) // kutunun hizasından değil, yazının hizasından başlasın
-                .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
+                .sheet(isPresented: $showPrivacy) { // ⮕ Views/PrivacyView | Views/TermsView
+                    if document == .kvkk { PrivacyView() } else { TermsView() }
+                }
         }
         .padding(.top, 2)
     }

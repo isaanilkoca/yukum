@@ -15,8 +15,12 @@ struct CarrierProfileView: View {
     @State private var viewModel: CarrierProfileViewModel
     @Environment(\.colorScheme) private var colorScheme
 
+    @State private var safety: SafetyViewModel // 15 Kasım: Şikâyet Et / Engelle ⮕ ViewModels/SafetyViewModel
+    @State private var feedback: ActionFeedback?
+
     init(carrierId: String) {
         _viewModel = State(initialValue: CarrierProfileViewModel(carrierId: carrierId))
+        _safety = State(initialValue: SafetyViewModel(target: SafetyTarget(userId: carrierId, name: "Taşımacı")))
     }
 
     // GÖRÜNÜM (15 Kasım, L tasarım): üstte profil kartı (baş harf rozeti, puan, tamamlanan iş), altında yorum kartları. İŞLEV DEĞİŞMEDİ.
@@ -95,7 +99,13 @@ struct CarrierProfileView: View {
         .themedScreen()
         .navigationTitle("Taşımacı Profili")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.load() }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { Menu { SafetyMenuItems(viewModel: safety) } label: { Image(systemName: "ellipsis.circle") } } }
+        .safetyFlow(safety, isShipper: true, feedback: $feedback) // profilde kalınır: menü "Engeli Kaldır"a döner
+        .task {
+            await viewModel.load()
+            if let name = viewModel.profile?.fullName { safety.target.name = name } // onay penceresinde gerçek ad
+        }
         .refreshable { await viewModel.load() }
+        .actionFeedback($feedback)
     }
 }

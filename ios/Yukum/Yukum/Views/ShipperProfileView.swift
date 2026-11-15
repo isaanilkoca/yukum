@@ -19,7 +19,13 @@ struct ShipperProfileView: View {
     @State private var viewModel: ShipperProfileViewModel
     @Environment(\.colorScheme) private var colorScheme
 
-    init(shipperId: String) { _viewModel = State(initialValue: ShipperProfileViewModel(shipperId: shipperId)) }
+    @State private var safety: SafetyViewModel // 15 Kasım: Şikâyet Et / Engelle ⮕ ViewModels/SafetyViewModel
+    @State private var feedback: ActionFeedback?
+
+    init(shipperId: String) {
+        _viewModel = State(initialValue: ShipperProfileViewModel(shipperId: shipperId))
+        _safety = State(initialValue: SafetyViewModel(target: SafetyTarget(userId: shipperId, name: "Yük Veren")))
+    }
 
     var body: some View {
         let palette = Palette(isDark: colorScheme == .dark)
@@ -66,8 +72,14 @@ struct ShipperProfileView: View {
         .background { ScreenBackground() }
         .navigationTitle("Yük Veren Profili")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await viewModel.load() }
+        .toolbar { ToolbarItem(placement: .topBarTrailing) { Menu { SafetyMenuItems(viewModel: safety) } label: { Image(systemName: "ellipsis.circle") } } }
+        .safetyFlow(safety, isShipper: false, feedback: $feedback) // profilde kalınır: menü "Engeli Kaldır"a döner
+        .task {
+            await viewModel.load()
+            if let name = viewModel.profile?.fullName { safety.target.name = name } // onay penceresinde gerçek ad
+        }
         .refreshable { await viewModel.load() }
+        .actionFeedback($feedback)
     }
 
     private func stat(_ value: String, _ title: String, _ icon: String, _ palette: Palette) -> some View {

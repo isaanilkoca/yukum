@@ -14,7 +14,7 @@ struct RegisterViewModelTests {
     private func make() -> (RegisterViewModel, FakeAuthService) {
         let auth = FakeAuthService()
         let vm = RegisterViewModel(auth: auth)
-        vm.fullName = "  Ali Veli  "; vm.email = " ali@x.com "; vm.phone = " 0532 123 45 67 "; vm.password = "Abcdefg1"; vm.kvkkAccepted = true
+        vm.fullName = "  Ali Veli  "; vm.email = " ali@x.com "; vm.phone = " 0532 123 45 67 "; vm.password = "Abcdefg1"; vm.kvkkAccepted = true; vm.termsAccepted = true
         return (vm, auth)
     }
 
@@ -34,6 +34,20 @@ struct RegisterViewModelTests {
         await vm.register()
         #expect(vm.errorMessage == "KVKK metnini onaylamanız gerekir.")
         #expect(auth.registerBodies.isEmpty)
+    }
+
+    @Test func termsOfUseApprovalIsRequired_separatelyFromKvkk() async { // 15 Kasım (Apple 1.2)
+        let (vm, auth) = make()
+        vm.termsAccepted = false
+        await vm.register()
+        #expect(vm.errorMessage == "Kullanım Koşulları'nı kabul etmeniz gerekir.")
+        #expect(auth.registerBodies.isEmpty)
+    }
+
+    @Test func sendsTheTermsApproval() async {
+        let (vm, auth) = make()
+        await vm.register()
+        #expect(auth.registerBodies.first?.termsAccepted == true)
     }
 
     @Test func buildsTheRequest_withTrimmedValues_optionalCompanyAsNil_andTheTemporaryDefaultCity() async {

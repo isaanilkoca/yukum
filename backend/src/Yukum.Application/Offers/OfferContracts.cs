@@ -40,7 +40,7 @@ public sealed record GetMyOffersQuery(Guid CarrierId);
 /// <summary>Taşımacı geçmişindeki satır: teklif + ilanın özeti. IsNew: karar verildi ama taşımacı henüz görmedi.</summary>
 public sealed record CarrierOfferDto(Guid Id, Guid ListingId, string ListingTitle,
     string FromCityName, string FromDistrictName, string ToCityName, string ToDistrictName,
-    string ShipperName, int WeightKg, DateOnly PickupDate,
+    string ShipperName, Guid ShipperId, int WeightKg, DateOnly PickupDate, // ShipperId (15 Kasım): sohbetteki "Engelle / Şikâyet et" kimi hedefleyeceğini bilsin | varsayılansız (OpenAPI dersi)
     decimal Amount, string? Note, OfferStatus Status, bool IsNew, DateTime CreatedAt, DateTime? DecidedAt, JobStage Stage,
     CancelRequestDto? CancelRequest = null, bool MutuallyCancelled = false,
     bool HasMessages = false); // 15 Kasım: bekleyen teklifte sohbet başladı mı → iOS "Görüşülüyor" etiketi

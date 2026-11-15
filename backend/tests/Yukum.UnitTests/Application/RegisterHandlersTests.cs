@@ -24,7 +24,7 @@ public class RegisterHandlersTests
     }
 
     private static RegisterShipperCommand ShipperCommand() => new(
-        "  Ali Veli  ", "  Ali@X.com ", "0532 123 45 67", "Abcdefg1", 33, null, null, null, true);
+        "  Ali Veli  ", "  Ali@X.com ", "0532 123 45 67", "Abcdefg1", 33, null, null, null, true, true);
 
     [Fact]
     public async Task Shipper_is_normalized_before_it_reaches_the_account_service()
@@ -60,7 +60,7 @@ public class RegisterHandlersTests
         var expected = new RegisteredUserDto(Guid.NewGuid(), "Veli", "veli@x.com", UserType.Carrier);
         _accounts.RegisterCarrierAsync(Arg.Do<RegisterCarrierCommand>(c => received = c), Arg.Any<CancellationToken>()).Returns(expected);
         var command = new RegisterCarrierCommand(
-            " Veli ", "VELI@x.com", "+90 533 222 11 00", "Abcdefg1", 33, [1], [new VehicleInput(VehicleType.Lorry, "  33 ab 1  ", 5000, null)], true);
+            " Veli ", "VELI@x.com", "+90 533 222 11 00", "Abcdefg1", 33, [1], [new VehicleInput(VehicleType.Lorry, "  33 ab 1  ", 5000, null)], true, true);
 
         var result = await _carrier.HandleAsync(command);
 
@@ -76,7 +76,7 @@ public class RegisterHandlersTests
     public async Task An_invalid_carrier_request_never_reaches_the_account_service()
     {
         // 15 Kasım: araçsız kayıt artık geçerli → geçersiz örnek olarak KVKK onayı verilmemiş istek kullanılır
-        var command = new RegisterCarrierCommand("Veli", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, null, [], false);
+        var command = new RegisterCarrierCommand("Veli", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, null, [], false, true);
 
         await Assert.ThrowsAsync<ValidationException>(() => _carrier.HandleAsync(command));
 

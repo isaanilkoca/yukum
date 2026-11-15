@@ -25,7 +25,8 @@ public sealed class DeleteAccountHandler(
     IDeviceTokenRepository deviceTokens,
     IUnitOfWork unitOfWork,
     TimeProvider time,
-    IAvatarStorage avatars) : ICommandHandler<DeleteAccountCommand, bool>
+    IAvatarStorage avatars,
+    IBlockRepository blocks) : ICommandHandler<DeleteAccountCommand, bool>
 {
     // FONKSİYON ROLÜ: API'NİN İŞ MANTIĞI | AccountController çağırır: şifreyi doğrular, aktif iş var mı bakar, açık ilan/teklifleri temizler,
     // favori/görüntülenme kayıtlarını siler ve hesabı anonimleştirir. HEPSİ TEK İŞLEMDE (biri başarısızsa hiçbiri olmaz)
@@ -69,6 +70,7 @@ public sealed class DeleteAccountHandler(
             await engagement.DeleteUserDataAsync(command.UserId, ct);   // favoriler + görüntülenme izleri: kişisel davranış verisi, tamamen silinir
             await notificationData.DeleteUserDataAsync(command.UserId, ct); // kendi bildirimleri de silinir (karşı taraflara giden bildirimler kalır)
             await deviceTokens.DeleteUserDataAsync(command.UserId, ct);     // telefon push adresleri: silinen hesaba bildirim gitmez
+            await blocks.DeleteUserDataAsync(command.UserId, ct);           // 15 Kasım: iki yöndeki engeller silinir (şikâyetler KALIR: yönetici incelemesi için kanıt)
             await accounts.AnonymizeAsync(command.UserId, ct);
         }, cancellationToken);
         // Profil fotoğrafı DOSYASI da silinir (KVKK: kişisel veri). İşlem başarıyla bittikten SONRA: işlem geri alınsaydı fotoğraf kaybolmasın.

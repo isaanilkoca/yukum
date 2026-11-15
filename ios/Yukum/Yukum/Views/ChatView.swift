@@ -39,8 +39,11 @@ struct ChatView: View {
     @State private var feedback: ActionFeedback? // işlem sonrası animasyon (rolüne göre) ⮕ Design/ActionFeedback.swift
     @State private var busy = false // temizle / işi bitir sürüyor → "İşleniyor…"
 
+    @State private var safety: SafetyViewModel // 15 Kasım: Engelle / Şikâyet Et ⮕ ViewModels/SafetyViewModel, Views/SafetyViews
+
     init(context: ChatContext) {
         _viewModel = State(initialValue: ChatViewModel(context: context))
+        _safety = State(initialValue: SafetyViewModel(target: SafetyTarget(userId: context.otherUserId ?? "", name: context.title, offerId: context.offerId)))
     }
 
     // Rol işareti: sohbeti iki rol de açar. canReview yalnız Yük Veren'de true (ChatContext) → Yük Veren koli, Taşımacı lastik izi.
@@ -111,6 +114,7 @@ struct ChatView: View {
                     if viewModel.canComplete { // yalnız kabul edilmiş + teslim edilmiş işte
                         Button("İşi Bitir ve Sil", systemImage: "checkmark.seal", role: .destructive) { showCompleteConfirm = true }
                     }
+                    if viewModel.context.otherUserId != nil { SafetyMenuItems(viewModel: safety) } // Şikâyet Et + Engelle (karşı taraf biliniyorsa)
                 } label: { Image(systemName: "ellipsis.circle") }
             }
         }
@@ -145,6 +149,7 @@ struct ChatView: View {
         } message: {
             Text("İş iki tarafta da Tamamlandı olur ve sohbet iki tarafta yazmaya kapanır. Teklif ve mesajlar sizin listenizden silinir; karşı taraf tamamlanmış işi kendi geçmişinde görür.")
         }
+        .safetyFlow(safety, isShipper: viewModel.context.canReview, feedback: $feedback) { dismiss() } // engelleyince sohbetten çık ⮕ Views/SafetyViews.swift
         .task { await viewModel.startPolling() } // ekran açıkken birkaç saniyede bir yeni mesaj sorar; ekran kapanınca .task kendiliğinden durur
         .actionFeedback($feedback)
     }

@@ -28,5 +28,6 @@ struct RegisterCarrierRequest: Encodable { // Encodable [SWIFT]: bu türdeki de�
     let vehicles: [VehicleRequest]?  // 15 Kasım: kayıtta araç sorulmuyor → nil (JSON'a yazılmaz); araçlar sonra Araçlarım'dan (VehicleService)
     // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let kvkkAccepted: Bool
+    let termsAccepted: Bool // 15 Kasım: Kullanım Koşulları onayı (Views/TermsView); sunucu zorunlu tutar
 }
 // Cevap paketi Yük Veren ile aynı (RegisterResponse), yenisi gerekmez.

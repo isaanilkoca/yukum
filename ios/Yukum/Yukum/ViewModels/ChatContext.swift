@@ -27,6 +27,7 @@ struct ChatContext: Hashable {
     let canComplete: Bool // "İşi Bitir ve Sil" seçeneği çıksın mı | yalnız KABUL EDİLMİŞ işte VE aşama "Teslim edildi" ise (sunucu kuralı: önce teslim)
     // ⮕ KULLANIM [canWrite]: okur: ChatContext › forCarrier(), ChatContext › forShipperPending(), ChatContext › forShipperHistory()
     let canWrite: Bool // yazma kutusu açık mı | reddedilmiş/tamamlanmış/iptal edilmişte kapalı, yalnız eski mesajlar okunur (API de 409 verir)
+    var otherUserId: String? = nil // 15 Kasım: karşı tarafın numarası → "⋯" menüsünde Engelle / Şikâyet Et (Views/SafetyViews) | nil: menüde çıkmaz
     var canReview = false // işi bitirince puan sayfası açılsın mı | yalnız Yük Veren tarafında true | var + varsayılan değer: eski kurucular (canReview yazmayanlar) bozulmaz
 
     // Taşımacı kendi teklifinin sohbetini açıyor (Tekliflerim): yazı yalnız bekleyen ve kabul edilende, bitirme yalnız kabul edilende
@@ -34,14 +35,14 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [forCarrier]: çağırır: MyOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forCarrier(_ offer: CarrierOffer) -> ChatContext { // static [SWIFT]: türün kendisine ait (örnek üretmeden erişilir)
         ChatContext(offerId: offer.id, title: offer.shipperName,
-                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Pending" || offer.status == "Accepted")
+                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Pending" || offer.status == "Accepted", otherUserId: offer.shipperId)
     }
 
     // Yük Veren, ilanına gelen BEKLEYEN bir teklifle pazarlık ediyor (Gelen Teklifler): yazılabilir, henüz bitirilemez
     // ⮕ ZİNCİR: Yük Veren bekleyen teklifle pazarlık ediyor ← ListingOffersViewModel.openChat(_:) ← Views/ListingOffersView "Sohbet"
     // ⮕ KULLANIM [forShipperPending]: çağırır: ListingOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forShipperPending(_ offer: ListingOffer) -> ChatContext {
-        ChatContext(offerId: offer.id, title: offer.carrierName, canComplete: false, canWrite: true)
+        ChatContext(offerId: offer.id, title: offer.carrierName, canComplete: false, canWrite: true, otherUserId: offer.carrierId)
     }
 
     // Yük Veren, karara bağlanmış bir teklifin sohbetini açıyor (Eski Teklifler): yazı ve bitirme yalnız kabul edilende
@@ -49,6 +50,6 @@ struct ChatContext: Hashable {
     // ⮕ KULLANIM [forShipperHistory]: çağırır: OldOffersViewModel › openChat(), ChatViewModelTests (test)
     static func forShipperHistory(_ offer: ShipperHistoryOffer) -> ChatContext {
         ChatContext(offerId: offer.id, title: offer.carrierName,
-                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Accepted", canReview: true)
+                    canComplete: offer.status == "Accepted" && offer.stage == "Delivered", canWrite: offer.status == "Accepted", otherUserId: offer.carrierId, canReview: true)
     }
 }

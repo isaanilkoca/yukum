@@ -29,8 +29,11 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
     @Environment(\.dismiss) private var dismiss // @Environment [SWIFT]: sistemden hazır değer al | dismiss: "bu ekranı kapat" komutu | teklif gidince ana sayfaya dönmek için
 
     // init: ilan dışarıdan verilir (HomeView'daki satır), ViewModel burada oluşturulur | kalıbı: Models/Listings/ → Listing
+    @State private var safety: SafetyViewModel // 15 Kasım: ilan sahibini Şikâyet Et / Engelle ⮕ ViewModels/SafetyViewModel
+
     init(listing: Listing) {
         _viewModel = State(initialValue: ListingDetailViewModel(listing: listing))
+        _safety = State(initialValue: SafetyViewModel(target: SafetyTarget(userId: listing.shipperId ?? "", name: "İlan sahibi", listingId: listing.id)))
     }
 
     @Environment(\.colorScheme) private var colorScheme // [SWIFT] açık/koyu mod → Palette
@@ -142,7 +145,13 @@ struct ListingDetailView: View { // ListingDetailView [BİZİM] ad | View [SWIFT
                     Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart").foregroundStyle(palette.accent) // SF Symbols: dolu/boş kalp | ⮕ ListingDetailViewModel.isFavorite
                 }
             }
+            if listing.shipperId != nil { // 15 Kasım: ⋯ menüsü → Şikâyet Et / Engelle (ilan sahibi)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu { SafetyMenuItems(viewModel: safety) } label: { Image(systemName: "ellipsis.circle").foregroundStyle(palette.accent) }
+                }
+            }
         }
+        .safetyFlow(safety, isShipper: false, feedback: $feedback) { dismiss() } // engelleyince ilan kapanır (listeden de düşer) ⮕ Views/SafetyViews.swift
         .task { await viewModel.recordView(); await viewModel.loadReference() }
         .onAppear { Task { await viewModel.loadVehicles() } } // 15 Kasım: araç seçici | .onAppear: Araçlarım'dan geri dönünce de yenilenir (yeni/tamamlanan araç görünür) // .task [SWIFT]: ekran göründüğünde çalışır | görüntülenme + emsal fiyat (hata olursa sessiz)
         .navigationTitle("İlan Detayı") // [SWIFT] üst çubuk başlığı

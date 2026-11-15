@@ -22,6 +22,7 @@ public sealed record VehicleInput(VehicleType? Type, string? PlateNumber, int? C
 /// <param name="TaxNumber">Vergi numarası (opsiyonel, 10 veya 11 haneli).</param>
 /// <param name="TaxOffice">Vergi dairesi (opsiyonel).</param>
 /// <param name="KvkkAccepted">KVKK aydınlatma metni onaylandı mı? Zorunlu: true olmalı.</param>
+/// <param name="TermsAccepted">Kullanım Koşulları (kötüye kullanıma sıfır tolerans) kabul edildi mi? Zorunlu: true olmalı (15 Kasım, Apple 1.2).</param>
 public sealed record RegisterShipperCommand(
     string? FullName,
     string? Email,
@@ -31,7 +32,8 @@ public sealed record RegisterShipperCommand(
     string? CompanyName,
     string? TaxNumber,
     string? TaxOffice,
-    bool KvkkAccepted);
+    bool KvkkAccepted,
+    bool TermsAccepted);
 
 /// <summary>Taşımacı kayıt isteği. En az bir araç zorunludur. Rol istemciden gelmez; bu uç Carrier rolünü kendisi verir.</summary>
 /// <param name="FullName">Ad-soyad ya da firma adı.</param>
@@ -42,6 +44,7 @@ public sealed record RegisterShipperCommand(
 /// <param name="ServiceCityIds">Çalıştığı illerin plaka kodları (opsiyonel).</param>
 /// <param name="Vehicles">Araçlar (en az 1).</param>
 /// <param name="KvkkAccepted">KVKK aydınlatma metni onaylandı mı? Zorunlu: true olmalı.</param>
+/// <param name="TermsAccepted">Kullanım Koşulları kabul edildi mi? Zorunlu: true olmalı (15 Kasım, Apple 1.2).</param>
 public sealed record RegisterCarrierCommand(
     string? FullName,
     string? Email,
@@ -50,7 +53,8 @@ public sealed record RegisterCarrierCommand(
     int? HomeCityId,
     List<int>? ServiceCityIds,
     List<VehicleInput>? Vehicles,
-    bool KvkkAccepted);
+    bool KvkkAccepted,
+    bool TermsAccepted);
 
 /// <summary>Kayıttan sonra istemciye dönen kullanıcı özeti. Şifre ve hash asla dönmez.</summary>
 /// <param name="Id">Kullanıcı numarası.</param>

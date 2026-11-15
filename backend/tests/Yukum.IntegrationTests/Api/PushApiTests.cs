@@ -79,11 +79,11 @@ public class PushApiTests(SqlServerFixture sql)
         var email = $"p{n}@x.com";
         var phone = $"0534{3000000 + n}";
         object body = shipper
-            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, kvkkAccepted = true }
+            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, kvkkAccepted = true, termsAccepted = true }
             : new
             {
                 fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, serviceCityIds = new[] { 33 },
-                vehicles = new object[] { new { type = "Truck", capacityKg = 24000, brand = "Volvo", model = "FH", year = 2020 } }, kvkkAccepted = true
+                vehicles = new object[] { new { type = "Truck", capacityKg = 24000, brand = "Volvo", model = "FH", year = 2020 } }, kvkkAccepted = true, termsAccepted = true
             };
         Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body)).StatusCode);
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "pd" + n, deviceName = "test" });

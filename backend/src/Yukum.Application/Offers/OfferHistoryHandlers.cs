@@ -32,7 +32,7 @@ public sealed class GetMyOffersHandler(IRepository<Offer> offers, IRepository<Li
             {
                 var l = listingMap[o.ListingId];
                 return new CarrierOfferDto(o.Id, l.Id, l.Title, cities[l.FromCityId], districts[l.FromDistrictId],
-                    cities[l.ToCityId], districts[l.ToDistrictId], shippers.GetValueOrDefault(l.ShipperId, "Yük Veren"),
+                    cities[l.ToCityId], districts[l.ToDistrictId], shippers.GetValueOrDefault(l.ShipperId, "Yük Veren"), l.ShipperId,
                     l.WeightKg, l.PickupDate, o.Amount, o.Note,
                     o.Status, IsNew: o.Status != OfferStatus.Pending && !o.CarrierSeen, o.CreatedAt, o.DecidedAt, o.Stage,
                     CancelRequestHandlers.ToDto(o, query.CarrierId), o.MutuallyCancelled, talking.Contains(o.Id));

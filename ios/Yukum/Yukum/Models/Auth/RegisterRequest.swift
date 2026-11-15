@@ -38,4 +38,5 @@ struct RegisterRequest: Encodable { // Encodable [SWIFT]: bu türdeki değer JSO
     let companyName : String?  // ? = boş olabilir (isteğe bağlı); nil ise JSON'a hiç yazılmaz
     // ⮕ KULLANIM [kvkkAccepted]: başka dosyada kullanılmıyor (yalnız bu dosyada ya da sözleşme gereği)
     let kvkkAccepted : Bool    // KVKK onayı; true olmalı
+    let termsAccepted: Bool    // 15 Kasım: Kullanım Koşulları onayı (Views/TermsView); true olmalı, sunucu da zorunlu tutar
 }

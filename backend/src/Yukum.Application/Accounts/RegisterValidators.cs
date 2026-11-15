@@ -60,6 +60,10 @@ internal static partial class AccountRules
         // bool alan true olmalı (KVKK onayı verilmeden kayıt olunamaz).
         rule.Equal(true).WithMessage("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
 
+    /// <summary>Kullanım Koşulları kabul edilmiş olmalı (15 Kasım, Apple 1.2: kötüye kullanıma sıfır tolerans; metin iOS Views/TermsView).</summary>
+    public static IRuleBuilderOptions<T, bool> TermsAccepted<T>(this IRuleBuilder<T, bool> rule) =>
+        rule.Equal(true).WithMessage("Devam etmek için Kullanım Koşulları'nı kabul etmeniz gerekir.");
+
     /// <summary>İl isteğe bağlı: boş bırakılabilir; verilmişse veritabanında var olmalı.</summary>
     public static IRuleBuilderOptions<T, int?> OptionalExistingCity<T>(this IRuleBuilder<T, int?> rule, IGeographyRepository geography) =>
         // Boş (null) geçerlidir: kayıtta il sorulmaz. Dolu ise il veritabanında/önbellekte var olmalı.
@@ -83,6 +87,7 @@ public sealed class RegisterShipperValidator : AbstractValidator<RegisterShipper
         RuleFor(c => c.Phone).Phone();
         RuleFor(c => c.Password).Password();
         RuleFor(c => c.KvkkAccepted).KvkkAccepted();
+        RuleFor(c => c.TermsAccepted).TermsAccepted(); // 15 Kasım: KVKK'dan AYRI onay (açık rıza başka sözleşmeyle tek kutuda birleştirilmez)
         RuleFor(c => c.CityId).OptionalExistingCity(geography);
 
         RuleFor(c => c.CompanyName).Must(v => v!.Trim().Length <= 200)
@@ -108,6 +113,7 @@ public sealed class RegisterCarrierValidator : AbstractValidator<RegisterCarrier
         RuleFor(c => c.Phone).Phone();
         RuleFor(c => c.Password).Password();
         RuleFor(c => c.KvkkAccepted).KvkkAccepted();
+        RuleFor(c => c.TermsAccepted).TermsAccepted(); // 15 Kasım: KVKK'dan AYRI onay (açık rıza başka sözleşmeyle tek kutuda birleştirilmez)
         RuleFor(c => c.HomeCityId).OptionalExistingCity(geography);
 
         // Çalışma illeri opsiyoneldir; verilmişse her biri geçerli, hiçbiri tekrarlı olmamalı.

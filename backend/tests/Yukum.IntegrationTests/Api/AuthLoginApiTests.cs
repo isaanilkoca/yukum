@@ -31,14 +31,14 @@ public class AuthLoginApiTests(SqlServerFixture sql)
     private static async Task RegisterShipperAsync(HttpClient client, string email = "ali@x.com", string phone = "0532 123 45 67") =>
         Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/v1/auth/register/shipper", new
         {
-            fullName = "Ali Veli", email, phone, password = Password, cityId = 33, kvkkAccepted = true
+            fullName = "Ali Veli", email, phone, password = Password, cityId = 33, kvkkAccepted = true, termsAccepted = true
         })).StatusCode);
 
     private static async Task RegisterCarrierAsync(HttpClient client, string email = "veli@x.com", string phone = "0533 222 11 00") =>
         Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/v1/auth/register/carrier", new
         {
             fullName = "Veli Nakliyat", email, phone, password = Password, homeCityId = 33,
-            vehicles = new[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true
+            vehicles = new[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true, termsAccepted = true
         })).StatusCode);
 
     private static Task<HttpResponseMessage> LoginAsync(HttpClient client, string emailOrPhone = "ali@x.com", string password = Password) =>

@@ -120,8 +120,8 @@ public partial class AuthorizationMatrixTests(SqlServerFixture sql)
         var n = Guid.NewGuid().ToString("N")[..8];
         var phone = "05" + Random.Shared.Next(300000000, 399999999);
         object body = shipper
-            ? new { fullName = "Yuk Veren", email = $"m{n}@x.com", phone, password = "Abcdefg1", kvkkAccepted = true }
-            : new { fullName = "Tasimaci", email = $"m{n}@x.com", phone, password = "Abcdefg1", vehicles = new object[] { new { type = "Truck", capacityKg = 1000 } }, kvkkAccepted = true };
+            ? new { fullName = "Yuk Veren", email = $"m{n}@x.com", phone, password = "Abcdefg1", kvkkAccepted = true, termsAccepted = true }
+            : new { fullName = "Tasimaci", email = $"m{n}@x.com", phone, password = "Abcdefg1", vehicles = new object[] { new { type = "Truck", capacityKg = 1000 } }, kvkkAccepted = true, termsAccepted = true };
         var reg = await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body);
         Assert.Equal(HttpStatusCode.Created, reg.StatusCode);
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = $"m{n}@x.com", password = "Abcdefg1", deviceId = "d" + n, deviceName = "t" });

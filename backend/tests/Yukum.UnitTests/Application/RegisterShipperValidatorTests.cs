@@ -18,7 +18,7 @@ public class RegisterShipperValidatorTests
     }
 
     private static RegisterShipperCommand Valid() => new(
-        "Ali Veli", "ali@x.com", "0532 123 45 67", "Abcdefg1", 33, "Ali Tarım", "1234567890", "Mersin", true);
+        "Ali Veli", "ali@x.com", "0532 123 45 67", "Abcdefg1", 33, "Ali Tarım", "1234567890", "Mersin", true, true);
 
     [Fact]
     public async Task A_complete_valid_request_passes()
@@ -123,6 +123,14 @@ public class RegisterShipperValidatorTests
         var result = await _validator.TestValidateAsync(Valid() with { KvkkAccepted = false });
         result.ShouldHaveValidationErrorFor(c => c.KvkkAccepted)
             .WithErrorMessage("Devam etmek için KVKK aydınlatma metnini onaylamanız gerekir.");
+    }
+
+    [Fact]
+    public async Task Terms_of_use_must_be_accepted_separately_from_kvkk()
+    {
+        var result = await _validator.TestValidateAsync(Valid() with { TermsAccepted = false });
+        result.ShouldHaveValidationErrorFor(c => c.TermsAccepted)
+            .WithErrorMessage("Devam etmek için Kullanım Koşulları'nı kabul etmeniz gerekir.");
     }
 
     // ---------- Yük Veren'e özel ----------

@@ -36,7 +36,7 @@ public class AuthServiceTests(SqlServerFixture sql)
         var db = await sql.CreateDatabaseAsync(new FakeTimeProvider());
         await using var scope = NewScope(db);
         await scope.ServiceProvider.GetRequiredService<IAccountService>().RegisterShipperAsync(
-            new RegisterShipperCommand("Ali Veli", email, phone, Password, 33, null, null, null, true));
+            new RegisterShipperCommand("Ali Veli", email, phone, Password, 33, null, null, null, true, true));
         return db;
     }
 
@@ -76,7 +76,7 @@ public class AuthServiceTests(SqlServerFixture sql)
         var db = await sql.CreateDatabaseAsync(new FakeTimeProvider());
         await using (var scope = NewScope(db))
             await scope.ServiceProvider.GetRequiredService<IAccountService>().RegisterCarrierAsync(new RegisterCarrierCommand(
-                "Veli Nakliyat", "veli@x.com", "+905332221100", Password, 33, null, [new VehicleInput(VehicleType.Truck, null, 1000, null)], true));
+                "Veli Nakliyat", "veli@x.com", "+905332221100", Password, 33, null, [new VehicleInput(VehicleType.Truck, null, 1000, null)], true, true));
 
         var user = await LoginAsync(db, "veli@x.com", null, Password);
 

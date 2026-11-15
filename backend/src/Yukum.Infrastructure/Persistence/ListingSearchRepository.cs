@@ -51,6 +51,11 @@ public class ListingSearchRepository(AppDbContext context) : IListingSearchRepos
         // SQL: WHERE NOT EXISTS (SELECT 1 FROM Offers o WHERE o.ListingId = l.Id AND o.CarrierId = @carrierId AND o.MutuallyCancelled = 0)
         query = query.Where(l => !context.Offers.Any(o => o.ListingId == l.Id && o.CarrierId == carrierId && !o.MutuallyCancelled));
 
+        // ENGEL (15 Kasım): Taşımacı ile ilan sahibi arasında engel varsa (iki yönden biri) ilan görünmez.
+        // SQL: AND NOT EXISTS (SELECT 1 FROM UserBlocks b WHERE (b.BlockerId=@carrierId AND b.BlockedId=l.ShipperId) OR (b.BlockerId=l.ShipperId AND b.BlockedId=@carrierId))
+        query = query.Where(l => !context.UserBlocks.Any(b =>
+            (b.BlockerId == carrierId && b.BlockedId == l.ShipperId) || (b.BlockerId == l.ShipperId && b.BlockedId == carrierId)));
+
         if (f.FromCityId is { } fromCity) query = query.Where(l => l.FromCityId == fromCity);
         if (f.FromDistrictId is { } fromDistrict) query = query.Where(l => l.FromDistrictId == fromDistrict);
         if (f.ToCityId is { } toCity) query = query.Where(l => l.ToCityId == toCity);

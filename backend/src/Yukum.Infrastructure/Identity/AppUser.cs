@@ -30,6 +30,9 @@ public class AppUser : IdentityUser<Guid>, ITimestamped
     /// <summary>KVKK aydınlatma metnini kabul ettiği an (UTC). Kayıt için zorunludur; ne zaman onayladığı kanıt olarak saklanır.</summary>
     public DateTime? KvkkAcceptedAt { get; set; }
 
+    /// <summary>Kullanım Koşulları'nın kabul edildiği an (kanıt; 15 Kasım, Apple 1.2). Bu tarihten önce açılmış hesaplarda boş.</summary>
+    public DateTime? TermsAcceptedAt { get; set; }
+
     /// <inheritdoc />
     public DateTime CreatedAt { get; set; }
 

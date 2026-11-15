@@ -26,12 +26,12 @@ public class SameEmailTwoRolesApiTests(SqlServerFixture sql)
     }
 
     private static Task<HttpResponseMessage> RegisterShipper(HttpClient c, string password = "Abcdefg1", string email = Email, string phone = Phone) =>
-        c.PostAsJsonAsync("/api/v1/auth/register/shipper", new { fullName = "Yuk Veren", email, phone, password, kvkkAccepted = true });
+        c.PostAsJsonAsync("/api/v1/auth/register/shipper", new { fullName = "Yuk Veren", email, phone, password, kvkkAccepted = true, termsAccepted = true });
 
     private static Task<HttpResponseMessage> RegisterCarrier(HttpClient c, string password = "Abcdefg1", string email = Email, string phone = Phone) =>
         c.PostAsJsonAsync("/api/v1/auth/register/carrier", new
         {
-            fullName = "Tasimaci", email, phone, password, kvkkAccepted = true,
+            fullName = "Tasimaci", email, phone, password, kvkkAccepted = true, termsAccepted = true,
             vehicles = new object[] { new { type = "Truck", capacityKg = 1000 } }
         });
 

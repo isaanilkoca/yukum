@@ -21,7 +21,7 @@ public class RegisterCarrierValidatorTests
     private static VehicleInput Truck() => new(VehicleType.Truck, "33 ABC 123", 24000, 90m);
 
     private static RegisterCarrierCommand Valid() => new(
-        "Veli Nakliyat", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, [33, 1], [Truck()], true);
+        "Veli Nakliyat", "veli@x.com", "0533 222 11 00", "Abcdefg1", 33, [33, 1], [Truck()], true, true);
 
     [Fact]
     public async Task A_complete_valid_request_passes()

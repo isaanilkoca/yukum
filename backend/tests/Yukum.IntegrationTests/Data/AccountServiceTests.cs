@@ -37,11 +37,11 @@ public class AccountServiceTests(SqlServerFixture sql)
     }
 
     private static RegisterShipperCommand Shipper(string email = "ali@x.com", string phone = "+905321234567") =>
-        new("Ali Veli", email, phone, "Abcdefg1", 33, "Ali Tarım", "1234567890", "Mersin", true);
+        new("Ali Veli", email, phone, "Abcdefg1", 33, "Ali Tarım", "1234567890", "Mersin", true, true);
 
     private static RegisterCarrierCommand Carrier(string email = "veli@x.com", string phone = "+905332221100", List<int>? serviceCities = null) =>
         new("Veli Nakliyat", email, phone, "Abcdefg1", 33, serviceCities ?? [33, 1],
-            [new VehicleInput(VehicleType.Truck, "33 ABC 123", 24000, 90m), new VehicleInput(VehicleType.Refrigerated, null, 8000, null)], true);
+            [new VehicleInput(VehicleType.Truck, "33 ABC 123", 24000, 90m), new VehicleInput(VehicleType.Refrigerated, null, 8000, null)], true, true);
 
     [Fact]
     public async Task Shipper_is_created_with_user_role_and_profile()

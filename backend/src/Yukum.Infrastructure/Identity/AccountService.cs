@@ -216,7 +216,9 @@ public sealed class AccountService(AppDbContext context, UserManager<AppUser> us
                 UserType = type,
                 IsActive = true,
                 // KVKK onay anı kanıt olarak saklanır.
-                KvkkAcceptedAt = time.GetUtcNow().UtcDateTime
+                KvkkAcceptedAt = time.GetUtcNow().UtcDateTime,
+                // Kullanım Koşulları kabul anı (15 Kasım). Doğrulayıcı true olmadan buraya gelinmez (RegisterValidators.TermsAccepted).
+                TermsAcceptedAt = time.GetUtcNow().UtcDateTime
             };
 
             // Identity: şifreyi hash'ler (PBKDF2), kuralları (şifre politikası, benzersiz e-posta) denetler, kullanıcıyı kaydeder. Şifre hiçbir zaman açık saklanmaz.

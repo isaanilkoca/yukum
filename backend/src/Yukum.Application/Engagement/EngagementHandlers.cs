@@ -36,7 +36,7 @@ public sealed class RecordViewHandler(IRepository<Listing> listings, IEngagement
 }
 
 /// <summary>Taşımacı'nın favori ilanları (yalnız hâlâ açık olanlar), en son favorilenen üstte.</summary>
-public sealed class GetFavoriteListingsHandler(IEngagementRepository engagement, IRepository<Listing> listings, IGeographyRepository geography)
+public sealed class GetFavoriteListingsHandler(IEngagementRepository engagement, IRepository<Listing> listings, IGeographyRepository geography, IBlockRepository blocks)
     : IQueryHandler<GetFavoriteListingsQuery, IReadOnlyList<ListingDto>>
 {
     /// <summary>Kaldırılmış ya da atanmış ilanlar listeden düşer.</summary>
@@ -45,7 +45,8 @@ public sealed class GetFavoriteListingsHandler(IEngagementRepository engagement,
         var ids = await engagement.ListFavoriteListingIdsAsync(query.CarrierId, cancellationToken); // sıra: son favorilenen önce
         var loaded = (await listings.ListAsync(l => ids.Contains(l.Id) && l.Status == ListingStatus.Open, asNoTracking: true, cancellationToken))
             .ToDictionary(l => l.Id);
-        var items = ids.Where(loaded.ContainsKey).Select(id => loaded[id]).ToList();
+        var blocked = await blocks.BlockedEitherWayIdsAsync(query.CarrierId, cancellationToken); // 15 Kasım: engelli ilan sahibinin ilanları favorilerde de görünmez
+        var items = ids.Where(loaded.ContainsKey).Select(id => loaded[id]).Where(l => !blocked.Contains(l.ShipperId)).ToList();
 
         var names = await CreateListingHandler.CityNamesAsync(geography, cancellationToken);
         var districts = await CreateListingHandler.DistrictNamesAsync(geography, items, cancellationToken);

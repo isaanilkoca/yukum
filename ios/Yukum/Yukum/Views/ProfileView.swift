@@ -12,7 +12,8 @@ import SwiftUI // [SWIFT] ekran çizim kütüphanesi
 // │ AÇAN      : HomeView sol üst profil fotoğrafı (NavigationLink) | veriler HomeViewModel'den gelir (me, user, unseenCount)
 // │ YÜK VEREN : İlanlarım (MyListingsView) · Eski Teklifler (OldOffersView) · Hesap Bilgilerim (AccountInfoView)
 // │ TAŞIMACI  : Tekliflerim (MyOffersView, görülmemiş karar rozeti) · Araçlarım (VehiclesView) · Beğendiklerim (FavoritesView) · Hesap Bilgilerim
-// │ ALT       : Gizlilik (PrivacyView, sheet) · Hesabı Sil (DeleteAccountView, sheet) · Çıkış
+// │ İKİ ROL   : Engellediklerim (BlockedUsersView, 15 Kasım)
+// │ ALT       : Gizlilik (PrivacyView, sheet) · Kullanım Koşulları (TermsView, sheet) · Hesabı Sil (DeleteAccountView, sheet) · Çıkış
 // │ ÇIKIŞ/SİL : HomeView'un verdiği kapanışlar (onSignOut/onDeleted) HomeView'u kapatır → giriş ekranı
 // └──────────────────────────────────────────────────────────────────────
 // NEDEN veriler parametre: profil başlığı (fotoğraf, ad) ana ekrandaki fotoğrafla AYNI kaynaktan (HomeViewModel.me) gelir;
@@ -31,6 +32,7 @@ struct ProfileView: View {
     var onDeleted: () -> Void
 
     @State private var showPrivacy = false
+    @State private var showTerms = false // 15 Kasım: Kullanım Koşulları ⮕ Views/TermsView
     @State private var showDeleteAccount = false
     @State private var signingOut = false
     @Environment(\.colorScheme) private var colorScheme
@@ -56,11 +58,14 @@ struct ProfileView: View {
                     link("Beğendiklerim", "heart.fill", palette) { FavoritesView() }
                 }
                 link("Hesap Bilgilerim", "person.crop.circle.fill", palette) { AccountInfoView(onSaved: onRename) }
+                link("Engellediklerim", "hand.raised.fill", palette) { BlockedUsersView(isShipper: isShipper) } // 15 Kasım ⮕ Views/BlockedUsersView
             }
 
             // HESAP EYLEMLERİ (önceden ana ekranın altındaki kapsül satırı)
             Section {
                 Button { showPrivacy = true } label: { rowLabel("Gizlilik ve KVKK", "hand.raised.fill", palette.title, palette) }
+                    .themedRow()
+                Button { showTerms = true } label: { rowLabel("Kullanım Koşulları", "doc.text.fill", palette.title, palette) }
                     .themedRow()
                 Button { showDeleteAccount = true } label: { rowLabel("Hesabı Sil", "person.crop.circle.badge.xmark", palette.danger, palette) }
                     .themedRow()
@@ -78,6 +83,7 @@ struct ProfileView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { Task { await onRefresh() } } // .onAppear [SWIFT]: Hesap Bilgilerim'den GERİ dönünce de çalışır → yeni fotoğraf hemen görünür
         .sheet(isPresented: $showPrivacy) { PrivacyView() } // ⮕ Views/PrivacyView
+        .sheet(isPresented: $showTerms) { TermsView() } // ⮕ Views/TermsView
         .sheet(isPresented: $showDeleteAccount) { DeleteAccountView(onDeleted: onDeleted) } // ⮕ Views/DeleteAccountView (şifre onayı orada)
     }
 

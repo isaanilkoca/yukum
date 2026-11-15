@@ -15,7 +15,7 @@ struct CarrierRegisterViewModelTests {
         let auth = FakeAuthService()
         let vm = CarrierRegisterViewModel(auth: auth)
         vm.fullName = "Veli Nakliyat"; vm.email = "veli@x.com"; vm.phone = "0533 222 11 00"; vm.password = "Abcdefg1"
-        vm.kvkkAccepted = true
+        vm.kvkkAccepted = true; vm.termsAccepted = true
         return (vm, auth)
     }
 

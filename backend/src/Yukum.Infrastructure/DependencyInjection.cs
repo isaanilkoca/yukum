@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IListingSearchRepository, ListingSearchRepository>();
         services.AddScoped<IPriceReferenceRepository, PriceReferenceRepository>();
         services.AddScoped<IEngagementRepository, EngagementRepository>();
+        services.AddScoped<IBlockRepository, BlockRepository>(); // 15 Kasım: engelleme (iki yönlü kontrol, kalıcı kaldırma)
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IDeviceTokenRepository, DeviceTokenRepository>();
 

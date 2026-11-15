@@ -43,8 +43,8 @@ public class AccountProfileApiTests(SqlServerFixture sql)
         var email = $"ap{n}{Guid.NewGuid().ToString("N")[..8]}@x.com";
         phone ??= $"0535{4000000 + n}";
         object body = shipper
-            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, kvkkAccepted = true }
-            : new { fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true };
+            ? new { fullName = $"Yuk Veren {n}", email, phone, password = "Abcdefg1", cityId = 33, kvkkAccepted = true, termsAccepted = true }
+            : new { fullName = $"Tasimaci {n}", email, phone, password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true, termsAccepted = true };
         Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync(shipper ? "/api/v1/auth/register/shipper" : "/api/v1/auth/register/carrier", body)).StatusCode);
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = email, password = "Abcdefg1", deviceId = "ap" + n, deviceName = "test" });
         return new User((await Json(login)).GetProperty("accessToken").GetString()!, email, phone);

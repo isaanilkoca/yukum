@@ -60,6 +60,7 @@ struct CarrierRegisterView: View {
                 .font(.footnote).foregroundStyle(palette.label.opacity(0.8))
 
             FormConsent(isOn: $viewModel.kvkkAccepted) // KVKK onayı + "metni oku" ⮕ Design/FormStyle.swift
+            FormConsent(isOn: $viewModel.termsAccepted, document: .terms) // 15 Kasım: Kullanım Koşulları (ayrı kutu) ⮕ Views/TermsView
 
             if let errorMessage = viewModel.errorMessage { FormMessage(text: errorMessage, isError: true) }
             if viewModel.isSuccess { FormMessage(text: "Başarıyla kayıt oldunuz. Şimdi giriş yapabilirsiniz.", isError: false) }

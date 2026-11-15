@@ -35,6 +35,7 @@ final class RegisterViewModel {
     var companyName = "" // firma adı, isteğe bağlı (boşsa nil gider)
     // ⮕ KULLANIM [kvkkAccepted]: okur: RegisterViewModel › register() | bağlar(okur+yazar): RegisterView › body | YAZAR: RegisterViewModelTests (test)
     var kvkkAccepted = false // KVKK Toggle'ı
+    var termsAccepted = false // 15 Kasım: Kullanım Koşulları kutusu (FormConsent document: .terms)
     // ⮕ ZİNCİR: Views/RegisterView: kırmızı hata yazısı (doğrulama mesajı ya da sunucunun Türkçe mesajı)
     // ⮕ KULLANIM [errorMessage]: YAZAR: RegisterViewModel › register() | okur: RegisterViewModelTests (test)
     var errorMessage: String?
@@ -60,11 +61,15 @@ final class RegisterViewModel {
             errorMessage = "KVKK metnini onaylamanız gerekir."
             return
         }
+        guard termsAccepted else { // 15 Kasım: Kullanım Koşulları ayrı ve zorunlu (Apple 1.2)
+            errorMessage = "Kullanım Koşulları'nı kabul etmeniz gerekir."
+            return
+        }
 
         // ---- 2) PAKETİ HAZIRLA ---- (parametre sırası RegisterRequest'teki alan sırasıyla aynı olmalı)
         let body = RegisterRequest(fullName: name, email: mail, password: password, phone: tel,
                                    companyName: companyName.isEmpty ? nil : companyName, // boşsa nil: JSON'a hiç yazılmaz
-                                   kvkkAccepted: kvkkAccepted)
+                                   kvkkAccepted: kvkkAccepted, termsAccepted: termsAccepted)
 
         // ---- 3) GÖNDER ----
         isLoading = true // düğme kilitlenir

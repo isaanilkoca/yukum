@@ -44,7 +44,8 @@ public sealed class SendMessageHandler(
     IRepository<Offer> offers,
     IRepository<Listing> listings,
     IRepository<Message> messages,
-    IUnitOfWork unitOfWork) : ICommandHandler<SendMessageCommand, MessageDto>
+    IUnitOfWork unitOfWork,
+    IBlockRepository blocks) : ICommandHandler<SendMessageCommand, MessageDto>
 {
     /// <summary>Doğrulama hatası 400, taraf değilse 404, teklif reddedilmişse 409.</summary>
     public async Task<MessageDto> HandleAsync(SendMessageCommand command, CancellationToken cancellationToken = default)
@@ -59,6 +60,14 @@ public sealed class SendMessageHandler(
             throw new ConflictException("İş tamamlandı, sohbet kapalı.");   // iki tarafta da kilitli
         if (offer.Status == OfferStatus.Cancelled)
             throw new ConflictException("İlan kaldırıldı, sohbet kapalı.");
+
+        // ENGEL (15 Kasım): iki taraftan biri diğerini engellediyse yazılamaz. Karşı taraf: ben Taşımacı isem ilan sahibi, değilsem teklifi veren.
+        //   Eski mesajlar okunmaya devam eder (GetMessagesHandler): şikâyet/inceleme için kanıt kaybolmasın.
+        var otherId = offer.CarrierId == command.UserId
+            ? (await listings.GetByIdAsync(offer.ListingId, asNoTracking: true, cancellationToken))!.ShipperId
+            : offer.CarrierId;
+        if (await blocks.IsBlockedEitherWayAsync(command.UserId, otherId, cancellationToken))
+            throw new ConflictException("Bu kullanıcıyla mesajlaşma kapalı (engellendi).");
 
         var message = new Message { OfferId = offer.Id, SenderId = command.UserId, Text = command.Text!.Trim() };
         messages.Add(message);

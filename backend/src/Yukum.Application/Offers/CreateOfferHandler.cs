@@ -16,7 +16,8 @@ public sealed class CreateOfferHandler(
     IRepository<Offer> offers,
     IRepository<Notification> notifications,
     IRepository<Yukum.Domain.Accounts.Vehicle> vehicles,
-    IUnitOfWork unitOfWork) : ICommandHandler<CreateOfferCommand, OfferDto>
+    IUnitOfWork unitOfWork,
+    IBlockRepository blocks) : ICommandHandler<CreateOfferCommand, OfferDto>
 {
     // FONKSİYON ROLÜ: API'NİN İŞ MANTIĞI | OffersController çağırır: tutarı doğrular, ilan açık mı bakar, yeni teklif ekler ya da eskisinin tutarını günceller, DB'ye yazar
     /// <summary>İlan yoksa NotFoundException (404), ilan açık değilse ConflictException (409) fırlatır.</summary>
@@ -28,6 +29,10 @@ public sealed class CreateOfferHandler(
             ?? throw new NotFoundException("İlan bulunamadı.");
         if (listing.Status != ListingStatus.Open)
             throw new ConflictException("Bu ilan artık teklif almıyor.");
+        // ENGEL (15 Kasım): Taşımacı ile ilan sahibi arasında (hangi yönden olursa olsun) engel varsa teklif yok.
+        //   Normalde ilan listede zaten görünmez (ListingSearchRepository); bu kontrol eski ekrandan/doğrudan istekten gelen teklifi durdurur.
+        if (await blocks.IsBlockedEitherWayAsync(command.CarrierId, listing.ShipperId, cancellationToken))
+            throw new ConflictException("Bu ilana teklif veremezsin.");
 
         // ARAÇ ŞARTI (15 Kasım, kullanıcı kararı): aracı olmayan Taşımacı teklif veremez. Kayıtta araç artık sorulmuyor,
         //   bu yüzden kontrol burada. Mesajdaki "Araçlarım" kelimesi iOS'ta "Araç ekle" düğmesini çıkarır (ListingDetailView).

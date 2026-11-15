@@ -31,7 +31,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     private static object ShipperBody(string email = "ali@x.com", string phone = "0532 123 45 67", string password = "Abcdefg1") => new
     {
         fullName = "Ali Veli", email, phone, password, cityId = 33,
-        companyName = "Ali Tarım", taxNumber = "1234567890", taxOffice = "Mersin", kvkkAccepted = true
+        companyName = "Ali Tarım", taxNumber = "1234567890", taxOffice = "Mersin", kvkkAccepted = true, termsAccepted = true
     };
 
     private static object CarrierBody(string email = "veli@x.com", string phone = "0533 222 11 00") => new
@@ -42,7 +42,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
             new { type = "Truck", plateNumber = "33 ABC 123", capacityKg = 24000, capacityVolume = 90 },
             new { type = "Refrigerated", capacityKg = 8000 }
         },
-        kvkkAccepted = true
+        kvkkAccepted = true, termsAccepted = true
     };
 
     // ---------- Yük Veren ----------
@@ -66,18 +66,35 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     }
 
     [Fact]
+    public async Task Registration_needs_the_terms_of_use_and_stores_when_they_were_accepted()
+    {
+        // 15 Kasım (Apple 1.2): Kullanım Koşulları KVKK'dan ayrı, zorunlu onay; kabul anı kanıt olarak saklanır.
+        var (client, db) = await StartAsync();
+
+        var without = await client.PostAsJsonAsync("/api/v1/auth/register/shipper",
+            new { fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = "Abcdefg1", kvkkAccepted = true });
+        var with = await client.PostAsJsonAsync("/api/v1/auth/register/shipper", ShipperBody());
+
+        Assert.Equal(HttpStatusCode.BadRequest, without.StatusCode);
+        Assert.Contains("Kullanım Koşulları", await without.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Created, with.StatusCode);
+        await using var context = db.NewContext();
+        Assert.NotNull((await context.Users.SingleAsync()).TermsAcceptedAt);
+    }
+
+    [Fact]
     public async Task Registration_works_without_a_city_for_both_roles()
     {
         // Kayıtta il sorulmaz: iki rol de cityId/homeCityId göndermeden kaydolabilir.
         var (client, _) = await StartAsync();
 
         var shipper = await client.PostAsJsonAsync("/api/v1/auth/register/shipper",
-            new { fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = "Abcdefg1", kvkkAccepted = true });
+            new { fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = "Abcdefg1", kvkkAccepted = true, termsAccepted = true });
         var carrier = await client.PostAsJsonAsync("/api/v1/auth/register/carrier",
             new
             {
                 fullName = "Veli Nakliyat", email = "veli@x.com", phone = "0533 222 11 00", password = "Abcdefg1",
-                vehicles = new object[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true
+                vehicles = new object[] { new { type = "Truck", capacityKg = 24000 } }, kvkkAccepted = true, termsAccepted = true
             });
 
         Assert.Equal(HttpStatusCode.Created, shipper.StatusCode);
@@ -102,7 +119,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     public async Task The_client_cannot_choose_a_role_the_endpoint_decides()
     {
         var (client, db) = await StartAsync();
-        var body = new { fullName = "Kötü Niyetli", email = "k@x.com", phone = "0532 000 00 01", password = "Abcdefg1", cityId = 33, kvkkAccepted = true, userType = "Admin", role = "Admin" };
+        var body = new { fullName = "Kötü Niyetli", email = "k@x.com", phone = "0532 000 00 01", password = "Abcdefg1", cityId = 33, kvkkAccepted = true, termsAccepted = true, userType = "Admin", role = "Admin" };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register/shipper", body);
 
@@ -151,7 +168,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     public async Task A_malformed_enum_value_is_a_400_not_a_server_error()
     {
         var (client, _) = await StartAsync();
-        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, vehicles = new[] { new { type = "Roket", capacityKg = 100 } }, kvkkAccepted = true };
+        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, vehicles = new[] { new { type = "Roket", capacityKg = 100 } }, kvkkAccepted = true, termsAccepted = true };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", body);
 
@@ -227,7 +244,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     {
         // 15 Kasım (yönetici kararı): kayıtta araç sorulmaz; araçlar sonra "Araçlarım"dan eklenir (teklif için en az bir araç gerekir).
         var (client, db) = await StartAsync();
-        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true };
+        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, kvkkAccepted = true, termsAccepted = true };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", body);
 
@@ -241,7 +258,7 @@ public class AuthRegisterApiTests(SqlServerFixture sql)
     public async Task A_vehicle_error_names_the_exact_field_in_camelCase()
     {
         var (client, _) = await StartAsync();
-        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, vehicles = new[] { new { type = "Truck", capacityKg = 100 }, new { type = "Truck", capacityKg = 0 } }, kvkkAccepted = true };
+        var body = new { fullName = "Veli", email = "v@x.com", phone = "0533 222 11 00", password = "Abcdefg1", homeCityId = 33, vehicles = new[] { new { type = "Truck", capacityKg = 100 }, new { type = "Truck", capacityKg = 0 } }, kvkkAccepted = true, termsAccepted = true };
 
         var response = await client.PostAsJsonAsync("/api/v1/auth/register/carrier", body);
 

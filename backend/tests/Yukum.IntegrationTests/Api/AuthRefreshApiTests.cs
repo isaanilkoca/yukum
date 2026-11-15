@@ -31,7 +31,7 @@ public class AuthRefreshApiTests(SqlServerFixture sql)
     {
         await c.PostAsJsonAsync("/api/v1/auth/register/shipper", new
         {
-            fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = Password, cityId = 33, kvkkAccepted = true
+            fullName = "Ali Veli", email = "ali@x.com", phone = "0532 123 45 67", password = Password, cityId = 33, kvkkAccepted = true, termsAccepted = true
         });   // ikinci girişte 409 döner, önemli değil
         var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { emailOrPhone = "ali@x.com", password = Password, deviceId = device, deviceName = "iPhone" });
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
